@@ -138,13 +138,11 @@ const nextConfig: NextConfig = {
       }
     }
 
-    // Bundle analysis in development
-    if (dev && !isServer) {
-      config.resolve.alias = {
-        ...config.resolve.alias,
-        // Optimize bundle size by using lighter alternatives
-        'moment': 'date-fns',
-      }
+    // Configure path aliases for both development and production
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      // Optimize bundle size by using lighter alternatives  
+      'moment': 'date-fns',
     }
 
     return config
