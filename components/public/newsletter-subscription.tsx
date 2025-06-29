@@ -88,7 +88,7 @@ export default function NewsletterSubscription({
       } else {
         setError(data.message || 'Failed to subscribe. Please try again.')
       }
-    } catch (err) {
+    } catch (_err) {
       setError('Failed to subscribe. Please check your connection and try again.')
     } finally {
       setLoading(false)

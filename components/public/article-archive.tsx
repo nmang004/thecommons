@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Search, Filter, SortAsc, SortDesc, Calendar, User, Download, Eye, Quote } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -43,6 +44,7 @@ const SORT_OPTIONS = [
 ]
 
 export default function ArticleArchive({ searchParams }: ArticleArchiveProps) {
+  const router = useRouter()
   const supabase = createClientComponentClient()
 
   const [articles, setArticles] = useState<ArticleWithAuthor[]>([])

@@ -111,7 +111,7 @@ const SORT_OPTIONS = [
   { value: 'recent', label: 'Recent Activity' },
 ]
 
-export default function FieldsBrowser({ searchParams }: FieldsBrowserProps) {
+export default function FieldsBrowser({ searchParams: _searchParams }: FieldsBrowserProps) {
   const router = useRouter()
   const supabase = createClientComponentClient()
 
