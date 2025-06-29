@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
 import { Search, Filter, SortAsc, SortDesc, Calendar, User, Download, Eye, Quote } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -11,26 +10,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { format } from 'date-fns'
 import Link from 'next/link'
+import type { Manuscript, Profile } from '@/types/database'
 
-interface Article {
-  id: string
-  title: string
-  abstract: string
-  keywords: string[]
-  field_of_study: string
-  subfield?: string
-  published_at: string
-  view_count: number
-  download_count: number
-  citation_count: number
-  author: {
-    full_name: string
-    affiliation?: string
-  }
-  coauthors: Array<{
-    name: string
-    affiliation?: string
-  }>
+type ArticleWithAuthor = Manuscript & {
+  author: Profile
+  coauthors?: { name: string; affiliation?: string | null }[]
 }
 
 interface ArticleArchiveProps {
@@ -59,11 +43,9 @@ const SORT_OPTIONS = [
 ]
 
 export default function ArticleArchive({ searchParams }: ArticleArchiveProps) {
-  const router = useRouter()
-  const urlSearchParams = useSearchParams()
   const supabase = createClientComponentClient()
 
-  const [articles, setArticles] = useState<Article[]>([])
+  const [articles, setArticles] = useState<ArticleWithAuthor[]>([])
   const [loading, setLoading] = useState(true)
   const [totalCount, setTotalCount] = useState(0)
   const [currentPage, setCurrentPage] = useState(1)
@@ -92,19 +74,39 @@ export default function ArticleArchive({ searchParams }: ArticleArchiveProps) {
           keywords,
           field_of_study,
           subfield,
+          author_id,
+          status,
+          submitted_at,
+          accepted_at,
           published_at,
+          created_at,
+          updated_at,
+          doi,
           view_count,
           download_count,
           citation_count,
-          author:profiles!manuscripts_author_id_fkey (
+          submission_number,
+          corresponding_author_id,
+          editor_id,
+          cover_letter,
+          funding_statement,
+          conflict_of_interest,
+          data_availability,
+          profiles!manuscripts_author_id_fkey (
+            id,
+            email,
             full_name,
-            affiliation
+            affiliation,
+            bio,
+            orcid,
+            created_at,
+            updated_at
           ),
-          coauthors:manuscript_coauthors (
+          manuscript_coauthors (
             name,
             affiliation
           )
-        `)
+        `, { count: 'exact' })
         .eq('status', 'published')
         .order(sortBy, { ascending: sortOrder === 'asc' })
         .range((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage - 1)
@@ -125,7 +127,23 @@ export default function ArticleArchive({ searchParams }: ArticleArchiveProps) {
         return
       }
 
-      setArticles(data || [])
+      // Transform the data to match the ArticleWithAuthor type
+      const transformedData = (data || []).map((item: any) => ({
+        ...item,
+        author: item.profiles || {
+          id: 'unknown',
+          email: '',
+          full_name: 'Unknown Author',
+          affiliation: null,
+          bio: null,
+          orcid: null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        } as Profile,
+        coauthors: item.manuscript_coauthors || []
+      })) as ArticleWithAuthor[]
+
+      setArticles(transformedData)
       setTotalCount(count || 0)
     } catch (error) {
       console.error('Error fetching articles:', error)

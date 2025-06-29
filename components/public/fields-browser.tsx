@@ -8,7 +8,6 @@ import {
   Users,
   ArrowRight,
   Search,
-  Filter,
   Calendar,
   ChevronDown,
   ChevronUp

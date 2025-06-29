@@ -9,10 +9,8 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
 import { 
   MessageSquare, 
   Bug, 
@@ -79,7 +77,6 @@ export function FeedbackForm({ onClose, initialType, initialCategory }: Feedback
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [selectedType, setSelectedType] = useState<string>(initialType || '');
 
   const {
     register,

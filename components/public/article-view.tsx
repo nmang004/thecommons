@@ -9,18 +9,13 @@ import {
   Quote, 
   Eye, 
   Calendar, 
-  User, 
-  Building2,
   ExternalLink,
   FileText,
-  Globe,
-  Printer,
-  Mail
+  Printer
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -88,15 +83,6 @@ export default function ArticleView({ article }: ArticleViewProps) {
     return () => observer.disconnect()
   }, [])
 
-  const formatAuthorName = (name: string) => {
-    const parts = name.split(' ')
-    if (parts.length >= 2) {
-      const lastName = parts[parts.length - 1]
-      const initials = parts.slice(0, -1).map(part => part[0] + '.').join(' ')
-      return `${initials} ${lastName}`
-    }
-    return name
-  }
 
   const generateCitation = (format: 'apa' | 'mla' | 'chicago' | 'bibtex') => {
     const authors = [article.author, ...article.coauthors.sort((a, b) => a.author_order - b.author_order)]

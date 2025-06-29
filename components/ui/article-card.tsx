@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
-import { Calendar, User, Download, Eye, Star, Share2, Bookmark } from 'lucide-react'
+import { Calendar, Download, Eye, Share2, Bookmark } from 'lucide-react'
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -27,7 +27,6 @@ export default function ArticleCard({
   className,
 }: ArticleCardProps) {
   const [isBookmarked, setIsBookmarked] = useState(false)
-  const [bookmarkCount, setBookmarkCount] = useState(0)
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {

@@ -12,8 +12,6 @@ import {
   ExternalLink, 
   Mail, 
   Calendar,
-  BookOpen,
-  Award,
   Users,
   FileText
 } from 'lucide-react'
