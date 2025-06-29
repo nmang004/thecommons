@@ -9,8 +9,6 @@ import {
   BookOpen, 
   SortAsc,
   SortDesc,
-  Download,
-  Eye,
   Quote
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'

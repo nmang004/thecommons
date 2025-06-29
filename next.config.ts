@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import path from "path";
 
 // Only import bundle analyzer when needed
 const withBundleAnalyzer = process.env.ANALYZE === "true" 
@@ -141,6 +142,13 @@ const nextConfig: NextConfig = {
     // Configure path aliases for both development and production
     config.resolve.alias = {
       ...config.resolve.alias,
+      // Fix module resolution for @/* imports using absolute paths
+      '@': path.resolve(__dirname),
+      '@/components': path.resolve(__dirname, 'components'),
+      '@/lib': path.resolve(__dirname, 'lib'),
+      '@/app': path.resolve(__dirname, 'app'),
+      '@/hooks': path.resolve(__dirname, 'hooks'),
+      '@/types': path.resolve(__dirname, 'types'),
       // Optimize bundle size by using lighter alternatives  
       'moment': 'date-fns',
     }
