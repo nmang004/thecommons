@@ -1,0 +1,478 @@
+/* Academic Typography Utilities */
+
+/* Font Families */
+.font-heading {
+  font-family: var(--font-heading);
+}
+
+.font-serif {
+  font-family: var(--font-serif);
+}
+
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+/* Academic Text Sizes */
+.text-academic-lg {
+  font-size: 1.125rem;
+  line-height: 1.8;
+  letter-spacing: 0.015em;
+}
+
+.text-academic-base {
+  font-size: 1rem;
+  line-height: 1.7;
+  letter-spacing: 0.01em;
+}
+
+.text-academic-sm {
+  font-size: 0.875rem;
+  line-height: 1.6;
+  letter-spacing: 0.005em;
+}
+
+/* Academic Headings */
+.heading-display {
+  font-family: var(--font-heading);
+  font-size: 3rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.05em;
+}
+
+.heading-1 {
+  font-family: var(--font-heading);
+  font-size: 2.5rem;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+}
+
+.heading-2 {
+  font-family: var(--font-heading);
+  font-size: 2rem;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+.heading-3 {
+  font-family: var(--font-heading);
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+}
+
+.heading-4 {
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+.heading-5 {
+  font-family: var(--font-heading);
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.005em;
+}
+
+/* Academic Content Styling */
+.prose-academic {
+  font-family: var(--font-serif);
+  font-size: 1.125rem;
+  line-height: 1.8;
+  letter-spacing: 0.015em;
+  color: var(--foreground);
+}
+
+.prose-academic p {
+  margin-bottom: 1.5rem;
+  text-align: justify;
+  hyphens: auto;
+}
+
+.prose-academic p:first-of-type::first-letter {
+  font-size: 3.5rem;
+  line-height: 3rem;
+  float: left;
+  margin: 0.125rem 0.5rem 0 0;
+  font-weight: 600;
+  color: var(--primary);
+  font-family: var(--font-heading);
+}
+
+.prose-academic h1, 
+.prose-academic h2, 
+.prose-academic h3, 
+.prose-academic h4, 
+.prose-academic h5, 
+.prose-academic h6 {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  color: var(--foreground);
+}
+
+.prose-academic h1 {
+  font-size: 2rem;
+  line-height: 1.1;
+  border-bottom: 2px solid var(--border);
+  padding-bottom: 0.5rem;
+}
+
+.prose-academic h2 {
+  font-size: 1.75rem;
+  line-height: 1.15;
+}
+
+.prose-academic h3 {
+  font-size: 1.5rem;
+  line-height: 1.2;
+}
+
+.prose-academic h4 {
+  font-size: 1.25rem;
+  line-height: 1.25;
+}
+
+.prose-academic blockquote {
+  border-left: 4px solid var(--primary);
+  padding-left: 1.5rem;
+  margin: 2rem 0;
+  font-style: italic;
+  color: var(--muted-foreground);
+  background-color: rgba(59, 130, 246, 0.05);
+  padding: 1rem 1.5rem;
+  border-radius: var(--radius-md);
+}
+
+.prose-academic ul, 
+.prose-academic ol {
+  margin: 1.5rem 0;
+  padding-left: 2rem;
+}
+
+.prose-academic li {
+  margin-bottom: 0.5rem;
+}
+
+.prose-academic code {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  background-color: var(--muted);
+  padding: 0.125rem 0.375rem;
+  border-radius: var(--radius-sm);
+  color: var(--foreground);
+}
+
+.prose-academic pre {
+  font-family: var(--font-mono);
+  background-color: var(--muted);
+  padding: 1rem;
+  border-radius: var(--radius-md);
+  overflow-x: auto;
+  margin: 1.5rem 0;
+  border: 1px solid var(--border);
+}
+
+.prose-academic pre code {
+  background-color: transparent;
+  padding: 0;
+}
+
+/* Academic Tables */
+.table-academic {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 2rem 0;
+  font-size: 0.875rem;
+  background-color: var(--card);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.table-academic th {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  font-weight: 600;
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.table-academic td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.table-academic tbody tr:hover {
+  background-color: var(--muted);
+}
+
+.table-academic tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Academic Citations */
+.citation {
+  color: var(--primary);
+  text-decoration: none;
+  border-bottom: 1px dotted var(--primary);
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.citation:hover {
+  background-color: rgba(30, 58, 138, 0.1);
+  border-bottom-style: solid;
+  padding: 0.125rem 0.25rem;
+  margin: -0.125rem -0.25rem;
+  border-radius: var(--radius-sm);
+}
+
+/* Academic Figures */
+.figure-academic {
+  margin: 2rem 0;
+  text-align: center;
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.figure-academic img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-sm);
+}
+
+.figure-academic figcaption {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+  margin-top: 1rem;
+  font-style: italic;
+  font-family: var(--font-sans);
+}
+
+/* Academic Status and Badges */
+.badge-academic {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-family: var(--font-sans);
+}
+
+.badge-primary {
+  background-color: rgba(30, 58, 138, 0.1);
+  color: var(--primary);
+  border: 1px solid rgba(30, 58, 138, 0.2);
+}
+
+.badge-secondary {
+  background-color: rgba(217, 119, 6, 0.1);
+  color: var(--secondary);
+  border: 1px solid rgba(217, 119, 6, 0.2);
+}
+
+.badge-success {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: var(--success);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.badge-warning {
+  background-color: rgba(245, 158, 11, 0.1);
+  color: var(--warning);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.badge-error {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: var(--error);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+/* Academic Forms */
+.input-academic {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background-color: var(--input);
+  font-size: 0.875rem;
+  font-family: var(--font-sans);
+  transition: all 0.2s ease;
+}
+
+.input-academic:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
+}
+
+.label-academic {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--foreground);
+  margin-bottom: 0.5rem;
+  font-family: var(--font-sans);
+}
+
+.textarea-academic {
+  width: 100%;
+  min-height: 120px;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background-color: var(--input);
+  font-size: 0.875rem;
+  font-family: var(--font-sans);
+  resize: vertical;
+  transition: all 0.2s ease;
+}
+
+.textarea-academic:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
+}
+
+/* Academic Buttons */
+.btn-academic {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-family: var(--font-sans);
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: 0.025em;
+}
+
+.btn-primary {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-primary:hover {
+  background-color: #1e40af;
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background-color: var(--secondary);
+  color: var(--secondary-foreground);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-secondary:hover {
+  background-color: #c2410c;
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.btn-outline {
+  background-color: transparent;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+}
+
+.btn-outline:hover {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.btn-ghost {
+  background-color: transparent;
+  color: var(--foreground);
+}
+
+.btn-ghost:hover {
+  background-color: var(--muted);
+}
+
+/* Academic Cards */
+.card-academic {
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
+}
+
+.card-academic:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.card-header {
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.card-title {
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--foreground);
+  margin-bottom: 0.5rem;
+}
+
+.card-description {
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+/* Academic Navigation */
+.nav-academic {
+  background-color: var(--background);
+  border-bottom: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+
+.nav-link {
+  color: var(--muted-foreground);
+  text-decoration: none;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-md);
+  transition: all 0.2s ease;
+  font-family: var(--font-sans);
+}
+
+.nav-link:hover {
+  color: var(--foreground);
+  background-color: var(--muted);
+}
+
+.nav-link.active {
+  color: var(--primary);
+  background-color: rgba(30, 58, 138, 0.1);
+}

@@ -39,3 +39,62 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# testing
+test-results/
+playwright-report/
+playwright/.cache/
+.nyc_output
+
+# IDE/Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Supabase
+.supabase/
+
+# Logs
+logs
+*.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory
+coverage/
+*.lcov
+
+# Temporary folders
+tmp/
+temp/
+
+# Storybook build outputs
+storybook-static
+
+# Lighthouse CI
+lighthouseci/
+
+# Local development
+.cache/
+.parcel-cache/
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional REPL history
+.node_repl_history
+
+# Yarn Integrity file
+.yarn-integrity
+
+# Turbo
+.turbo
