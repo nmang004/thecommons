@@ -58,7 +58,7 @@ const roleColors = {
   admin: 'bg-red-100 text-red-800',
 }
 
-export default function MobileNav({ user, isOpen, onToggle, onClose }: MobileNavProps) {
+export default function MobileNav({ user, isOpen, onToggle: _onToggle, onClose }: MobileNavProps) {
   const pathname = usePathname()
   const [searchQuery, setSearchQuery] = useState('')
   const isMobile = !useMediaQuery('md')

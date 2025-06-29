@@ -31,7 +31,7 @@ export default function TitleAndAbstractStep() {
   const keywords = watch('keywords') || []
 
   const titleCharCount = title.length
-  const abstractWordCount = abstract.split(/\s+/).filter(word => word.length > 0).length
+  const abstractWordCount = abstract.split(/\s+/).filter((word: string) => word.length > 0).length
   const abstractCharCount = abstract.length
 
   const addKeyword = (keyword: string) => {
@@ -43,7 +43,7 @@ export default function TitleAndAbstractStep() {
   }
 
   const removeKeyword = (indexToRemove: number) => {
-    setValue('keywords', keywords.filter((_, index) => index !== indexToRemove), { shouldValidate: true })
+    setValue('keywords', keywords.filter((_: string, index: number) => index !== indexToRemove), { shouldValidate: true })
   }
 
   const handleKeywordInputKeyPress = (e: React.KeyboardEvent) => {
@@ -141,7 +141,7 @@ export default function TitleAndAbstractStep() {
         {/* Current Keywords */}
         {keywords.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-4">
-            {keywords.map((keyword, index) => (
+            {keywords.map((keyword: string, index: number) => (
               <Badge
                 key={index}
                 variant="secondary"

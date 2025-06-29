@@ -14,7 +14,6 @@ import {
   CheckCircle, 
   AlertCircle,
   Eye,
-  Edit,
   DollarSign,
   Shield,
   Clock
@@ -48,7 +47,7 @@ function ReviewSection({ title, icon: Icon, children, isComplete }: {
 }
 
 export default function ReviewAndPayStep({ onSubmit, isSubmitting }: ReviewAndPayStepProps) {
-  const { watch, getValues } = useFormContext()
+  const { getValues } = useFormContext()
   const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [acceptedPolicy, setAcceptedPolicy] = useState(false)
 
