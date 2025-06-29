@@ -20,7 +20,9 @@ import {
 } from 'lucide-react'
 
 export default function AdditionalInfoStep() {
-  const { register, control, watch, formState: { errors } } = useFormContext()
+  const { register, control, watch } = useFormContext()
+  
+  const coverLetter = watch('coverLetter') || ''
   
   // Suggested Reviewers
   const { fields: suggestedReviewers, append: appendSuggested, remove: removeSuggested } = useFieldArray({
@@ -34,10 +36,6 @@ export default function AdditionalInfoStep() {
     name: 'excludedReviewers'
   })
 
-  const coverLetter = watch('coverLetter') || ''
-  const fundingStatement = watch('fundingStatement') || ''
-  const conflictOfInterest = watch('conflictOfInterest') || ''
-  const dataAvailability = watch('dataAvailability') || ''
 
   const addSuggestedReviewer = () => {
     appendSuggested({
@@ -91,7 +89,7 @@ export default function AdditionalInfoStep() {
         />
         
         <div className="text-sm text-gray-500 mt-2">
-          {coverLetter.split(/\s+/).filter(word => word.length > 0).length} words
+          {coverLetter.split(/\s+/).filter((word: string) => word.length > 0).length} words
         </div>
       </Card>
 

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React from 'react'
 import { useFormContext, useFieldArray } from 'react-hook-form'
 import { Card } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
@@ -52,7 +52,7 @@ export default function AuthorsStep() {
 
   const setCorrespondingAuthor = (index: number) => {
     // Set all authors to non-corresponding first
-    authors.forEach((_, i) => {
+    authors.forEach((_: any, i: number) => {
       setValue(`authors.${i}.isCorresponding`, false)
     })
     // Set the selected author as corresponding
@@ -114,9 +114,9 @@ export default function AuthorsStep() {
                                 />
                                 <User className="w-4 h-4 absolute left-3 top-3 text-gray-400" />
                               </div>
-                              {errors.authors?.[index]?.name && (
+                              {(errors as any)?.authors?.[index]?.name && (
                                 <p className="text-red-600 text-xs mt-1">
-                                  {errors.authors[index].name.message}
+                                  {(errors as any).authors[index].name.message}
                                 </p>
                               )}
                             </div>
@@ -135,9 +135,9 @@ export default function AuthorsStep() {
                                 />
                                 <Mail className="w-4 h-4 absolute left-3 top-3 text-gray-400" />
                               </div>
-                              {errors.authors?.[index]?.email && (
+                              {(errors as any)?.authors?.[index]?.email && (
                                 <p className="text-red-600 text-xs mt-1">
-                                  {errors.authors[index].email.message}
+                                  {(errors as any).authors[index].email.message}
                                 </p>
                               )}
                             </div>
@@ -172,7 +172,7 @@ export default function AuthorsStep() {
                                 />
                                 <ExternalLink className="w-4 h-4 absolute left-3 top-3 text-gray-400" />
                               </div>
-                              {errors.authors?.[index]?.orcid && (
+                              {(errors as any)?.authors?.[index]?.orcid && (
                                 <p className="text-red-600 text-xs mt-1">
                                   Invalid ORCID format
                                 </p>

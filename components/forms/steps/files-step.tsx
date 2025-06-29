@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useCallback, useState } from 'react'
-import { useFormContext, useFieldArray } from 'react-hook-form'
+import { useFormContext } from 'react-hook-form'
 import { Card } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
@@ -12,7 +12,7 @@ import {
   FileText, 
   Image, 
   Paperclip, 
-  Trash2, 
+ 
   AlertCircle,
   CheckCircle,
   X
@@ -121,7 +121,7 @@ function FileTypeUploader({ fileType, onFilesAdded, files }: {
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: fileType.accept,
+    accept: fileType.accept as any,
     maxSize: fileType.maxSize,
     multiple: fileType.multiple || false,
   })
@@ -248,10 +248,6 @@ export default function FilesStep() {
     setValue('manuscriptFiles', updatedFiles, { shouldValidate: true })
   }
 
-  const removeFile = (index: number) => {
-    const updatedFiles = manuscriptFiles.filter((_: any, i: number) => i !== index)
-    setValue('manuscriptFiles', updatedFiles, { shouldValidate: true })
-  }
 
   const hasRequiredFiles = manuscriptFiles.some((file: any) => file.type === 'manuscript_main')
 
