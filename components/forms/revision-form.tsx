@@ -9,17 +9,14 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
 import { useDropzone } from 'react-dropzone'
 import { 
   Upload, 
-  File, 
   FileText, 
   MessageSquare, 
   Eye, 
   Star,
   AlertCircle,
-  CheckCircle,
   ArrowLeft,
   Send
 } from 'lucide-react'

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React from 'react'
 import { useFormContext, useFieldArray } from 'react-hook-form'
 import { Card } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
@@ -12,16 +12,15 @@ import {
   Trash2, 
   Mail, 
   User, 
-  Building, 
+ 
   AlertTriangle,
   DollarSign,
   Database,
-  FileText,
   Info
 } from 'lucide-react'
 
 export default function AdditionalInfoStep() {
-  const { register, control, watch, setValue, formState: { errors } } = useFormContext()
+  const { register, control, watch, formState: { errors } } = useFormContext()
   
   // Suggested Reviewers
   const { fields: suggestedReviewers, append: appendSuggested, remove: removeSuggested } = useFieldArray({
