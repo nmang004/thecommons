@@ -7,31 +7,54 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import ArticleCard from '@/components/ui/article-card'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import type { Manuscript, Profile } from '@/types/database'
+
+type ArticleWithAuthor = Manuscript & {
+  author: Profile
+  coauthors?: { name: string; affiliation?: string | null }[]
+}
 
 // Mock data - in real app this would come from props or API
-const recentArticles = [
+const recentArticles: ArticleWithAuthor[] = [
   {
     id: '1',
     title: 'Machine Learning Approaches for Climate Change Prediction: A Comprehensive Review',
     abstract: 'This comprehensive review examines the latest machine learning techniques applied to climate change prediction, analyzing their effectiveness and potential for future environmental modeling...',
     keywords: ['Machine Learning', 'Climate Change', 'Environmental Science'],
     field_of_study: 'Environmental Science',
+    subfield: 'Climate Science',
+    author_id: '1',
+    status: 'published',
+    submitted_at: '2024-01-08T00:00:00Z',
+    accepted_at: '2024-01-12T00:00:00Z',
+    published_at: '2024-01-15T00:00:00Z',
+    created_at: '2024-01-10T00:00:00Z',
+    updated_at: '2024-01-15T00:00:00Z',
+    doi: '10.1000/sample.doi.1',
+    submission_number: 'SUB-2024-001',
+    corresponding_author_id: '1',
+    editor_id: null,
+    cover_letter: null,
+    funding_statement: null,
+    conflict_of_interest: null,
+    data_availability: null,
+    view_count: 1250,
+    download_count: 340,
+    citation_count: 12,
     author: {
       id: '1',
+      email: 'sarah.chen@stanford.edu',
       full_name: 'Dr. Sarah Chen',
       affiliation: 'Stanford University',
-      avatar_url: null,
+      bio: 'Environmental scientist specializing in climate modeling',
+      orcid: '0000-0000-0000-0001',
+      created_at: '2023-06-01T00:00:00Z',
+      updated_at: '2024-01-15T00:00:00Z',
     },
     coauthors: [
       { name: 'Dr. Michael Rodriguez', affiliation: 'MIT' },
       { name: 'Dr. Lisa Wang', affiliation: 'UC Berkeley' },
     ],
-    status: 'published' as const,
-    published_at: '2024-01-15T00:00:00Z',
-    created_at: '2024-01-10T00:00:00Z',
-    view_count: 1250,
-    download_count: 340,
-    citation_count: 12,
   },
   {
     id: '2',

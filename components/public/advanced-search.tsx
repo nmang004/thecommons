@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox'
 import ArticleCard from '@/components/ui/article-card'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import type { Manuscript, Profile } from '@/types/database'
 
 interface SearchFilters {
   query: string
@@ -33,25 +34,9 @@ interface SearchFilters {
   minCitations: string
 }
 
-interface Article {
-  id: string
-  title: string
-  abstract: string
-  keywords: string[]
-  field_of_study: string
-  subfield?: string
-  published_at: string
-  view_count: number
-  download_count: number
-  citation_count: number
-  author: {
-    full_name: string
-    affiliation?: string
-  }
-  coauthors: Array<{
-    name: string
-    affiliation?: string
-  }>
+type ArticleWithAuthor = Manuscript & {
+  author: Profile
+  coauthors?: { name: string; affiliation?: string | null }[]
 }
 
 const FIELDS_OF_STUDY = [
@@ -103,7 +88,7 @@ export default function AdvancedSearch({
     minCitations: '',
   })
 
-  const [articles, setArticles] = useState<Article[]>([])
+  const [articles, setArticles] = useState<ArticleWithAuthor[]>([])
   const [loading, setLoading] = useState(false)
   const [totalCount, setTotalCount] = useState(0)
   const [currentPage, setCurrentPage] = useState(1)
@@ -142,13 +127,33 @@ export default function AdvancedSearch({
           keywords,
           field_of_study,
           subfield,
+          author_id,
+          status,
+          submitted_at,
+          accepted_at,
           published_at,
+          created_at,
+          updated_at,
+          doi,
           view_count,
           download_count,
           citation_count,
+          submission_number,
+          corresponding_author_id,
+          editor_id,
+          cover_letter,
+          funding_statement,
+          conflict_of_interest,
+          data_availability,
           profiles!manuscripts_author_id_fkey (
+            id,
+            email,
             full_name,
-            affiliation
+            affiliation,
+            bio,
+            orcid,
+            created_at,
+            updated_at
           ),
           manuscript_coauthors (
             name,
@@ -204,12 +209,21 @@ export default function AdvancedSearch({
         return
       }
 
-      // Transform the data to match the Article interface
+      // Transform the data to match the ArticleWithAuthor type
       const transformedData = (data || []).map((item: any) => ({
         ...item,
-        author: item.profiles ? item.profiles : { full_name: 'Unknown', affiliation: undefined },
+        author: item.profiles || {
+          id: 'unknown',
+          email: '',
+          full_name: 'Unknown Author',
+          affiliation: null,
+          bio: null,
+          orcid: null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        } as Profile,
         coauthors: item.manuscript_coauthors || []
-      }))
+      })) as ArticleWithAuthor[]
 
       setArticles(transformedData)
       setTotalCount(count || 0)
