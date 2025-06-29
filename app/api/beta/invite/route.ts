@@ -17,7 +17,7 @@ const bulkInviteSchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const supabase = createClient();
+    const supabase = await createClient();
     
     // Check if user is admin
     const { data: { user } } = await supabase.auth.getUser();
@@ -164,7 +164,7 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const supabase = createClient();
+    const supabase = await createClient();
     
     // Check if user is admin
     const { data: { user } } = await supabase.auth.getUser();

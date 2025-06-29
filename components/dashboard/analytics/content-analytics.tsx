@@ -291,7 +291,7 @@ export function ContentAnalytics({
     return num.toString()
   }
 
-  const COLORS = ['#1e3a8a', '#d97706', '#16a34a', '#dc2626', '#7c3aed', '#0891b2', '#c2410c']
+  // const COLORS = ['#1e3a8a', '#d97706', '#16a34a', '#dc2626', '#7c3aed', '#0891b2', '#c2410c'] // Future use for color customization
 
   return (
     <div className={`space-y-6 ${className}`}>

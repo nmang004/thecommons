@@ -1,4 +1,4 @@
-import { createServerClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 import { NextRequest } from 'next/server'
 
 export async function GET(request: NextRequest) {
@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
   const field = searchParams.get('field')
   
   try {
-    const supabase = createServerClient()
+    const supabase = await createClient()
     
     let query = supabase
       .from('manuscripts')
@@ -66,9 +66,9 @@ export async function GET(request: NextRequest) {
       <link>${baseUrl}/articles/${article.id}</link>
       <guid isPermaLink="true">${baseUrl}/articles/${article.id}</guid>
       <pubDate>${new Date(article.published_at).toUTCString()}</pubDate>
-      <dc:creator><![CDATA[${article.author?.full_name || 'Unknown Author'}]]></dc:creator>
+      <dc:creator><![CDATA[${(article.author as any)?.full_name || 'Unknown Author'}]]></dc:creator>
       <category><![CDATA[${article.field_of_study}]]></category>
-      ${article.keywords?.map(keyword => `<category><![CDATA[${keyword}]]></category>`).join('') || ''}
+      ${(article.keywords as any)?.map((keyword: any) => `<category><![CDATA[${keyword}]]></category>`).join('') || ''}
     </item>`).join('') || ''}
   </channel>
 </rss>`

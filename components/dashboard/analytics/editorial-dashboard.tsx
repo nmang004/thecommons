@@ -266,16 +266,16 @@ export function EditorialDashboard({
     return num.toString()
   }
 
-  const getStatusColor = (stage: string) => {
-    switch (stage.toLowerCase()) {
-      case 'submissions': return '#3b82f6'
-      case 'with_editor': return '#f59e0b'
-      case 'under_review': return '#8b5cf6'
-      case 'decision_made': return '#10b981'
-      case 'published': return '#16a34a'
-      default: return '#6b7280'
-    }
-  }
+  // const getStatusColor = (stage: string) => {  // Future use for dynamic chart colors
+  //   switch (stage.toLowerCase()) {
+  //     case 'submissions': return '#3b82f6'
+  //     case 'with_editor': return '#f59e0b'
+  //     case 'under_review': return '#8b5cf6'
+  //     case 'decision_made': return '#10b981'
+  //     case 'published': return '#16a34a'
+  //     default: return '#6b7280'
+  //   }
+  // }
 
   return (
     <div className={`space-y-6 ${className}`}>
@@ -523,7 +523,7 @@ export function EditorialDashboard({
                   name === 'avgTurnaround' ? `${value} days` : value,
                   name === 'avgTurnaround' ? 'Turnaround' : 'Quality Score'
                 ]}
-                labelFormatter={(label, payload) => 
+                labelFormatter={(_label, payload) => 
                   payload?.[0]?.payload?.reviewerName || ''
                 }
               />

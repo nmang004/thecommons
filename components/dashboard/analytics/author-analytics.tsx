@@ -382,7 +382,7 @@ export function AuthorAnalytics({
                   fill="#8884d8"
                   dataKey="count"
                 >
-                  {statusData.map((entry, index) => (
+                  {statusData.map((_entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>

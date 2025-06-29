@@ -42,8 +42,9 @@ export async function GET(request: NextRequest) {
 
     try {
       // Test Redis connection (if available)
-      const { cache } = await import('@/lib/redis/cache')
-      await cache.ping()
+      const { getRedisClient } = await import('@/lib/redis/client')
+      const redis = getRedisClient()
+      await redis.ping()
       healthCheck.services.redis = 'healthy'
     } catch {
       healthCheck.services.redis = 'unhealthy'

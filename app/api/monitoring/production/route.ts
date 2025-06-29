@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const startTime = Date.now();
+    // const startTime = Date.now(); // Future use for timing metrics
     const metrics: SystemMetrics = {
       timestamp: new Date().toISOString(),
       database: {
@@ -94,10 +94,10 @@ export async function GET(request: NextRequest) {
     // Test database connection and performance
     try {
       const dbStartTime = Date.now();
-      const supabase = createClient();
+      const supabase = await createClient();
       
       // Test basic connectivity
-      const { data: healthCheck, error: healthError } = await supabase
+      const { error: healthError } = await supabase
         .rpc('production_health_check');
       
       if (healthError) {
@@ -176,7 +176,7 @@ export async function GET(request: NextRequest) {
 
     // Get application metrics
     try {
-      const supabase = createClient();
+      const supabase = await createClient();
       const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
       
       // Active users in last 24 hours
@@ -211,7 +211,7 @@ export async function GET(request: NextRequest) {
 
     // Get academic-specific metrics
     try {
-      const supabase = createClient();
+      const supabase = await createClient();
       const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
       
       // Manuscripts submitted in last 24 hours

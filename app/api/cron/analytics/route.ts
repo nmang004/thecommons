@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const supabase = createClient();
+    const supabase = await createClient();
     const redis = getRedisClient();
     
     const timestamp = new Date().toISOString();
@@ -135,7 +135,7 @@ export async function GET(request: NextRequest) {
     
     // Log the error
     try {
-      const supabase = createClient();
+      const supabase = await createClient();
       await supabase.from('activity_logs').insert({
         action: 'analytics_processing_failed',
         details: {

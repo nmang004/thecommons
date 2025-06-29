@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
 
 const subscriptionSchema = z.object({
@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const validatedData = subscriptionSchema.parse(body)
     
-    const supabase = createServerClient()
+    const supabase = await createClient()
 
     // Check if email already exists
     const { data: existingSubscription, error: checkError } = await supabase
@@ -113,7 +113,7 @@ export async function DELETE(request: NextRequest) {
       }, { status: 400 })
     }
 
-    const supabase = createServerClient()
+    const supabase = await createClient()
 
     // Deactivate subscription
     const { error } = await supabase

@@ -3,14 +3,13 @@
 import { useState, useEffect } from 'react'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { 
-  LineChart, Line, XAxis, YAxis, CartesianGrid, 
+  XAxis, YAxis, CartesianGrid, 
   Tooltip, ResponsiveContainer, AreaChart, Area
 } from 'recharts'
 import { 
-  Activity, Users, Eye, FileText, Clock, 
+  Activity, Users, Eye, 
   TrendingUp, AlertCircle, CheckCircle, Zap,
   Server, Database, Wifi, Globe
 } from 'lucide-react'
@@ -265,10 +264,6 @@ export function RealTimeMetrics({ className = '' }: RealTimeMetricsProps) {
     return `${minutes}:${secs.toString().padStart(2, '0')}`
   }
 
-  const formatNumber = (num: number) => {
-    if (num >= 1000) return `${(num / 1000).toFixed(1)}K`
-    return Math.round(num).toString()
-  }
 
   return (
     <div className={`space-y-6 ${className}`}>

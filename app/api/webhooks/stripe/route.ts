@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
             amount: paymentIntent.amount,
             currency: paymentIntent.currency,
             status: paymentIntent.status,
-            receipt_url: paymentIntent.charges.data[0]?.receipt_url,
+            receipt_url: (paymentIntent as any).charges?.data?.[0]?.receipt_url || null,
             billing_details: session.customer_details,
           })
           .select()
@@ -152,7 +152,7 @@ export async function POST(request: NextRequest) {
               submissionNumber: manuscriptDetails.submission_number,
               amount: paymentIntent.amount,
               paymentId: payment.id,
-              receiptUrl: paymentIntent.charges.data[0]?.receipt_url,
+              receiptUrl: (paymentIntent as any).charges?.data?.[0]?.receipt_url || null,
             })
           }
         } catch (emailError) {

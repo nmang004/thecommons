@@ -359,13 +359,13 @@ export function ExecutiveDashboard({
                   cy="50%"
                   labelLine={false}
                   label={({ field_of_study, percent }) => 
-                    `${field_of_study} (${(percent * 100).toFixed(0)}%)`
+                    `${field_of_study} (${((percent || 0) * 100).toFixed(0)}%)`
                   }
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="total_views"
                 >
-                  {contentData.map((entry, index) => (
+                  {contentData.map((_entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>

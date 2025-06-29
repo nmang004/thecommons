@@ -11,8 +11,7 @@ import {
 } from 'recharts'
 import { 
   Activity, AlertTriangle, CheckCircle, Clock, 
-  Server, Database, Zap, RefreshCw, AlertCircle,
-  TrendingUp, TrendingDown, Cpu, HardDrive
+  Server, RefreshCw, AlertCircle
 } from 'lucide-react'
 
 interface SystemHealth {
@@ -50,7 +49,7 @@ function HealthStatusCard({
   status, 
   value, 
   unit, 
-  icon, 
+  icon: _icon, 
   loading = false 
 }: {
   title: string
@@ -401,7 +400,7 @@ export function MonitoringDashboard({
             </div>
           ) : (
             <div className="space-y-3">
-              {errorTypeData.slice(0, 5).map((error, index) => (
+              {errorTypeData.slice(0, 5).map((error, _index) => (
                 <div key={error.type} className="flex items-center justify-between">
                   <span className="text-sm font-medium truncate">{error.type}</span>
                   <div className="flex items-center space-x-2">
@@ -473,7 +472,7 @@ export function MonitoringDashboard({
               systemHealth?.status === 'warning' ? 'bg-yellow-500' : 'bg-red-500'
             }`}></div>
             <span className="font-medium">
-              System Status: {systemHealth?.status?.charAt(0).toUpperCase() + systemHealth?.status?.slice(1) || 'Unknown'}
+              System Status: {systemHealth?.status ? systemHealth.status.charAt(0).toUpperCase() + systemHealth.status.slice(1) : 'Unknown'}
             </span>
           </div>
           <div className="text-sm text-muted-foreground">

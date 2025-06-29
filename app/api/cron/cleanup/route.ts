@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const supabase = createClient();
+    const supabase = await createClient();
     
     const timestamp = new Date().toISOString();
     const cleanupResults = [];
@@ -111,7 +111,7 @@ export async function GET(request: NextRequest) {
     
     // Log the error
     try {
-      const supabase = createClient();
+      const supabase = await createClient();
       await supabase.from('activity_logs').insert({
         action: 'system_cleanup_failed',
         details: {

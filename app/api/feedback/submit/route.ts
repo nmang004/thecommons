@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validatedData = feedbackSchema.parse(body);
 
-    const supabase = createClient();
+    const supabase = await createClient();
     
     // Get user if authenticated
     const { data: { user } } = await supabase.auth.getUser();
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
           academic_context: validatedData.academic_context,
           contact_email: validatedData.contact_email,
           allow_follow_up: validatedData.allow_follow_up,
-          submitted_from_ip: request.ip,
+          submitted_from_ip: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
           timestamp: new Date().toISOString()
         },
         status: 'open'
@@ -151,7 +151,7 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const supabase = createClient();
+    const supabase = await createClient();
     
     // Get user
     const { data: { user } } = await supabase.auth.getUser();
