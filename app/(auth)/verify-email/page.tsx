@@ -24,21 +24,6 @@ export default function VerifyEmailPage() {
   
   const supabase = createClient()
 
-  useEffect(() => {
-    if (email) {
-      setUserEmail(email)
-    }
-    
-    // If we have a token and type, this is likely a verification callback
-    if (token && type) {
-      verifyToken()
-    } else {
-      // Otherwise, show the verification status page
-      setStatus('loading')
-      checkVerificationStatus()
-    }
-  }, [token, type, email, checkVerificationStatus, verifyToken])
-
   const verifyToken = useCallback(async () => {
     try {
       if (type === 'signup') {
@@ -84,6 +69,21 @@ export default function VerifyEmailPage() {
       setStatus('error')
     }
   }, [supabase.auth])
+
+  useEffect(() => {
+    if (email) {
+      setUserEmail(email)
+    }
+    
+    // If we have a token and type, this is likely a verification callback
+    if (token && type) {
+      verifyToken()
+    } else {
+      // Otherwise, show the verification status page
+      setStatus('loading')
+      checkVerificationStatus()
+    }
+  }, [token, type, email, checkVerificationStatus, verifyToken])
 
   const handleResendVerification = async () => {
     if (!userEmail) return

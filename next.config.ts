@@ -1,9 +1,11 @@
 import type { NextConfig } from "next";
-import bundleAnalyzer from "@next/bundle-analyzer";
 
-const withBundleAnalyzer = bundleAnalyzer({
-  enabled: process.env.ANALYZE === "true",
-});
+// Only import bundle analyzer when needed
+const withBundleAnalyzer = process.env.ANALYZE === "true" 
+  ? require("@next/bundle-analyzer")({
+      enabled: true,
+    })
+  : (config: NextConfig) => config;
 
 const nextConfig: NextConfig = {
   // Optimization settings
