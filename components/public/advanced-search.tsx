@@ -146,11 +146,11 @@ export default function AdvancedSearch({
           view_count,
           download_count,
           citation_count,
-          author:profiles!manuscripts_author_id_fkey (
+          profiles!manuscripts_author_id_fkey (
             full_name,
             affiliation
           ),
-          coauthors:manuscript_coauthors (
+          manuscript_coauthors (
             name,
             affiliation
           )
@@ -204,7 +204,14 @@ export default function AdvancedSearch({
         return
       }
 
-      setArticles(data || [])
+      // Transform the data to match the Article interface
+      const transformedData = (data || []).map((item: any) => ({
+        ...item,
+        author: item.profiles ? item.profiles : { full_name: 'Unknown', affiliation: undefined },
+        coauthors: item.manuscript_coauthors || []
+      }))
+
+      setArticles(transformedData)
       setTotalCount(count || 0)
     } catch (error) {
       console.error('Search error:', error)
