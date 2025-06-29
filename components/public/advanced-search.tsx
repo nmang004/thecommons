@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
 import { 
   Search, 
   Filter, 
@@ -87,8 +86,6 @@ export default function AdvancedSearch({
 }: { 
   searchParams: { [key: string]: string | string[] | undefined } 
 }) {
-  const router = useRouter()
-  const urlSearchParams = useSearchParams()
   const supabase = createClientComponentClient()
 
   const [filters, setFilters] = useState<SearchFilters>({
