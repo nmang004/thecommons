@@ -18,7 +18,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox'
 import ArticleCard from '@/components/ui/article-card'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { format } from 'date-fns'
 
 interface SearchFilters {
   query: string
