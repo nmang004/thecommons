@@ -1,0 +1,60 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "nixpacks"
+  },
+  "deploy": {
+    "numReplicas": 1,
+    "sleepApplication": false,
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 10
+  },
+  "environments": {
+    "production": {
+      "variables": {
+        "NODE_ENV": "production",
+        "REDIS_URL": "${{REDIS_URL}}",
+        "REDIS_TLS": "true",
+        "REDIS_MAX_CONNECTIONS": "20",
+        "REDIS_IDLE_TIMEOUT": "30000",
+        "REDIS_CONNECT_TIMEOUT": "10000"
+      }
+    }
+  },
+  "regions": ["us-west1"],
+  "services": [
+    {
+      "name": "redis",
+      "source": {
+        "image": "redis:7-alpine"
+      },
+      "variables": {
+        "REDIS_PASSWORD": "${{REDIS_PASSWORD}}",
+        "REDIS_PORT": "6379",
+        "REDIS_DATABASES": "16",
+        "REDIS_MAXMEMORY": "256mb",
+        "REDIS_MAXMEMORY_POLICY": "allkeys-lru"
+      },
+      "healthcheck": {
+        "command": ["redis-cli", "ping"],
+        "interval": 30,
+        "timeout": 10,
+        "retries": 3
+      },
+      "volumes": [
+        {
+          "mountPath": "/data",
+          "size": "1GB"
+        }
+      ]
+    }
+  ],
+  "plugins": [
+    {
+      "name": "redis-insight",
+      "config": {
+        "version": "latest"
+      }
+    }
+  ]
+}
