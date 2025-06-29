@@ -13,19 +13,13 @@ import {
   Download,
   Users,
   Mail,
-  Clock,
-  CheckCircle,
-  AlertCircle,
   User,
   MapPin,
-  ExternalLink,
   Eye,
   MessageSquare,
   Award,
   Send,
   UserPlus,
-  Trash2,
-  Edit,
   MoreHorizontal
 } from 'lucide-react'
 
@@ -38,7 +32,7 @@ interface ManuscriptDetailViewProps {
 export function ManuscriptDetailView({ 
   manuscript, 
   potentialReviewers,
-  currentEditor 
+  currentEditor: _currentEditor 
 }: ManuscriptDetailViewProps) {
   const router = useRouter()
   const [showReviewerSelector, setShowReviewerSelector] = useState(false)

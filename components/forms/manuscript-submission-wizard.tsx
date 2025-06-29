@@ -112,7 +112,7 @@ export default function ManuscriptSubmissionWizard({ profile }: ManuscriptSubmis
     },
   })
 
-  const { trigger, getValues } = methods
+  const { trigger, getValues: _getValues } = methods
 
   const validateCurrentStep = async () => {
     let fieldsToValidate: (keyof SubmissionFormData)[] = []

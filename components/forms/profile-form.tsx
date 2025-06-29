@@ -48,7 +48,7 @@ export function ProfileForm({ profile, onUpdate }: ProfileFormProps) {
         website_url: profile.website_url || '',
         role: profile.role,
       })
-      setAvatarPreview(profile.avatar_url)
+      setAvatarPreview(profile.avatar_url || null)
     }
   }, [profile])
 
