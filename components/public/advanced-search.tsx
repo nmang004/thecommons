@@ -8,15 +8,13 @@ import {
   X, 
   BookOpen, 
   SortAsc,
-  SortDesc,
-  Quote
+  SortDesc
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Separator } from '@/components/ui/separator'
 import { Checkbox } from '@/components/ui/checkbox'
 import ArticleCard from '@/components/ui/article-card'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
