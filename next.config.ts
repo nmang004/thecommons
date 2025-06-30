@@ -4,9 +4,6 @@ import path from "path";
 // Load global polyfills immediately
 require('./global-polyfills.js');
 
-// Import custom webpack plugin
-const PolyfillPlugin = require('./webpack-polyfill-plugin.js');
-
 // Only import bundle analyzer when needed
 const withBundleAnalyzer = process.env.ANALYZE === "true" 
   ? require("@next/bundle-analyzer")({
@@ -114,77 +111,33 @@ const nextConfig: NextConfig = {
 
   // Webpack optimizations
   webpack: (config, { dev, isServer }) => {
-    // Add polyfill plugin to ensure browser globals are available
-    config.plugins.push(new PolyfillPlugin());
+    // Add polyfill using webpack's DefinePlugin instead of custom plugin
+    const webpack = require('webpack');
     
-    // Production optimizations
-    if (!dev) {
-      config.optimization = {
-        ...config.optimization,
-        splitChunks: {
-          chunks: 'all',
-          cacheGroups: {
-            vendor: {
-              test: /[\\/]node_modules[\\/]/,
-              name: 'vendors',
-              priority: 10,
-              chunks: 'all',
-            },
-            ui: {
-              test: /[\\/]components[\\/]ui[\\/]/,
-              name: 'ui',
-              priority: 20,
-              chunks: 'all',
-            },
-            common: {
-              name: 'common',
-              minChunks: 2,
-              priority: 5,
-              chunks: 'all',
-            },
-          },
-        },
-      }
-    }
-
-    // Add fallbacks for browser globals in server environment
     if (isServer) {
-      // Inject polyfill for 'self' at the beginning of each entry point
-      const originalEntry = config.entry;
-      config.entry = async () => {
-        const entries = await originalEntry();
-        
-        // Add polyfill to each entry point
-        Object.keys(entries).forEach((key) => {
-          const entry = entries[key];
-          
-          // Handle different entry formats
-          if (Array.isArray(entry)) {
-            // Entry is already an array
-            if (!entry.includes('./global-polyfills.js')) {
-              entries[key] = ['./global-polyfills.js', ...entry];
-            }
-          } else if (typeof entry === 'string') {
-            // Entry is a string, convert to array
-            entries[key] = ['./global-polyfills.js', entry];
-          } else if (entry && typeof entry === 'object' && entry.import) {
-            // Entry is an object with import property
-            if (Array.isArray(entry.import)) {
-              if (!entry.import.includes('./global-polyfills.js')) {
-                entry.import = ['./global-polyfills.js', ...entry.import];
-              }
-            } else {
-              entry.import = ['./global-polyfills.js', entry.import];
-            }
-          }
-        });
-        
-        return entries;
-      };
+      // Define self globally for server-side rendering
+      config.plugins.push(
+        new webpack.DefinePlugin({
+          'typeof self': JSON.stringify('object'),
+        })
+      );
       
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-      }
+      // Add polyfill as a banner to all chunks
+      config.plugins.push(
+        new webpack.BannerPlugin({
+          banner: `
+            if (typeof self === 'undefined') {
+              try {
+                global.self = global;
+              } catch (e) {
+                // Ignore errors
+              }
+            }
+          `,
+          raw: true,
+          entryOnly: false,
+        })
+      );
     }
 
     // Configure path aliases for both development and production
@@ -220,9 +173,6 @@ const nextConfig: NextConfig = {
 
   // Power by header
   poweredByHeader: false,
-
-  // Generate standalone output for better performance
-  output: 'standalone',
 };
 
 export default withBundleAnalyzer(nextConfig);
