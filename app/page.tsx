@@ -1,4 +1,6 @@
 import { Metadata } from 'next'
+import Header from '@/components/layout/header'
+import Footer from '@/components/layout/footer'
 import HeroSection from '@/components/public/hero-section'
 import FeaturesSection from '@/components/public/features-section'
 import RecentArticlesSection from '@/components/public/recent-articles-section'
@@ -34,9 +36,11 @@ export const metadata: Metadata = {
 export default function Home() {
   return (
     <>
+      <Header />
       <HeroSection />
       <FeaturesSection />
       <RecentArticlesSection />
+      <Footer />
     </>
   )
 }
