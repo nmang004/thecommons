@@ -42,18 +42,20 @@ export interface SystemHealthMetric {
 // ===========================
 
 class ErrorTracker {
-  private supabase: ReturnType<typeof createClient> | ReturnType<typeof createBrowserClient>
-  private isServer: boolean
+  private getSupabase: () => ReturnType<typeof createClient> | ReturnType<typeof createBrowserClient>
 
   constructor(isServer = true) {
-    this.isServer = isServer
-    this.supabase = isServer ? createClient() : createBrowserClient()
+    // Note: createClient() is async and returns a Promise, but for error tracking
+    // we'll handle the Promise resolution in each method
+    // @ts-ignore - TypeScript incorrectly thinks createClient needs arguments
+    this.getSupabase = () => isServer ? createClient() : createBrowserClient()
   }
 
   // Track JavaScript errors
   async trackError(error: ErrorEvent): Promise<void> {
     try {
-      await this.supabase
+      const supabase = await this.getSupabase()
+      await supabase
         .from('error_logs')
         .insert({
           error_type: error.errorType,
@@ -84,7 +86,8 @@ class ErrorTracker {
   // Track performance metrics
   async trackPerformance(performance: PerformanceEvent): Promise<void> {
     try {
-      await this.supabase
+      const supabase = await this.getSupabase()
+      await supabase
         .from('performance_metrics')
         .insert({
           metric_type: performance.metricType,
@@ -114,7 +117,8 @@ class ErrorTracker {
   // Track system health metrics
   async trackSystemHealth(metric: SystemHealthMetric): Promise<void> {
     try {
-      await this.supabase.rpc('track_system_health', {
+      const supabase = await this.getSupabase()
+      await supabase.rpc('track_system_health', {
         metric_type_param: metric.metricType,
         metric_value_param: metric.metricValue,
         endpoint_param: metric.endpoint,
@@ -133,7 +137,8 @@ class ErrorTracker {
       const hours = timeRange === '1h' ? 1 : timeRange === '24h' ? 24 : timeRange === '7d' ? 168 : 720
       const startTime = new Date(Date.now() - hours * 60 * 60 * 1000)
 
-      const { data, error } = await this.supabase
+      const supabase = await this.getSupabase()
+      const { data, error } = await supabase
         .from('error_logs')
         .select(`
           error_type,
@@ -151,8 +156,8 @@ class ErrorTracker {
       // Aggregate error data
       const errorStats = {
         totalErrors: data?.length || 0,
-        criticalErrors: data?.filter(e => e.severity === 'critical').length || 0,
-        unresolvedErrors: data?.filter(e => !e.resolved).length || 0,
+        criticalErrors: data?.filter((e: any) => e.severity === 'critical').length || 0,
+        unresolvedErrors: data?.filter((e: any) => !e.resolved).length || 0,
         errorsByType: {} as Record<string, number>,
         errorsBySeverity: {
           low: 0,
@@ -163,13 +168,15 @@ class ErrorTracker {
         hourlyTrend: {} as Record<string, number>
       }
 
-      data?.forEach(error => {
+      data?.forEach((error: any) => {
         // Count by type
         errorStats.errorsByType[error.error_type] = 
           (errorStats.errorsByType[error.error_type] || 0) + 1
 
         // Count by severity
-        errorStats.errorsBySeverity[error.severity]++
+        if (error.severity in errorStats.errorsBySeverity) {
+          errorStats.errorsBySeverity[error.severity as keyof typeof errorStats.errorsBySeverity]++
+        }
 
         // Hourly trend
         const hour = error.created_at.substring(0, 13) // YYYY-MM-DDTHH
@@ -186,7 +193,8 @@ class ErrorTracker {
   // Get performance analytics
   async getPerformanceAnalytics(timeRange: '1h' | '24h' | '7d' | '30d' = '24h') {
     try {
-      const { data, error } = await this.supabase
+      const supabase = await this.getSupabase()
+      const { data, error } = await supabase
         .rpc('get_performance_summary', { 
           hours_back: timeRange === '1h' ? 1 : timeRange === '24h' ? 24 : timeRange === '7d' ? 168 : 720 
         })
@@ -205,7 +213,8 @@ class ErrorTracker {
     try {
       const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
 
-      const { data, error } = await this.supabase
+      const supabase = await this.getSupabase()
+      const { data, error } = await supabase
         .from('analytics.system_health')
         .select('*')
         .gte('recorded_at', oneHourAgo.toISOString())
@@ -224,25 +233,25 @@ class ErrorTracker {
       }
 
       if (data && data.length > 0) {
-        const responseTimeMetrics = data.filter(m => m.metric_type === 'response_time')
-        const errorMetrics = data.filter(m => m.metric_type === 'error_rate')
-        const throughputMetrics = data.filter(m => m.metric_type === 'throughput')
+        const responseTimeMetrics = data.filter((m: any) => m.metric_type === 'response_time')
+        const errorMetrics = data.filter((m: any) => m.metric_type === 'error_rate')
+        const throughputMetrics = data.filter((m: any) => m.metric_type === 'throughput')
 
         if (responseTimeMetrics.length > 0) {
           healthMetrics.avgResponseTime = responseTimeMetrics.reduce(
-            (sum, m) => sum + m.metric_value, 0
+            (sum: any, m: any) => sum + m.metric_value, 0
           ) / responseTimeMetrics.length
         }
 
         if (errorMetrics.length > 0) {
           healthMetrics.errorRate = errorMetrics.reduce(
-            (sum, m) => sum + m.metric_value, 0
+            (sum: any, m: any) => sum + m.metric_value, 0
           ) / errorMetrics.length
         }
 
         if (throughputMetrics.length > 0) {
           healthMetrics.throughput = throughputMetrics.reduce(
-            (sum, m) => sum + m.metric_value, 0
+            (sum: any, m: any) => sum + m.metric_value, 0
           ) / throughputMetrics.length
         }
 
@@ -271,7 +280,8 @@ class ErrorTracker {
   // Mark error as resolved
   async resolveError(errorId: string): Promise<void> {
     try {
-      await this.supabase
+      const supabase = await this.getSupabase()
+      await supabase
         .from('error_logs')
         .update({ resolved: true })
         .eq('id', errorId)

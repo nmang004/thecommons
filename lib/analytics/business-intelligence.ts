@@ -109,10 +109,8 @@ export interface CompetitiveAnalysisReport {
 // ===========================
 
 export class BusinessIntelligenceService {
-  private supabase: ReturnType<typeof createClient>
-
-  constructor() {
-    this.supabase = createClient()
+  private async getSupabase() {
+    return createClient()
   }
 
   // ===========================
@@ -124,15 +122,16 @@ export class BusinessIntelligenceService {
     endDate: Date
   ): Promise<FinancialReport> {
     const cacheKey = `financial-report-${startDate.toISOString()}-${endDate.toISOString()}`
-    const cached = await cache.get(cacheKey)
+    const cached = await cache.get<FinancialReport>(cacheKey)
     
     if (cached) {
-      return JSON.parse(cached)
+      return cached
     }
 
     try {
       // Get payment data
-      const { data: payments, error } = await this.supabase
+      const supabase = await this.getSupabase()
+      const { data: payments, error } = await supabase
         .from('payments')
         .select(`
           amount,
@@ -192,7 +191,7 @@ export class BusinessIntelligenceService {
         .sort((a, b) => a.month.localeCompare(b.month))
 
       // Cache for 4 hours
-      await cache.setex(cacheKey, 14400, JSON.stringify(report))
+      await cache.set(cacheKey, report, { ttl: 14400 })
       return report
 
     } catch (error) {
@@ -210,15 +209,16 @@ export class BusinessIntelligenceService {
     endDate: Date
   ): Promise<AcademicImpactReport> {
     const cacheKey = `academic-impact-${startDate.toISOString()}-${endDate.toISOString()}`
-    const cached = await cache.get(cacheKey)
+    const cached = await cache.get<AcademicImpactReport>(cacheKey)
     
     if (cached) {
-      return JSON.parse(cached)
+      return cached
     }
 
     try {
       // Get published manuscripts
-      const { data: manuscripts, error } = await this.supabase
+      const supabase = await this.getSupabase()
+      const { data: manuscripts, error } = await supabase
         .from('manuscripts')
         .select(`
           field_of_study,
@@ -271,7 +271,7 @@ export class BusinessIntelligenceService {
       }
 
       // Get geographic data from analytics
-      const { data: geoData } = await this.supabase
+      const { data: geoData } = await supabase
         .from('analytics.manuscript_analytics')
         .select('country_code, event_type')
         .not('country_code', 'is', null)
@@ -296,7 +296,7 @@ export class BusinessIntelligenceService {
       }
 
       // Cache for 2 hours
-      await cache.setex(cacheKey, 7200, JSON.stringify(report))
+      await cache.set(cacheKey, report, { ttl: 7200 })
       return report
 
     } catch (error) {
@@ -314,22 +314,23 @@ export class BusinessIntelligenceService {
     endDate: Date
   ): Promise<EditorialEfficiencyReport> {
     const cacheKey = `editorial-efficiency-${startDate.toISOString()}-${endDate.toISOString()}`
-    const cached = await cache.get(cacheKey)
+    const cached = await cache.get<EditorialEfficiencyReport>(cacheKey)
     
     if (cached) {
-      return JSON.parse(cached)
+      return cached
     }
 
     try {
       // Get editorial efficiency data
-      const { data: efficiencyData } = await this.supabase
+      const supabase = await this.getSupabase()
+      const { data: efficiencyData } = await supabase
         .rpc('get_editorial_efficiency')
 
-      const { data: reviewerData } = await this.supabase
+      const { data: reviewerData } = await supabase
         .rpc('get_reviewer_analytics')
 
       // Get manuscripts in the period
-      const { data: manuscripts } = await this.supabase
+      const { data: manuscripts } = await supabase
         .from('manuscripts')
         .select('status, submitted_at, published_at')
         .gte('submitted_at', startDate.toISOString())
@@ -361,7 +362,7 @@ export class BusinessIntelligenceService {
       }
 
       // Cache for 1 hour
-      await cache.setex(cacheKey, 3600, JSON.stringify(report))
+      await cache.set(cacheKey, report, { ttl: 3600 })
       return report
 
     } catch (error) {
@@ -379,10 +380,10 @@ export class BusinessIntelligenceService {
     endDate: Date
   ): Promise<GrowthAnalysisReport> {
     const cacheKey = `growth-analysis-${startDate.toISOString()}-${endDate.toISOString()}`
-    const cached = await cache.get(cacheKey)
+    const cached = await cache.get<GrowthAnalysisReport>(cacheKey)
     
     if (cached) {
-      return JSON.parse(cached)
+      return cached
     }
 
     try {
@@ -392,40 +393,41 @@ export class BusinessIntelligenceService {
       const prevEndDate = new Date(endDate.getTime() - periodLength)
 
       // Get user counts
-      const { data: currentUsers } = await this.supabase
+      const supabase = await this.getSupabase()
+      const { data: currentUsers } = await supabase
         .from('profiles')
         .select('id, created_at')
         .gte('created_at', startDate.toISOString())
         .lte('created_at', endDate.toISOString())
 
-      const { data: prevUsers } = await this.supabase
+      const { data: prevUsers } = await supabase
         .from('profiles')
         .select('id')
         .gte('created_at', prevStartDate.toISOString())
         .lte('created_at', prevEndDate.toISOString())
 
       // Get submissions
-      const { data: currentSubmissions } = await this.supabase
+      const { data: currentSubmissions } = await supabase
         .from('manuscripts')
         .select('id')
         .gte('submitted_at', startDate.toISOString())
         .lte('submitted_at', endDate.toISOString())
 
-      const { data: prevSubmissions } = await this.supabase
+      const { data: prevSubmissions } = await supabase
         .from('manuscripts')
         .select('id')
         .gte('submitted_at', prevStartDate.toISOString())
         .lte('submitted_at', prevEndDate.toISOString())
 
       // Get publications
-      const { data: currentPublications } = await this.supabase
+      const { data: currentPublications } = await supabase
         .from('manuscripts')
         .select('id')
         .eq('status', 'published')
         .gte('published_at', startDate.toISOString())
         .lte('published_at', endDate.toISOString())
 
-      const { data: prevPublications } = await this.supabase
+      const { data: prevPublications } = await supabase
         .from('manuscripts')
         .select('id')
         .eq('status', 'published')
@@ -462,7 +464,7 @@ export class BusinessIntelligenceService {
       }
 
       // Cache for 6 hours
-      await cache.setex(cacheKey, 21600, JSON.stringify(report))
+      await cache.set(cacheKey, report, { ttl: 21600 })
       return report
 
     } catch (error) {
@@ -475,22 +477,22 @@ export class BusinessIntelligenceService {
   // Export Functions
   // ===========================
 
-  async exportReportToCSV(reportType: string, data: any): Promise<string> {
+  async exportReportToCSV(reportType: string, data: FinancialReport | AcademicImpactReport | EditorialEfficiencyReport | GrowthAnalysisReport): Promise<string> {
     // Convert report data to CSV format
     let csvContent = ''
     
     switch (reportType) {
       case 'financial':
-        csvContent = this.financialReportToCSV(data)
+        csvContent = this.financialReportToCSV(data as FinancialReport)
         break
       case 'academic-impact':
-        csvContent = this.academicImpactReportToCSV(data)
+        csvContent = this.academicImpactReportToCSV(data as AcademicImpactReport)
         break
       case 'editorial-efficiency':
-        csvContent = this.editorialEfficiencyReportToCSV(data)
+        csvContent = this.editorialEfficiencyReportToCSV(data as EditorialEfficiencyReport)
         break
       case 'growth-analysis':
-        csvContent = this.growthAnalysisReportToCSV(data)
+        csvContent = this.growthAnalysisReportToCSV(data as GrowthAnalysisReport)
         break
       default:
         throw new Error(`Unsupported report type: ${reportType}`)

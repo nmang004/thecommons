@@ -61,19 +61,21 @@ describe('Schema Markup Generation', () => {
       const schema = generateArticleSchema(mockArticle)
 
       expect(schema.author).toHaveLength(2)
-      expect(schema.author[0].name).toBe('Dr. Jane Smith')
-      expect(schema.author[0].affiliation.name).toBe('University of Technology')
-      expect(schema.author[0].identifier.value).toBe(mockArticle.author.orcid)
-      expect(schema.author[1].name).toBe('Dr. John Doe')
+      expect(Array.isArray(schema.author) && schema.author[0]?.name).toBe('Dr. Jane Smith')
+      expect(Array.isArray(schema.author) && schema.author[0]?.affiliation?.name).toBe('University of Technology')
+      expect(Array.isArray(schema.author) && schema.author[0]?.identifier?.value).toBe(mockArticle.author.orcid)
+      expect(Array.isArray(schema.author) && schema.author[1]?.name).toBe('Dr. John Doe')
     })
 
     it('should handle DOI identifier correctly', () => {
       const schema = generateArticleSchema(mockArticle)
 
       expect(Array.isArray(schema.identifier)).toBe(true)
-      expect(schema.identifier[0].propertyID).toBe('DOI')
-      expect(schema.identifier[0].value).toBe(mockArticle.doi)
-      expect(schema.identifier[1].propertyID).toBe('URL')
+      if (Array.isArray(schema.identifier)) {
+        expect(schema.identifier[0]?.propertyID).toBe('DOI')
+        expect(schema.identifier[0]?.value).toBe(mockArticle.doi)
+        expect(schema.identifier[1]?.propertyID).toBe('URL')
+      }
     })
 
     it('should handle article without DOI', () => {
@@ -81,8 +83,10 @@ describe('Schema Markup Generation', () => {
       const schema = generateArticleSchema(articleWithoutDOI)
 
       expect(Array.isArray(schema.identifier)).toBe(false)
-      expect(schema.identifier.propertyID).toBe('URL')
-      expect(schema.identifier.value).toContain('/articles/article-123')
+      if (!Array.isArray(schema.identifier)) {
+        expect(schema.identifier.propertyID).toBe('URL')
+        expect(schema.identifier.value).toContain('/articles/article-123')
+      }
     })
 
     it('should include keywords', () => {
@@ -158,9 +162,9 @@ describe('Schema Markup Generation', () => {
 
       expect(schema['@type']).toBe('BreadcrumbList')
       expect(schema.itemListElement).toHaveLength(3)
-      expect(schema.itemListElement[0].position).toBe(1)
-      expect(schema.itemListElement[0].name).toBe('Home')
-      expect(schema.itemListElement[2].position).toBe(3)
+      expect(schema.itemListElement[0]?.position).toBe(1)
+      expect(schema.itemListElement[0]?.name).toBe('Home')
+      expect(schema.itemListElement[2]?.position).toBe(3)
     })
 
     it('should handle absolute URLs correctly', () => {
@@ -171,8 +175,8 @@ describe('Schema Markup Generation', () => {
 
       const schema = generateBreadcrumbSchema(items)
 
-      expect(schema.itemListElement[0].item).toBe('https://external.example.com')
-      expect(schema.itemListElement[1].item).toBe('https://test.thecommons.org/internal')
+      expect(schema.itemListElement[0]?.item).toBe('https://external.example.com')
+      expect(schema.itemListElement[1]?.item).toBe('https://test.thecommons.org/internal')
     })
   })
 
@@ -223,9 +227,9 @@ describe('Schema Markup Generation', () => {
     it('should include affiliation and ORCID', () => {
       const schema = generateAcademicPersonSchema(mockProfile)
 
-      expect(schema.affiliation.name).toBe('University of Technology')
-      expect(schema.identifier.propertyID).toBe('ORCID')
-      expect(schema.identifier.value).toBe(mockProfile.orcid)
+      expect(schema.affiliation?.name).toBe('University of Technology')
+      expect(schema.identifier?.propertyID).toBe('ORCID')
+      expect(schema.identifier?.value).toBe(mockProfile.orcid)
     })
 
     it('should include expertise', () => {
@@ -303,9 +307,9 @@ describe('Schema Markup Generation', () => {
 
       expect(schema['@type']).toBe('FAQPage')
       expect(schema.mainEntity).toHaveLength(2)
-      expect(schema.mainEntity[0]['@type']).toBe('Question')
-      expect(schema.mainEntity[0].name).toBe(mockFAQs[0].question)
-      expect(schema.mainEntity[0].acceptedAnswer.text).toBe(mockFAQs[0].answer)
+      expect(schema.mainEntity[0]?.['@type']).toBe('Question')
+      expect(schema.mainEntity[0]?.name).toBe(mockFAQs[0]?.question)
+      expect(schema.mainEntity[0]?.acceptedAnswer?.text).toBe(mockFAQs[0]?.answer)
     })
   })
 

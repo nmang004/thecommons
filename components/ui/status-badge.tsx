@@ -1,10 +1,13 @@
+import React from 'react'
 import { cn } from '@/lib/utils'
-import { Badge, BadgeProps } from '@/components/ui/badge'
+import { Badge } from '@/components/ui/badge'
 import type { ManuscriptStatus } from '@/types/database'
 
-interface StatusBadgeProps extends Omit<BadgeProps, 'children'> {
+interface StatusBadgeProps extends Omit<React.ComponentProps<'span'>, 'children'> {
   status: ManuscriptStatus
   showIcon?: boolean
+  variant?: 'default' | 'secondary' | 'destructive' | 'outline'
+  asChild?: boolean
 }
 
 const statusConfig = {

@@ -1,4 +1,4 @@
-import { cache, CACHE_KEYS, CACHE_TTL } from '@/lib/redis/cache'
+import { cache, CACHE_TTL } from '@/lib/redis/cache'
 
 interface ArticleData {
   id: string
@@ -364,7 +364,7 @@ export class AcademicPDFGenerator {
     return processedContent
   }
 
-  private async convertHTMLToPDF(html: string, options: PDFOptions): Promise<Buffer> {
+  private async convertHTMLToPDF(html: string, _options: PDFOptions): Promise<Buffer> {
     // In a real implementation, you would use a library like Puppeteer or Playwright
     // For this example, we'll simulate PDF generation
     

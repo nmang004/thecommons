@@ -14,7 +14,7 @@ export class EmailService {
         subject: template.subject,
         html: template.html,
         text: template.text,
-        reply_to: EMAIL_CONFIG.REPLY_TO,
+        replyTo: EMAIL_CONFIG.REPLY_TO,
       })
 
       console.log('Email sent successfully:', result.data?.id)

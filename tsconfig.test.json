@@ -1,0 +1,25 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "target": "ES2020",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "allowJs": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "downlevelIteration": true,
+    "types": ["@testing-library/jest-dom", "jest", "@types/jest", "node"]
+  },
+  "include": [
+    "next-env.d.ts",
+    "types/**/*.d.ts",
+    "__tests__/**/*.ts",
+    "__tests__/**/*.tsx",
+    "jest.setup.js"
+  ],
+  "exclude": [
+    "node_modules",
+    ".next",
+    "dist"
+  ]
+}

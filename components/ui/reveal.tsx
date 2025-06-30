@@ -11,7 +11,6 @@ interface RevealProps {
   distance?: number
   className?: string
   once?: boolean
-  threshold?: number
 }
 
 const getDirectionOffset = (direction: string, distance: number) => {
@@ -37,10 +36,9 @@ export default function Reveal({
   distance = 30,
   className = '',
   once = true,
-  threshold = 0.1,
 }: RevealProps) {
   const ref = useRef(null)
-  const isInView = useInView(ref, { once, threshold })
+  const isInView = useInView(ref, { once })
 
   const offset = getDirectionOffset(direction, distance)
 
@@ -81,7 +79,6 @@ interface StaggerRevealProps {
   distance?: number
   className?: string
   once?: boolean
-  threshold?: number
 }
 
 export function StaggerReveal({
@@ -92,7 +89,6 @@ export function StaggerReveal({
   distance = 30,
   className = '',
   once = true,
-  threshold = 0.1,
 }: StaggerRevealProps) {
   return (
     <div className={className}>
@@ -104,7 +100,6 @@ export function StaggerReveal({
           duration={duration}
           distance={distance}
           once={once}
-          threshold={threshold}
         >
           {child}
         </Reveal>

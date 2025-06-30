@@ -8,9 +8,9 @@ export const LazyArticleArchive = lazy(() => import('@/components/public/article
 export const LazyAdvancedSearch = lazy(() => import('@/components/public/advanced-search'))
 export const LazyFieldsBrowser = lazy(() => import('@/components/public/fields-browser'))
 export const LazyManuscriptSubmissionWizard = lazy(() => import('@/components/forms/manuscript-submission-wizard'))
-export const LazyReviewSubmissionForm = lazy(() => import('@/components/forms/review-submission-form'))
+export const LazyReviewSubmissionForm = lazy(() => import('@/components/forms/review-submission-form').then(module => ({ default: module.ReviewSubmissionForm })))
 export const LazyRevisionForm = lazy(() => import('@/components/forms/revision-form'))
-export const LazyManuscriptDetailView = lazy(() => import('@/components/dashboard/manuscript-detail-view'))
+export const LazyManuscriptDetailView = lazy(() => import('@/components/dashboard/manuscript-detail-view').then(module => ({ default: module.ManuscriptDetailView })))
 
 // Loading skeletons for different component types
 const ArticleArchiveSkeleton = () => (

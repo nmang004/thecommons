@@ -5,6 +5,15 @@
 // Learn more: https://github.com/testing-library/jest-dom
 import '@testing-library/jest-dom'
 
+// The import '@testing-library/jest-dom' automatically extends Jest matchers
+// No need to manually extend them
+
+// Import Jest globals for proper TypeScript support
+import { jest } from '@jest/globals'
+
+// Make Jest globals available in the global scope
+global.jest = jest
+
 // Mock Next.js router
 jest.mock('next/navigation', () => ({
   useRouter() {

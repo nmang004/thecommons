@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useFocusTrap, useFocusRestore } from '@/hooks/use-focus-trap'
@@ -41,6 +41,7 @@ export default function AccessibleDialog({
   className = '',
   contentClassName = '',
 }: AccessibleDialogProps) {
+  const dialogRef = useRef<HTMLDivElement>(null)
   const focusTrapRef = useFocusTrap(isOpen)
   const { storeFocus, restoreFocus } = useFocusRestore()
 
@@ -50,6 +51,10 @@ export default function AccessibleDialog({
       storeFocus()
       // Prevent body scroll
       document.body.style.overflow = 'hidden'
+      // Set focus trap on dialog
+      if (focusTrapRef.current && dialogRef.current) {
+        focusTrapRef.current = dialogRef.current
+      }
     } else {
       restoreFocus()
       // Restore body scroll
@@ -59,7 +64,7 @@ export default function AccessibleDialog({
     return () => {
       document.body.style.overflow = 'unset'
     }
-  }, [isOpen, storeFocus, restoreFocus])
+  }, [isOpen, storeFocus, restoreFocus, focusTrapRef])
 
   // Handle escape key
   useEffect(() => {
@@ -107,7 +112,7 @@ export default function AccessibleDialog({
 
         {/* Dialog */}
         <motion.div
-          ref={focusTrapRef}
+          ref={dialogRef}
           role="dialog"
           aria-modal="true"
           aria-labelledby="dialog-title"

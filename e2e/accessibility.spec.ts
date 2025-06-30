@@ -1,19 +1,7 @@
 import { test, expect } from '@playwright/test'
-import { injectAxe, checkA11y, configureAxe } from '@axe-core/playwright'
+import { AxeBuilder } from '@axe-core/playwright'
 
 test.describe('Accessibility Testing', () => {
-  test.beforeEach(async ({ page }) => {
-    // Inject axe into the page
-    await injectAxe(page)
-    
-    // Configure axe with custom rules if needed
-    await configureAxe(page, {
-      rules: [
-        // Disable some rules for specific tests if needed
-        // { id: 'color-contrast', enabled: false }
-      ]
-    })
-  })
 
   test('Homepage accessibility (WCAG 2.1 AA)', async ({ page }) => {
     await page.goto('/')
@@ -22,14 +10,10 @@ test.describe('Accessibility Testing', () => {
     await page.waitForLoadState('networkidle')
     
     // Run accessibility checks
-    await checkA11y(page, null, {
-      detailedReport: true,
-      detailedReportOptions: {
-        html: true,
-      },
-      // Check for WCAG 2.1 AA compliance
-      tags: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'],
-    })
+    const accessibilityResults = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+      .analyze()
+    expect(accessibilityResults.violations).toEqual([])
   })
 
   test('Navigation accessibility', async ({ page }) => {
@@ -46,9 +30,11 @@ test.describe('Accessibility Testing', () => {
     await expect(nav.first()).toBeVisible()
     
     // Run axe check on navigation
-    await checkA11y(page, 'nav', {
-      tags: ['wcag2a', 'wcag2aa']
-    })
+    const accessibilityResults = await new AxeBuilder({ page })
+      .include('nav')
+      .withTags(['wcag2a', 'wcag2aa'])
+      .analyze()
+    expect(accessibilityResults.violations).toEqual([])
   })
 
   test('Form accessibility', async ({ page }) => {
@@ -69,14 +55,11 @@ test.describe('Accessibility Testing', () => {
     }
     
     // Run accessibility check on the form
-    await checkA11y(page, 'form', {
-      tags: ['wcag2a', 'wcag2aa'],
-      rules: {
-        // Form-specific accessibility rules
-        'label': { enabled: true },
-        'form-field-multiple-labels': { enabled: true }
-      }
-    })
+    const accessibilityResults = await new AxeBuilder({ page })
+      .include('form')
+      .withTags(['wcag2a', 'wcag2aa'])
+      .analyze()
+    expect(accessibilityResults.violations).toEqual([])
   })
 
   test('Color contrast compliance', async ({ page }) => {
@@ -84,12 +67,11 @@ test.describe('Accessibility Testing', () => {
     await page.waitForLoadState('networkidle')
     
     // Run color contrast specific checks
-    await checkA11y(page, null, {
-      tags: ['wcag2aa'],
-      rules: {
-        'color-contrast': { enabled: true }
-      }
-    })
+    const accessibilityResults = await new AxeBuilder({ page })
+      .withTags(['wcag2aa'])
+      .withRules(['color-contrast'])
+      .analyze()
+    expect(accessibilityResults.violations).toEqual([])
   })
 
   test('Images and media accessibility', async ({ page }) => {
@@ -111,12 +93,11 @@ test.describe('Accessibility Testing', () => {
     }
     
     // Run accessibility check for images
-    await checkA11y(page, null, {
-      tags: ['wcag2a', 'wcag2aa'],
-      rules: {
-        'image-alt': { enabled: true }
-      }
-    })
+    const accessibilityResults = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa'])
+      .withRules(['image-alt'])
+      .analyze()
+    expect(accessibilityResults.violations).toEqual([])
   })
 
   test('Heading structure and landmarks', async ({ page }) => {
@@ -136,14 +117,11 @@ test.describe('Accessibility Testing', () => {
     await expect(main.first()).toBeVisible()
     
     // Run accessibility check for heading structure
-    await checkA11y(page, null, {
-      tags: ['wcag2a', 'wcag2aa'],
-      rules: {
-        'page-has-heading-one': { enabled: true },
-        'heading-order': { enabled: true },
-        'landmark-one-main': { enabled: true }
-      }
-    })
+    const accessibilityResults = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa'])
+      .withRules(['page-has-heading-one', 'heading-order', 'landmark-one-main'])
+      .analyze()
+    expect(accessibilityResults.violations).toEqual([])
   })
 
   test('Interactive elements accessibility', async ({ page }) => {
@@ -168,13 +146,11 @@ test.describe('Accessibility Testing', () => {
     }
     
     // Run accessibility check for interactive elements
-    await checkA11y(page, null, {
-      tags: ['wcag2a', 'wcag2aa'],
-      rules: {
-        'button-name': { enabled: true },
-        'link-name': { enabled: true }
-      }
-    })
+    const accessibilityResults = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa'])
+      .withRules(['button-name', 'link-name'])
+      .analyze()
+    expect(accessibilityResults.violations).toEqual([])
   })
 
   test('Mobile accessibility', async ({ page }) => {
@@ -202,9 +178,10 @@ test.describe('Accessibility Testing', () => {
     }
     
     // Run accessibility checks on mobile
-    await checkA11y(page, null, {
-      tags: ['wcag2a', 'wcag2aa', 'wcag21aa']
-    })
+    const accessibilityResults = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+      .analyze()
+    expect(accessibilityResults.violations).toEqual([])
   })
 
   test('Keyboard navigation flow', async ({ page }) => {
@@ -245,13 +222,11 @@ test.describe('Accessibility Testing', () => {
     await page.keyboard.press('Shift+Tab')
     
     // Run accessibility check for keyboard navigation
-    await checkA11y(page, null, {
-      tags: ['wcag2a', 'wcag2aa'],
-      rules: {
-        'focusable-content': { enabled: true },
-        'focus-order-semantics': { enabled: true }
-      }
-    })
+    const accessibilityResults = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa'])
+      .withRules(['focusable-content', 'focus-order-semantics'])
+      .analyze()
+    expect(accessibilityResults.violations).toEqual([])
   })
 
   test('Screen reader compatibility', async ({ page }) => {
@@ -275,16 +250,11 @@ test.describe('Accessibility Testing', () => {
     }
     
     // Run accessibility check for screen readers
-    await checkA11y(page, null, {
-      tags: ['wcag2a', 'wcag2aa'],
-      rules: {
-        'aria-allowed-attr': { enabled: true },
-        'aria-required-attr': { enabled: true },
-        'aria-valid-attr-value': { enabled: true },
-        'landmark-one-main': { enabled: true },
-        'region': { enabled: true }
-      }
-    })
+    const accessibilityResults = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa'])
+      .withRules(['aria-allowed-attr', 'aria-required-attr', 'aria-valid-attr-value', 'landmark-one-main', 'region'])
+      .analyze()
+    expect(accessibilityResults.violations).toEqual([])
   })
 
   test('Error handling accessibility', async ({ page }) => {
@@ -308,11 +278,10 @@ test.describe('Accessibility Testing', () => {
     }
     
     // Run accessibility check including error states
-    await checkA11y(page, null, {
-      tags: ['wcag2a', 'wcag2aa'],
-      rules: {
-        'aria-valid-attr-value': { enabled: true }
-      }
-    })
+    const accessibilityResults = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa'])
+      .withRules(['aria-valid-attr-value'])
+      .analyze()
+    expect(accessibilityResults.violations).toEqual([])
   })
 })

@@ -98,7 +98,7 @@ class ApiCacheManager {
     return !hasAuth
   }
 
-  private shouldCacheResponse(res: NextResponse, config: ApiCacheConfig): boolean {
+  private shouldCacheResponse(res: Response | NextResponse, config: ApiCacheConfig): boolean {
     // Don't cache error responses
     if (res.status >= 400) {
       return false
@@ -106,7 +106,7 @@ class ApiCacheManager {
 
     // Use custom shouldCache function if provided
     if (config.shouldCache) {
-      return config.shouldCache(undefined as any, res)
+      return config.shouldCache(undefined as any, res as NextResponse)
     }
 
     return true
@@ -151,7 +151,7 @@ class ApiCacheManager {
 
   async setCachedResponse(
     cacheKey: string, 
-    response: NextResponse, 
+    response: Response | NextResponse, 
     config: ApiCacheConfig
   ): Promise<void> {
     if (!this.shouldCacheResponse(response, config)) {
@@ -228,11 +228,12 @@ export function withApiCache(config: ApiCacheConfig = {}) {
 // Cache invalidation by tags
 export async function invalidateApiCacheByTag(tag: string): Promise<void> {
   const tagKey = `tag:${tag}`
-  const keys = await cache.redis.hkeys(tagKey)
+  const redis = cache.getRedisClient()
+  const keys = await redis.hkeys(tagKey)
   
   if (keys.length > 0) {
     // Delete all cached responses for this tag
-    await cache.redis.del(...keys)
+    await redis.del(...keys)
     // Delete the tag itself
     await cache.del(tagKey)
   }
@@ -251,7 +252,8 @@ export async function getCacheStats(): Promise<{
   cacheSize: number
 }> {
   try {
-    const info = await cache.redis.info('stats')
+    const redis = cache.getRedisClient()
+    const info = await redis.info('stats')
     const lines = info.split('\r\n')
     
     let hits = 0
@@ -270,7 +272,7 @@ export async function getCacheStats(): Promise<{
     const missRate = totalRequests > 0 ? misses / totalRequests : 0
     
     // Get approximate cache size
-    const dbSize = await cache.redis.dbsize()
+    const dbSize = await redis.dbsize()
     
     return {
       hitRate,

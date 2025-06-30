@@ -1,6 +1,6 @@
 import { FullConfig } from '@playwright/test'
 
-async function globalSetup(config: FullConfig) {
+async function globalSetup(_config: FullConfig) {
   // Global setup for all tests
   console.log('Setting up Playwright tests...')
   

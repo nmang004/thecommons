@@ -37,7 +37,6 @@ export interface PrivateAnalyticsEvent {
 
 class PrivacyManager {
   private consentStore: Map<string, UserConsent> = new Map()
-  private anonymizedEvents: PrivateAnalyticsEvent[] = []
 
   // Check if user has given consent for analytics
   hasAnalyticsConsent(sessionId: string, userId?: string): boolean {
@@ -52,7 +51,7 @@ class PrivacyManager {
     this.consentStore.set(key, consent)
     
     // Store in cache for persistence
-    await cache.setex(`consent:${key}`, 86400 * 365, JSON.stringify(consent)) // 1 year
+    await cache.set(`consent:${key}`, consent, { ttl: 86400 * 365 }) // 1 year
   }
 
   // Retrieve user consent
@@ -64,9 +63,9 @@ class PrivacyManager {
     if (consent) return consent
     
     // Check cache
-    const cached = await cache.get(`consent:${key}`)
+    const cached = await cache.get<UserConsent>(`consent:${key}`)
     if (cached) {
-      consent = JSON.parse(cached)
+      consent = cached
       this.consentStore.set(key, consent)
       return consent
     }
@@ -199,8 +198,11 @@ export class PrivacyCompliantAnalytics {
     }
 
     // Store minimal essential analytics
-    await cache.lpush('essential_events', JSON.stringify(essentialData))
-    await cache.ltrim('essential_events', 0, 1000) // Keep last 1000 events
+    // Store essential events using cache.set with a list key
+    const existingEvents = await cache.get<any[]>('essential_events') || []
+    existingEvents.push(essentialData)
+    const trimmedEvents = existingEvents.slice(-1000) // Keep last 1000 events
+    await cache.set('essential_events', trimmedEvents, { ttl: 86400 })
   }
 
   // Track page views with privacy protection
@@ -300,8 +302,11 @@ export class PrivacyCompliantAnalytics {
       timestamp: new Date().toISOString()
     }
 
-    await cache.lpush('privacy_compliant_events', JSON.stringify(eventData))
-    await cache.ltrim('privacy_compliant_events', 0, 10000) // Keep last 10k events
+    // Store privacy compliant events using cache.set with a list key
+    const existingComplianceEvents = await cache.get<any[]>('privacy_compliant_events') || []
+    existingComplianceEvents.push(eventData)
+    const trimmedComplianceEvents = existingComplianceEvents.slice(-10000) // Keep last 10k events
+    await cache.set('privacy_compliant_events', trimmedComplianceEvents, { ttl: 86400 })
   }
 
   // Generate privacy-compliant analytics report
@@ -385,7 +390,7 @@ export class PrivacyCompliantAnalytics {
         reason: 'user_request'
       }
       
-      await cache.setex(`anonymized:${userId}`, 86400 * 30, JSON.stringify(anonymizationRecord))
+      await cache.set(`anonymized:${userId}`, anonymizationRecord, { ttl: 86400 * 30 })
       
       // In production, this would trigger a batch job to anonymize historical data
       console.log(`User data deletion initiated for user: ${userId}`)

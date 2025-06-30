@@ -1,3 +1,4 @@
+import React from 'react'
 import { cn } from '@/lib/utils'
 
 interface ResponsiveContainerProps {
@@ -5,7 +6,7 @@ interface ResponsiveContainerProps {
   size?: 'sm' | 'md' | 'lg' | 'xl' | 'full'
   padding?: 'none' | 'sm' | 'md' | 'lg'
   className?: string
-  as?: keyof JSX.IntrinsicElements
+  as?: keyof React.JSX.IntrinsicElements
 }
 
 const sizeClasses = {
@@ -184,7 +185,7 @@ interface ResponsiveTextProps {
     lg?: 'left' | 'center' | 'right'
   }
   className?: string
-  as?: keyof JSX.IntrinsicElements
+  as?: keyof React.JSX.IntrinsicElements
 }
 
 export function ResponsiveText({

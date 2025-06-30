@@ -1,6 +1,6 @@
 'use client'
 
-import { getCLS, getFCP, getFID, getLCP, getTTFB } from 'web-vitals'
+import { onCLS, onFCP, onINP, onLCP, onTTFB } from 'web-vitals'
 import type { Metric } from 'web-vitals'
 
 interface WebVitalsData {
@@ -103,32 +103,32 @@ function processMetric(metric: Metric): WebVitalsData {
 export function reportWebVitals() {
   try {
     // Core Web Vitals
-    getCLS((metric) => {
+    onCLS((metric: any) => {
       const data = processMetric(metric)
       sendToAnalytics(data)
       console.log('📊 CLS:', data)
     })
 
-    getFID((metric) => {
+    onINP((metric: any) => {
       const data = processMetric(metric)
       sendToAnalytics(data)
-      console.log('📊 FID:', data)
+      console.log('📊 INP:', data)
     })
 
-    getLCP((metric) => {
+    onLCP((metric: any) => {
       const data = processMetric(metric)
       sendToAnalytics(data)
       console.log('📊 LCP:', data)
     })
 
     // Additional metrics
-    getFCP((metric) => {
+    onFCP((metric: any) => {
       const data = processMetric(metric)
       sendToAnalytics(data)
       console.log('📊 FCP:', data)
     })
 
-    getTTFB((metric) => {
+    onTTFB((metric: any) => {
       const data = processMetric(metric)
       sendToAnalytics(data)
       console.log('📊 TTFB:', data)

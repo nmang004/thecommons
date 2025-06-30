@@ -309,12 +309,7 @@ export class ArticleService {
   async incrementViewCount(articleId: string): Promise<void> {
     // Increment in database
     const supabase = await this.supabase
-    await supabase
-      .from('manuscripts')
-      .update({ 
-        view_count: supabase.rpc('increment_view_count', { manuscript_id: articleId })
-      })
-      .eq('id', articleId)
+    await supabase.rpc('increment_view_count', { manuscript_id: articleId })
 
     // Invalidate related caches
     await cache.del(CACHE_KEYS.ARTICLES.DETAIL(articleId))
@@ -325,12 +320,7 @@ export class ArticleService {
   async incrementDownloadCount(articleId: string): Promise<void> {
     // Increment in database
     const supabase = await this.supabase
-    await supabase
-      .from('manuscripts')
-      .update({ 
-        download_count: supabase.rpc('increment_download_count', { manuscript_id: articleId })
-      })
-      .eq('id', articleId)
+    await supabase.rpc('increment_download_count', { manuscript_id: articleId })
 
     // Invalidate related caches
     await cache.del(CACHE_KEYS.ARTICLES.DETAIL(articleId))

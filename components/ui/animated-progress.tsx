@@ -29,7 +29,7 @@ export default function AnimatedProgress({
   className = '',
 }: AnimatedProgressProps) {
   const ref = useRef(null)
-  const isInView = useInView(ref, { once: true, threshold: 0.5 })
+  const isInView = useInView(ref, { once: true })
   
   const percentage = Math.min(Math.max((value / max) * 100, 0), 100)
 
@@ -86,7 +86,7 @@ export function CircularProgress({
   className = '',
 }: CircularProgressProps) {
   const ref = useRef(null)
-  const isInView = useInView(ref, { once: true, threshold: 0.5 })
+  const isInView = useInView(ref, { once: true })
   
   const radius = (size - strokeWidth) / 2
   const circumference = radius * 2 * Math.PI

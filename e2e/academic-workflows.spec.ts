@@ -1,11 +1,7 @@
 import { test, expect } from '@playwright/test'
-import { injectAxe, checkA11y } from '@axe-core/playwright'
+import { AxeBuilder } from '@axe-core/playwright'
 
 test.describe('Academic Publishing Workflows', () => {
-  test.beforeEach(async ({ page }) => {
-    // Inject axe for accessibility testing
-    await injectAxe(page)
-  })
 
   test.describe('Homepage', () => {
     test('should load the homepage successfully', async ({ page }) => {
@@ -16,10 +12,10 @@ test.describe('Academic Publishing Workflows', () => {
       await expect(page.locator('h1')).toBeVisible()
       
       // Check accessibility
-      await checkA11y(page, null, {
-        detailedReport: true,
-        detailedReportOptions: { html: true },
-      })
+      const accessibilityResults = await new AxeBuilder({ page })
+        .withTags(['wcag2a', 'wcag2aa'])
+        .analyze()
+      expect(accessibilityResults.violations).toEqual([])
     })
 
     test('should have working navigation', async ({ page }) => {
@@ -68,7 +64,8 @@ test.describe('Academic Publishing Workflows', () => {
         await expect(page.getByRole('button', { name: /sign in|login/i })).toBeVisible()
         
         // Test accessibility on login page
-        await checkA11y(page)
+        const accessibilityResults = await new AxeBuilder({ page }).analyze()
+        expect(accessibilityResults.violations).toEqual([])
       }
     })
 
@@ -85,7 +82,8 @@ test.describe('Academic Publishing Workflows', () => {
         await expect(page.getByRole('textbox', { name: /email/i })).toBeVisible()
         
         // Test accessibility on registration page
-        await checkA11y(page)
+        const accessibilityResults = await new AxeBuilder({ page }).analyze()
+        expect(accessibilityResults.violations).toEqual([])
       }
     })
 
@@ -125,7 +123,8 @@ test.describe('Academic Publishing Workflows', () => {
       await expect(page.locator('h1')).toBeVisible()
       
       // Test accessibility
-      await checkA11y(page)
+      const accessibilityResults = await new AxeBuilder({ page }).analyze()
+      expect(accessibilityResults.violations).toEqual([])
     })
 
     test('should have search and filter functionality', async ({ page }) => {
@@ -161,7 +160,8 @@ test.describe('Academic Publishing Workflows', () => {
       }
       
       // Test accessibility on mobile
-      await checkA11y(page)
+      const accessibilityResults = await new AxeBuilder({ page }).analyze()
+      expect(accessibilityResults.violations).toEqual([])
     })
 
     test('should work on tablet devices', async ({ page }) => {
@@ -173,7 +173,8 @@ test.describe('Academic Publishing Workflows', () => {
       await expect(page.locator('h1')).toBeVisible()
       
       // Test accessibility on tablet
-      await checkA11y(page)
+      const accessibilityResults = await new AxeBuilder({ page }).analyze()
+      expect(accessibilityResults.violations).toEqual([])
     })
   })
 

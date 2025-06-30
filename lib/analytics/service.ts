@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { createBrowserClient } from '@/lib/supabase/client'
+import { createClient as createBrowserClient } from '@/lib/supabase/client'
 import { cache } from '@/lib/redis/cache'
 
 // ===========================
@@ -105,10 +105,14 @@ export interface ManuscriptFunnelStage {
 // ===========================
 
 export class AnalyticsService {
-  private supabase: ReturnType<typeof createClient>
+  private isServer: boolean
   
   constructor(isServer = true) {
-    this.supabase = isServer ? createClient() : createBrowserClient()
+    this.isServer = isServer
+  }
+
+  private async getSupabase() {
+    return this.isServer ? createClient() : createBrowserClient()
   }
 
   // ===========================
@@ -118,7 +122,8 @@ export class AnalyticsService {
   async trackManuscriptEvent(event: ManuscriptAnalyticsEvent): Promise<void> {
     try {
       // Use the database function for atomic operations
-      await this.supabase.rpc('analytics.track_manuscript_event', {
+      const supabase = await this.getSupabase()
+      await supabase.rpc('analytics.track_manuscript_event', {
         p_manuscript_id: event.manuscriptId,
         p_event_type: event.eventType,
         p_event_data: event.eventData || {},
@@ -146,7 +151,8 @@ export class AnalyticsService {
 
   async trackUserEngagement(event: UserEngagementEvent): Promise<void> {
     try {
-      await this.supabase
+      const supabase = await this.getSupabase()
+      await supabase
         .from('analytics.user_engagement')
         .insert({
           user_id: event.userId,
@@ -166,7 +172,8 @@ export class AnalyticsService {
 
   async trackEditorialEvent(event: EditorialAnalyticsEvent): Promise<void> {
     try {
-      await this.supabase
+      const supabase = await this.getSupabase()
+      await supabase
         .from('analytics.editorial_analytics')
         .insert({
           manuscript_id: event.manuscriptId,
@@ -186,7 +193,8 @@ export class AnalyticsService {
 
   async trackReviewEvent(event: ReviewAnalyticsEvent): Promise<void> {
     try {
-      await this.supabase
+      const supabase = await this.getSupabase()
+      await supabase
         .from('analytics.review_analytics')
         .insert({
           review_assignment_id: event.reviewAssignmentId,
@@ -206,7 +214,8 @@ export class AnalyticsService {
 
   async trackSearchEvent(event: SearchAnalyticsEvent): Promise<void> {
     try {
-      await this.supabase
+      const supabase = await this.getSupabase()
+      await supabase
         .from('analytics.search_analytics')
         .insert({
           search_query: event.searchQuery,
@@ -231,14 +240,15 @@ export class AnalyticsService {
 
   async getExecutiveDashboard(): Promise<DashboardMetrics> {
     const cacheKey = 'executive-dashboard'
-    const cached = await cache.get(cacheKey)
+    const cached = await cache.get<DashboardMetrics>(cacheKey)
     
     if (cached) {
-      return JSON.parse(cached)
+      return cached
     }
 
     try {
-      const { data, error } = await this.supabase
+      const supabase = await this.getSupabase()
+      const { data, error } = await supabase
         .from('analytics.executive_dashboard')
         .select('*')
 
@@ -274,7 +284,7 @@ export class AnalyticsService {
       })
 
       // Cache for 15 minutes
-      await cache.setex(cacheKey, 900, JSON.stringify(metrics))
+      await cache.set(cacheKey, metrics, { ttl: 900 })
       return metrics
     } catch (error) {
       console.error('Failed to get executive dashboard:', error)
@@ -293,14 +303,15 @@ export class AnalyticsService {
 
   async getEditorialPerformance(weeks = 12): Promise<any[]> {
     const cacheKey = `editorial-performance-${weeks}`
-    const cached = await cache.get(cacheKey)
+    const cached = await cache.get<any[]>(cacheKey)
     
     if (cached) {
-      return JSON.parse(cached)
+      return cached
     }
 
     try {
-      const { data, error } = await this.supabase
+      const supabase = await this.getSupabase()
+      const { data, error } = await supabase
         .from('analytics.editorial_performance')
         .select('*')
         .order('week_start', { ascending: false })
@@ -309,7 +320,7 @@ export class AnalyticsService {
       if (error) throw error
 
       // Cache for 1 hour
-      await cache.setex(cacheKey, 3600, JSON.stringify(data || []))
+      await cache.set(cacheKey, data || [], { ttl: 3600 })
       return data || []
     } catch (error) {
       console.error('Failed to get editorial performance:', error)
@@ -319,14 +330,15 @@ export class AnalyticsService {
 
   async getContentPerformance(): Promise<ContentPerformance[]> {
     const cacheKey = 'content-performance'
-    const cached = await cache.get(cacheKey)
+    const cached = await cache.get<ContentPerformance[]>(cacheKey)
     
     if (cached) {
-      return JSON.parse(cached)
+      return cached
     }
 
     try {
-      const { data, error } = await this.supabase
+      const supabase = await this.getSupabase()
+      const { data, error } = await supabase
         .from('analytics.content_performance')
         .select('*')
         .order('total_views', { ascending: false })
@@ -334,7 +346,7 @@ export class AnalyticsService {
       if (error) throw error
 
       // Cache for 30 minutes
-      await cache.setex(cacheKey, 1800, JSON.stringify(data || []))
+      await cache.set(cacheKey, data || [], { ttl: 1800 })
       return data || []
     } catch (error) {
       console.error('Failed to get content performance:', error)
@@ -344,14 +356,15 @@ export class AnalyticsService {
 
   async getReviewerPerformance(): Promise<ReviewerPerformance[]> {
     const cacheKey = 'reviewer-performance'
-    const cached = await cache.get(cacheKey)
+    const cached = await cache.get<ReviewerPerformance[]>(cacheKey)
     
     if (cached) {
-      return JSON.parse(cached)
+      return cached
     }
 
     try {
-      const { data, error } = await this.supabase
+      const supabase = await this.getSupabase()
+      const { data, error } = await supabase
         .from('analytics.review_quality')
         .select('*')
         .order('avg_quality_score', { ascending: false })
@@ -359,7 +372,7 @@ export class AnalyticsService {
       if (error) throw error
 
       // Cache for 1 hour
-      await cache.setex(cacheKey, 3600, JSON.stringify(data || []))
+      await cache.set(cacheKey, data || [], { ttl: 3600 })
       return data || []
     } catch (error) {
       console.error('Failed to get reviewer performance:', error)
@@ -369,20 +382,21 @@ export class AnalyticsService {
 
   async getManuscriptFunnel(daysBack = 30): Promise<ManuscriptFunnelStage[]> {
     const cacheKey = `manuscript-funnel-${daysBack}`
-    const cached = await cache.get(cacheKey)
+    const cached = await cache.get<ManuscriptFunnelStage[]>(cacheKey)
     
     if (cached) {
-      return JSON.parse(cached)
+      return cached
     }
 
     try {
-      const { data, error } = await this.supabase
+      const supabase = await this.getSupabase()
+      const { data, error } = await supabase
         .rpc('analytics.get_manuscript_funnel', { days_back: daysBack })
 
       if (error) throw error
 
       // Cache for 1 hour
-      await cache.setex(cacheKey, 3600, JSON.stringify(data || []))
+      await cache.set(cacheKey, data || [], { ttl: 3600 })
       return data || []
     } catch (error) {
       console.error('Failed to get manuscript funnel:', error)
@@ -390,16 +404,17 @@ export class AnalyticsService {
     }
   }
 
-  async getFieldOfStudyTrends(): Promise<any[]> {
+  async getFieldOfStudyTrends(): Promise<Record<string, any>> {
     const cacheKey = 'field-study-trends'
-    const cached = await cache.get(cacheKey)
+    const cached = await cache.get<Record<string, any>>(cacheKey)
     
     if (cached) {
-      return JSON.parse(cached)
+      return cached
     }
 
     try {
-      const { data, error } = await this.supabase
+      const supabase = await this.getSupabase()
+      const { data, error } = await supabase
         .from('manuscripts')
         .select('field_of_study, created_at, status')
         .gte('created_at', new Date(Date.now() - 6 * 30 * 24 * 60 * 60 * 1000).toISOString())
@@ -428,7 +443,7 @@ export class AnalyticsService {
       }, {})
 
       // Cache for 2 hours
-      await cache.setex(cacheKey, 7200, JSON.stringify(trends))
+      await cache.set(cacheKey, trends, { ttl: 7200 })
       return trends
     } catch (error) {
       console.error('Failed to get field of study trends:', error)
@@ -438,14 +453,15 @@ export class AnalyticsService {
 
   async getGeographicDistribution(): Promise<any[]> {
     const cacheKey = 'geographic-distribution'
-    const cached = await cache.get(cacheKey)
+    const cached = await cache.get<any[]>(cacheKey)
     
     if (cached) {
-      return JSON.parse(cached)
+      return cached
     }
 
     try {
-      const { data, error } = await this.supabase
+      const supabase = await this.getSupabase()
+      const { data, error } = await supabase
         .from('analytics.manuscript_analytics')
         .select('country_code, event_type')
         .not('country_code', 'is', null)
@@ -472,11 +488,11 @@ export class AnalyticsService {
       // Convert to array format
       const result = Object.entries(distribution).map(([country, stats]) => ({
         country,
-        ...stats
+        ...(stats as { views: number; downloads: number; total: number })
       }))
 
       // Cache for 4 hours
-      await cache.setex(cacheKey, 14400, JSON.stringify(result))
+      await cache.set(cacheKey, result, { ttl: 14400 })
       return result
     } catch (error) {
       console.error('Failed to get geographic distribution:', error)
@@ -492,7 +508,8 @@ export class AnalyticsService {
     try {
       const field = eventType === 'view' ? 'view_count' : 'download_count'
       
-      await this.supabase
+      const supabase = await this.getSupabase()
+      await supabase
         .rpc('increment_manuscript_count', {
           manuscript_id: manuscriptId,
           count_field: field
@@ -512,7 +529,8 @@ export class AnalyticsService {
 
   async refreshDashboards(): Promise<void> {
     try {
-      await this.supabase.rpc('analytics.refresh_dashboards')
+      const supabase = await this.getSupabase()
+      await supabase.rpc('analytics.refresh_dashboards')
       
       // Clear all dashboard caches
       await this.invalidateAnalyticsCache([

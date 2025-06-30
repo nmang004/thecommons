@@ -69,14 +69,15 @@ const severityLevels = [
 
 interface FeedbackFormProps {
   onClose?: () => void;
-  initialType?: string;
-  initialCategory?: string;
+  initialType?: 'bug' | 'feature' | 'improvement' | 'general' | 'academic';
+  initialCategory?: 'submission' | 'review' | 'editorial' | 'ui_ux' | 'performance' | 'other';
 }
 
 export function FeedbackForm({ onClose, initialType, initialCategory }: FeedbackFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [, setSelectedType] = useState<string>(initialType || '');
 
   const {
     register,
@@ -87,8 +88,8 @@ export function FeedbackForm({ onClose, initialType, initialCategory }: Feedback
   } = useForm<FeedbackFormData>({
     resolver: zodResolver(feedbackSchema),
     defaultValues: {
-      type: initialType || '',
-      category: initialCategory || '',
+      type: initialType,
+      category: initialCategory,
       severity: 'medium',
       allow_follow_up: false
     }
@@ -188,7 +189,7 @@ export function FeedbackForm({ onClose, initialType, initialCategory }: Feedback
                     key={type.value}
                     type="button"
                     onClick={() => {
-                      setValue('type', type.value as any);
+                      setValue('type', type.value as 'bug' | 'feature' | 'improvement' | 'general' | 'academic');
                       setSelectedType(type.value);
                     }}
                     className={`p-3 border rounded-lg text-center transition-all ${
@@ -271,7 +272,7 @@ export function FeedbackForm({ onClose, initialType, initialCategory }: Feedback
                   <button
                     key={level.value}
                     type="button"
-                    onClick={() => setValue('severity', level.value as any)}
+                    onClick={() => setValue('severity', level.value as 'low' | 'medium' | 'high' | 'critical')}
                     className={`p-2 border rounded text-center text-xs ${
                       watch('severity') === level.value
                         ? 'border-blue-500 bg-blue-50 text-blue-700'

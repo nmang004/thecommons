@@ -1,12 +1,12 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import React, { useEffect, useRef } from 'react'
 
 interface LiveRegionProps {
   message: string
   priority?: 'polite' | 'assertive'
   atomic?: boolean
-  relevant?: 'additions' | 'removals' | 'text' | 'all'
+  relevant?: string // Allow any combination of aria-relevant values
   delay?: number
 }
 
@@ -17,7 +17,7 @@ export default function LiveRegion({
   relevant = 'additions text',
   delay = 0,
 }: LiveRegionProps) {
-  const timeoutRef = useRef<NodeJS.Timeout>()
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     if (!message) return
@@ -118,7 +118,7 @@ export function AnnouncementManager() {
 // Screen reader only text component
 interface ScreenReaderOnlyProps {
   children: React.ReactNode
-  as?: keyof JSX.IntrinsicElements
+  as?: keyof React.JSX.IntrinsicElements
   className?: string
 }
 

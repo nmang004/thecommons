@@ -130,7 +130,7 @@ export class AcademicImageOptimizer {
     }
   }
 
-  async optimizeForPrint(imageBuffer: Buffer, dpi: number = 300): Promise<Buffer> {
+  async optimizeForPrint(imageBuffer: Buffer, _dpi: number = 300): Promise<Buffer> {
     // For print, we want high quality and preserve original dimensions
     const result = await this.optimizeImage(imageBuffer, {
       format: 'png', // PNG for print to preserve quality
@@ -216,7 +216,7 @@ export class AcademicImageOptimizer {
 
   private async processImage(
     buffer: Buffer,
-    options: Required<ImageOptimizationOptions>
+    _options: Required<ImageOptimizationOptions>
   ): Promise<Buffer> {
     // In a real implementation, you would use a library like Sharp
     // For this example, we'll simulate image processing
@@ -328,7 +328,7 @@ export class AcademicImageOptimizer {
     }
   }
 
-  async extractImageText(buffer: Buffer): Promise<string[]> {
+  async extractImageText(_buffer: Buffer): Promise<string[]> {
     // In a real implementation, you would use OCR
     // For this example, return empty array
     return []
@@ -359,13 +359,13 @@ export class AcademicImageOptimizer {
     }
   }
 
-  private async addWatermark(buffer: Buffer, text: string): Promise<Buffer> {
+  private async addWatermark(buffer: Buffer, _text: string): Promise<Buffer> {
     // In production, use Sharp or similar to add watermark
     // For now, return original buffer
     return buffer
   }
 
-  private async applyBlur(buffer: Buffer, radius: number): Promise<Buffer> {
+  private async applyBlur(buffer: Buffer, _radius: number): Promise<Buffer> {
     // In production, use Sharp or similar to apply blur
     // For now, return original buffer
     return buffer

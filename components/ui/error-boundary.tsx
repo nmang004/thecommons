@@ -41,7 +41,9 @@ class ErrorBoundaryClass extends React.Component<ErrorBoundaryProps, ErrorBounda
     if (typeof window !== 'undefined') {
       import('@/lib/monitoring/error-tracker').then(({ clientErrorMonitor }) => {
         if (clientErrorMonitor) {
-          clientErrorMonitor.trackReactError(error, errorInfo)
+          clientErrorMonitor.trackReactError(error, { 
+            componentStack: errorInfo.componentStack || 'No component stack available' 
+          })
         }
       })
     }
@@ -167,7 +169,7 @@ export function ErrorBoundary({ children, fallback, onError }: ErrorBoundaryProp
 export function PageErrorBoundary({ children }: { children: React.ReactNode }) {
   return (
     <ErrorBoundary
-      onError={(error, _errorInfo) => {
+      onError={(error) => {
         // Additional page-level error handling
         console.error('Page-level error:', error)
       }}
@@ -185,7 +187,7 @@ export function ComponentErrorBoundary({
   children: React.ReactNode
   componentName?: string
 }) {
-  const CustomFallback = ({ error: _error, resetError }: { error: Error; resetError: () => void }) => (
+  const CustomFallback = ({ resetError }: { error: Error; resetError: () => void }) => (
     <Card className="p-6 border-red-200 bg-red-50">
       <div className="flex items-center space-x-3 mb-4">
         <AlertTriangle className="h-5 w-5 text-red-600" />

@@ -27,7 +27,7 @@ export default function ArticleCard({
   className,
 }: ArticleCardProps) {
   const [isBookmarked, setIsBookmarked] = useState(false)
-  const [bookmarkCount, setBookmarkCount] = useState(0)
+  const [, setBookmarkCount] = useState(0)
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'No date'
