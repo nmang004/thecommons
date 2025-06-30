@@ -52,7 +52,7 @@ export default function ArticleArchive({ searchParams }: ArticleArchiveProps) {
   const [totalCount, setTotalCount] = useState(0)
   const [currentPage, setCurrentPage] = useState(1)
   const [searchQuery, setSearchQuery] = useState(searchParams.q as string || '')
-  const [selectedField, setSelectedField] = useState(searchParams.field as string || '')
+  const [selectedField, setSelectedField] = useState(searchParams.field as string || 'all')
   const [sortBy, setSortBy] = useState(searchParams.sort as string || 'published_at')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(
     searchParams.order as 'asc' | 'desc' || 'desc'
@@ -118,7 +118,7 @@ export default function ArticleArchive({ searchParams }: ArticleArchiveProps) {
         query = query.or(`title.ilike.%${searchQuery}%,abstract.ilike.%${searchQuery}%,keywords.cs.{${searchQuery}}`)
       }
 
-      if (selectedField) {
+      if (selectedField && selectedField !== 'all') {
         query = query.eq('field_of_study', selectedField)
       }
 
@@ -162,7 +162,7 @@ export default function ArticleArchive({ searchParams }: ArticleArchiveProps) {
   const updateURL = () => {
     const params = new URLSearchParams()
     if (searchQuery) params.set('q', searchQuery)
-    if (selectedField) params.set('field', selectedField)
+    if (selectedField && selectedField !== 'all') params.set('field', selectedField)
     if (sortBy !== 'published_at') params.set('sort', sortBy)
     if (sortOrder !== 'desc') params.set('order', sortOrder)
     if (currentPage > 1) params.set('page', currentPage.toString())
@@ -199,7 +199,7 @@ export default function ArticleArchive({ searchParams }: ArticleArchiveProps) {
                     <SelectValue placeholder="All Fields" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Fields</SelectItem>
+                    <SelectItem value="all">All Fields</SelectItem>
                     {FIELDS_OF_STUDY.map((field) => (
                       <SelectItem key={field} value={field}>
                         {field}
@@ -300,7 +300,7 @@ export default function ArticleArchive({ searchParams }: ArticleArchiveProps) {
             <p className="text-muted-foreground mb-4">No articles found matching your criteria.</p>
             <Button onClick={() => {
               setSearchQuery('')
-              setSelectedField('')
+              setSelectedField('all')
               setCurrentPage(1)
             }}>
               Clear Filters
