@@ -66,7 +66,7 @@ export default function Header({ user, notificationCount = 0 }: HeaderProps) {
   }
 
   return (
-    <header className={`nav-academic sticky top-0 z-50 w-full transition-all duration-300 ${
+    <header id="navigation" className={`nav-academic sticky top-0 z-50 w-full transition-all duration-300 ${
       isScrolled 
         ? 'bg-background/80 backdrop-blur-md shadow-sm' 
         : 'bg-background/95'
