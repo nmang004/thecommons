@@ -30,13 +30,12 @@ if (typeof self === 'undefined') {
           Object.keys(assets).forEach((assetName) => {
             if (assetName.includes('vendor') || assetName.includes('webpack')) {
               const asset = assets[assetName];
-              const source = asset.source();
-              const newSource = polyfillCode + source;
+              const originalSource = asset.source();
+              const newSource = polyfillCode + originalSource;
               
-              assets[assetName] = {
-                source: () => newSource,
-                size: () => newSource.length,
-              };
+              // Use webpack's RawSource to create a proper asset
+              const { sources } = webpack;
+              assets[assetName] = new sources.RawSource(newSource);
             }
           });
         }

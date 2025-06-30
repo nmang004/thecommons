@@ -156,8 +156,26 @@ const nextConfig: NextConfig = {
         
         // Add polyfill to each entry point
         Object.keys(entries).forEach((key) => {
-          if (entries[key] && !entries[key].includes('./global-polyfills.js')) {
-            entries[key] = ['./global-polyfills.js', ...entries[key]];
+          const entry = entries[key];
+          
+          // Handle different entry formats
+          if (Array.isArray(entry)) {
+            // Entry is already an array
+            if (!entry.includes('./global-polyfills.js')) {
+              entries[key] = ['./global-polyfills.js', ...entry];
+            }
+          } else if (typeof entry === 'string') {
+            // Entry is a string, convert to array
+            entries[key] = ['./global-polyfills.js', entry];
+          } else if (entry && typeof entry === 'object' && entry.import) {
+            // Entry is an object with import property
+            if (Array.isArray(entry.import)) {
+              if (!entry.import.includes('./global-polyfills.js')) {
+                entry.import = ['./global-polyfills.js', ...entry.import];
+              }
+            } else {
+              entry.import = ['./global-polyfills.js', entry.import];
+            }
           }
         });
         
