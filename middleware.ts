@@ -84,7 +84,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Check if accessing protected routes
-  for (const [role, pattern] of Object.entries(protectedRoutes)) {
+  for (const [, pattern] of Object.entries(protectedRoutes)) {
     if (pattern.test(pathname)) {
       if (!user) {
         // Redirect to login with return URL
