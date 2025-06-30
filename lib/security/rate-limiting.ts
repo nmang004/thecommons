@@ -37,7 +37,7 @@ export const RATE_LIMITS = {
 } as const
 
 class RateLimiter {
-  private redis = cache.redis
+  private redis = cache.getRedisClient()
 
   private getKey(identifier: string, windowStart: number): string {
     return `ratelimit:${identifier}:${windowStart}`
@@ -137,7 +137,7 @@ export function getClientIdentifier(req: NextRequest): string {
   
   // Fallback to IP address
   const forwarded = req.headers.get('x-forwarded-for')
-  const ip = forwarded?.split(',')[0] || req.ip || 'unknown'
+  const ip = forwarded?.split(',')[0] || req.headers.get('x-real-ip') || 'unknown'
   return `ip:${ip}`
 }
 
@@ -202,7 +202,7 @@ export function withRateLimit(config: RateLimitConfig) {
 
 // Suspicious activity detection
 export class SecurityMonitor {
-  private redis = cache.redis
+  private redis = cache.getRedisClient()
 
   async recordFailedAttempt(identifier: string, type: 'auth' | 'upload' | 'api'): Promise<void> {
     const key = `security:failed:${type}:${identifier}`

@@ -210,7 +210,7 @@ export class ManuscriptService {
       ? CACHE_KEYS.MANUSCRIPTS.REVIEWS(id)
       : CACHE_KEYS.MANUSCRIPTS.DETAIL(id)
 
-    return cacheWithFallback(
+    const result = await cacheWithFallback(
       cacheKey,
       async () => {
         return monitorDatabaseQuery('getManuscriptById', async () => {
@@ -244,6 +244,9 @@ export class ManuscriptService {
       },
       { ttl: CACHE_TTL.MEDIUM }
     )
+
+    // Ensure we return the correct type
+    return (result && typeof result === 'object' && 'id' in result) ? result as Manuscript : null
   }
 
   // Update manuscript status

@@ -87,8 +87,8 @@ export default function ArticleView({ article }: ArticleViewProps) {
   const generateCitation = (format: 'apa' | 'mla' | 'chicago' | 'bibtex') => {
     const authors = [article.author, ...article.coauthors.sort((a, b) => a.author_order - b.author_order)]
     const authorString = authors.map(a => a.name || a.full_name).join(', ')
-    const year = new Date(article.published_at).getFullYear()
-    const date = format(new Date(article.published_at), 'MMMM dd, yyyy')
+    const year = article.published_at ? new Date(article.published_at).getFullYear() : new Date().getFullYear()
+    const date = article.published_at ? format(new Date(article.published_at), 'MMMM dd, yyyy') : 'No date'
 
     switch (format) {
       case 'apa':
@@ -167,7 +167,7 @@ export default function ArticleView({ article }: ArticleViewProps) {
             <div className="flex flex-wrap items-center gap-6 text-sm text-muted-foreground mb-6">
               <div className="flex items-center">
                 <Calendar className="h-4 w-4 mr-2" />
-                Published {format(new Date(article.published_at), 'MMMM dd, yyyy')}
+                Published {article.published_at ? format(new Date(article.published_at), 'MMMM dd, yyyy') : 'No date'}
               </div>
               {article.doi && (
                 <div className="flex items-center">

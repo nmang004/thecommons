@@ -54,7 +54,8 @@ export class ArticleService {
     return cacheWithFallback(
       cacheKey,
       async () => {
-        let supabaseQuery = this.supabase
+        const supabase = await this.supabase
+        let supabaseQuery = supabase
           .from('manuscripts')
           .select(`
             id,
@@ -118,7 +119,8 @@ export class ArticleService {
     return cacheWithFallback(
       cacheKey,
       async () => {
-        const { data, error } = await this.supabase
+        const supabase = await this.supabase
+        const { data, error } = await supabase
           .from('manuscripts')
           .select(`
             *,
@@ -150,7 +152,8 @@ export class ArticleService {
     return cacheWithFallback(
       CACHE_KEYS.ARTICLES.RECENT,
       async () => {
-        const { data, error } = await this.supabase
+        const supabase = await this.supabase
+        const { data, error } = await supabase
           .from('manuscripts')
           .select(`
             id,
@@ -193,7 +196,8 @@ export class ArticleService {
     return cacheWithFallback(
       CACHE_KEYS.ARTICLES.POPULAR,
       async () => {
-        const { data, error } = await this.supabase
+        const supabase = await this.supabase
+        const { data, error } = await supabase
           .from('manuscripts')
           .select(`
             id,
@@ -242,7 +246,8 @@ export class ArticleService {
       async () => {
         // This would typically involve more complex analytics
         // For now, we'll return the most common fields of study
-        const { data, error } = await this.supabase
+        const supabase = await this.supabase
+        const { data, error } = await supabase
           .from('manuscripts')
           .select('field_of_study')
           .eq('status', 'published')
@@ -278,7 +283,8 @@ export class ArticleService {
     return cacheWithFallback(
       CACHE_KEYS.FIELDS.WITH_COUNTS,
       async () => {
-        const { data, error } = await this.supabase
+        const supabase = await this.supabase
+        const { data, error } = await supabase
           .from('manuscripts')
           .select('field_of_study')
           .eq('status', 'published')
@@ -302,10 +308,11 @@ export class ArticleService {
 
   async incrementViewCount(articleId: string): Promise<void> {
     // Increment in database
-    await this.supabase
+    const supabase = await this.supabase
+    await supabase
       .from('manuscripts')
       .update({ 
-        view_count: this.supabase.rpc('increment_view_count', { manuscript_id: articleId })
+        view_count: supabase.rpc('increment_view_count', { manuscript_id: articleId })
       })
       .eq('id', articleId)
 
@@ -317,10 +324,11 @@ export class ArticleService {
 
   async incrementDownloadCount(articleId: string): Promise<void> {
     // Increment in database
-    await this.supabase
+    const supabase = await this.supabase
+    await supabase
       .from('manuscripts')
       .update({ 
-        download_count: this.supabase.rpc('increment_download_count', { manuscript_id: articleId })
+        download_count: supabase.rpc('increment_download_count', { manuscript_id: articleId })
       })
       .eq('id', articleId)
 

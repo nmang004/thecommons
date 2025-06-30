@@ -91,7 +91,7 @@ export function generateArticleSchema(article: Article) {
       '@type': 'Organization',
       'name': 'The Commons'
     },
-    'copyrightYear': new Date(article.published_at).getFullYear(),
+    'copyrightYear': article.published_at ? new Date(article.published_at).getFullYear() : new Date().getFullYear(),
     'isAccessibleForFree': true,
     'creativeWorkStatus': 'Published'
   }

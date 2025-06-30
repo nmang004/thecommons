@@ -98,6 +98,11 @@ export class CacheService {
     }
   }
 
+  // Public method to access Redis client for specialized operations
+  public getRedisClient() {
+    return this.redis
+  }
+
   async setHash(
     key: string, 
     field: string, 
@@ -291,11 +296,11 @@ export const cacheWithTags = async <T>(
 
 export const invalidateByTag = async (tag: string): Promise<void> => {
   const tagKey = `tag:${tag}`
-  const keys = await cache.redis.hkeys(tagKey)
+  const keys = await cache.getRedisClient().hkeys(tagKey)
   
   if (keys.length > 0) {
     // Delete all keys associated with this tag
-    await cache.redis.del(...keys.map(key => `${DEFAULT_PREFIX}${key}`))
+    await cache.getRedisClient().del(...keys.map(key => `${DEFAULT_PREFIX}${key}`))
     // Delete the tag itself
     await cache.del(tagKey)
   }

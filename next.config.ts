@@ -108,7 +108,7 @@ const nextConfig: NextConfig = {
   },
 
   // Webpack optimizations
-  webpack: (config, { dev, isServer }) => {
+  webpack: (config, { dev, isServer: _isServer }) => {
     // Production optimizations
     if (!dev) {
       config.optimization = {

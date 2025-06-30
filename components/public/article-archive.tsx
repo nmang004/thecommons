@@ -361,7 +361,7 @@ export default function ArticleArchive({ searchParams }: ArticleArchiveProps) {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center text-xs text-muted-foreground">
                     <Calendar className="h-3 w-3 mr-1" />
-                    {format(new Date(article.published_at), 'MMM dd, yyyy')}
+                    {article.published_at ? format(new Date(article.published_at), 'MMM dd, yyyy') : 'No date'}
                   </div>
                   <div className="flex flex-wrap gap-1">
                     {article.keywords?.slice(0, 2).map((keyword, index) => (

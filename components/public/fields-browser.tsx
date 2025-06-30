@@ -172,7 +172,11 @@ export default function FieldsBrowser({ searchParams: _searchParams }: FieldsBro
 
         // Sort articles by publication date and get recent ones
         const recentArticles = data.articles
-          .sort((a: any, b: any) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime())
+          .sort((a: any, b: any) => {
+            const dateB = b.published_at ? new Date(b.published_at).getTime() : 0
+            const dateA = a.published_at ? new Date(a.published_at).getTime() : 0
+            return dateB - dateA
+          })
           .slice(0, 3)
 
         // Calculate growth (mock data for now)
@@ -210,8 +214,9 @@ export default function FieldsBrowser({ searchParams: _searchParams }: FieldsBro
         case 'trending':
           return b.growth - a.growth
         case 'recent':
-          return new Date(b.recentArticles[0]?.published_at || 0).getTime() - 
-                 new Date(a.recentArticles[0]?.published_at || 0).getTime()
+          const bDate = b.recentArticles[0]?.published_at ? new Date(b.recentArticles[0].published_at).getTime() : 0
+          const aDate = a.recentArticles[0]?.published_at ? new Date(a.recentArticles[0].published_at).getTime() : 0
+          return bDate - aDate
         case 'count':
         default:
           return b.count - a.count

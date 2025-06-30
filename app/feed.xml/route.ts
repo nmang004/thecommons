@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
       <description><![CDATA[${article.abstract || 'No abstract available.'}]]></description>
       <link>${baseUrl}/articles/${article.id}</link>
       <guid isPermaLink="true">${baseUrl}/articles/${article.id}</guid>
-      <pubDate>${new Date(article.published_at).toUTCString()}</pubDate>
+      <pubDate>${article.published_at ? new Date(article.published_at).toUTCString() : new Date().toUTCString()}</pubDate>
       <dc:creator><![CDATA[${(article.author as any)?.full_name || 'Unknown Author'}]]></dc:creator>
       <category><![CDATA[${article.field_of_study}]]></category>
       ${(article.keywords as any)?.map((keyword: any) => `<category><![CDATA[${keyword}]]></category>`).join('') || ''}
