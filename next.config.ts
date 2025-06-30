@@ -110,7 +110,7 @@ const nextConfig: NextConfig = {
   },
 
   // Webpack optimizations
-  webpack: (config, { dev, isServer }) => {
+  webpack: (config, { isServer }) => {
     // Add polyfill using webpack's DefinePlugin instead of custom plugin
     const webpack = require('webpack');
     
