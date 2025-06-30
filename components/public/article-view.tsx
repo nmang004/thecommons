@@ -239,10 +239,9 @@ export default function ArticleView({ article }: ArticleViewProps) {
                   <CardTitle className="heading-2">Abstract</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-academic-lg leading-relaxed text-justify">
+                  <div className="prose prose-lg max-w-none text-academic-lg leading-relaxed text-justify">
                     <ReactMarkdown 
                       remarkPlugins={[remarkGfm]}
-                      className="prose prose-lg max-w-none"
                     >
                       {article.abstract}
                     </ReactMarkdown>

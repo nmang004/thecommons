@@ -38,7 +38,7 @@ const feedbackSchema = z.object({
     experience_level: z.enum(['novice', 'intermediate', 'expert']).optional()
   }).optional(),
   contact_email: z.string().email().optional().or(z.literal('')),
-  allow_follow_up: z.boolean().default(false)
+  allow_follow_up: z.boolean()
 });
 
 type FeedbackFormData = z.infer<typeof feedbackSchema>;
@@ -87,8 +87,8 @@ export function FeedbackForm({ onClose, initialType, initialCategory }: Feedback
   } = useForm<FeedbackFormData>({
     resolver: zodResolver(feedbackSchema),
     defaultValues: {
-      type: initialType as any || undefined,
-      category: initialCategory as any || undefined,
+      type: initialType || '',
+      category: initialCategory || '',
       severity: 'medium',
       allow_follow_up: false
     }
