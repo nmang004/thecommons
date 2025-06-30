@@ -37,8 +37,27 @@ export const RATE_LIMITS = {
 } as const
 
 class RateLimiter {
+  private redis: any = null
+  
   private getRedis() {
-    return cache.getRedisClient()
+    if (!this.redis) {
+      try {
+        this.redis = cache.getRedisClient()
+      } catch (error) {
+        console.warn('Redis not available for rate limiting:', error)
+        // Return a mock that always allows requests
+        return {
+          get: async () => null,
+          pipeline: () => ({
+            incr: () => {},
+            expire: () => {},
+            exec: async () => []
+          }),
+          del: async () => 0
+        }
+      }
+    }
+    return this.redis
   }
 
   private getKey(identifier: string, windowStart: number): string {
@@ -57,8 +76,23 @@ class RateLimiter {
     const key = this.getKey(identifier, windowStart)
     
     try {
+      const redis = this.getRedis()
+      
+      // If Redis is not available, allow the request
+      if (!redis || typeof redis.get !== 'function') {
+        return {
+          success: true,
+          info: {
+            limit: config.maxRequests,
+            current: 0,
+            remaining: config.maxRequests,
+            resetTime: Date.now() + config.windowMs
+          }
+        }
+      }
+      
       // Get current count
-      const current = await this.getRedis().get(key)
+      const current = await redis.get(key)
       const currentCount = current ? parseInt(current) : 0
       
       const info: RateLimitInfo = {
@@ -74,7 +108,7 @@ class RateLimiter {
       }
       
       // Increment counter
-      const pipeline = this.getRedis().pipeline()
+      const pipeline = redis.pipeline()
       pipeline.incr(key)
       pipeline.expire(key, Math.ceil(config.windowMs / 1000))
       await pipeline.exec()
@@ -204,35 +238,91 @@ export function withRateLimit(config: RateLimitConfig) {
 
 // Suspicious activity detection
 export class SecurityMonitor {
-  private redis = cache.getRedisClient()
+  private redis: any = null
+  
+  private getRedis() {
+    if (!this.redis) {
+      try {
+        this.redis = cache.getRedisClient()
+      } catch (error) {
+        console.warn('Redis not available for security monitoring:', error)
+        // Return a mock that always allows operations
+        return {
+          incr: async () => 0,
+          expire: async () => 1,
+          get: async () => null,
+          setex: async () => 'OK',
+          del: async () => 0
+        }
+      }
+    }
+    return this.redis
+  }
 
   async recordFailedAttempt(identifier: string, type: 'auth' | 'upload' | 'api'): Promise<void> {
-    const key = `security:failed:${type}:${identifier}`
-    const count = await this.redis.incr(key)
-    await this.redis.expire(key, 3600) // 1 hour
-    
-    // Alert on suspicious activity
-    if (count >= 10) {
-      console.warn(`Suspicious activity detected: ${type} - ${identifier} - ${count} failed attempts`)
-      // You could integrate with alerting service here
+    try {
+      const redis = this.getRedis()
+      if (!redis || typeof redis.incr !== 'function') {
+        return
+      }
+      
+      const key = `security:failed:${type}:${identifier}`
+      const count = await redis.incr(key)
+      await redis.expire(key, 3600) // 1 hour
+      
+      // Alert on suspicious activity
+      if (count >= 10) {
+        console.warn(`Suspicious activity detected: ${type} - ${identifier} - ${count} failed attempts`)
+        // You could integrate with alerting service here
+      }
+    } catch (error) {
+      console.error('Error recording failed attempt:', error)
     }
   }
 
   async isBlocked(identifier: string): Promise<boolean> {
-    const key = `security:blocked:${identifier}`
-    const blocked = await this.redis.get(key)
-    return blocked === '1'
+    try {
+      const redis = this.getRedis()
+      if (!redis || typeof redis.get !== 'function') {
+        return false // If Redis is not available, don't block anyone
+      }
+      
+      const key = `security:blocked:${identifier}`
+      const blocked = await redis.get(key)
+      return blocked === '1'
+    } catch (error) {
+      console.error('Error checking block status:', error)
+      return false
+    }
   }
 
   async blockIdentifier(identifier: string, durationSeconds: number = 3600): Promise<void> {
-    const key = `security:blocked:${identifier}`
-    await this.redis.setex(key, durationSeconds, '1')
-    console.warn(`Blocked identifier: ${identifier} for ${durationSeconds} seconds`)
+    try {
+      const redis = this.getRedis()
+      if (!redis || typeof redis.setex !== 'function') {
+        return
+      }
+      
+      const key = `security:blocked:${identifier}`
+      await redis.setex(key, durationSeconds, '1')
+      console.warn(`Blocked identifier: ${identifier} for ${durationSeconds} seconds`)
+    } catch (error) {
+      console.error('Error blocking identifier:', error)
+    }
   }
 
   async unblockIdentifier(identifier: string): Promise<void> {
-    const key = `security:blocked:${identifier}`
-    await this.redis.del(key)
+    try {
+      const redis = this.getRedis()
+      if (!redis || typeof redis.del !== 'function') {
+        return
+      }
+      
+      const key = `security:blocked:${identifier}`
+      await redis.del(key)
+    } catch (error) {
+      console.error('Error unblocking identifier:', error)
+    }
   }
 }
 
