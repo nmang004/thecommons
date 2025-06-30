@@ -47,7 +47,7 @@ class ErrorTracker {
   constructor(isServer = true) {
     // Note: createClient() is async and returns a Promise, but for error tracking
     // we'll handle the Promise resolution in each method
-    // @ts-ignore - TypeScript incorrectly thinks createClient needs arguments
+    // @ts-expect-error - TypeScript incorrectly thinks createClient needs arguments
     this.getSupabase = () => isServer ? createClient() : createBrowserClient()
   }
 
