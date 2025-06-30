@@ -56,7 +56,13 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_APP_URL
+      ? process.env.NEXT_PUBLIC_APP_URL.startsWith('http') 
+        ? process.env.NEXT_PUBLIC_APP_URL 
+        : `https://${process.env.NEXT_PUBLIC_APP_URL}`
+      : 'http://localhost:3000'
+  ),
   alternates: {
     canonical: '/',
   },

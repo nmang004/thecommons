@@ -18,6 +18,8 @@ WITH CHECK (
   )
 );
 
+-- Drop and recreate policy to handle potential conflicts
+DROP POLICY IF EXISTS "Authors can view their manuscript files" ON storage.objects;
 CREATE POLICY "Authors can view their manuscript files"
 ON storage.objects FOR SELECT
 USING (
@@ -29,6 +31,7 @@ USING (
   )
 );
 
+DROP POLICY IF EXISTS "Editors can view manuscript files" ON storage.objects;
 CREATE POLICY "Editors can view manuscript files"
 ON storage.objects FOR SELECT
 USING (
@@ -303,7 +306,7 @@ RETURNS TABLE(
   table_name text,
   operation text,
   user_id uuid,
-  timestamp timestamptz,
+  created_at timestamptz,
   data jsonb
 ) AS $$
 BEGIN
@@ -312,10 +315,10 @@ BEGIN
     'activity_logs'::text,
     action,
     activity_logs.user_id,
-    created_at,
+    activity_logs.created_at,
     details
   FROM activity_logs
-  WHERE created_at >= NOW() - INTERVAL '24 hours';
+  WHERE activity_logs.created_at >= NOW() - INTERVAL '24 hours';
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 

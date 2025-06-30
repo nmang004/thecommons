@@ -1,32 +1,36 @@
 -- Phase 7: Performance & Optimization Database Indexes
 -- Additional indexes for performance-critical queries
+-- NOTE: Remove CONCURRENTLY for migrations - run in transaction block
 
 -- Composite indexes for common query patterns
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_manuscripts_status_field ON manuscripts(status, field_of_study);
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_manuscripts_status_created ON manuscripts(status, created_at DESC);
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_manuscripts_author_status ON manuscripts(author_id, status);
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_manuscripts_editor_status ON manuscripts(editor_id, status) WHERE editor_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_manuscripts_status_field ON manuscripts(status, field_of_study);
+CREATE INDEX IF NOT EXISTS idx_manuscripts_status_created ON manuscripts(status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_manuscripts_author_status ON manuscripts(author_id, status);
+CREATE INDEX IF NOT EXISTS idx_manuscripts_editor_status ON manuscripts(editor_id, status) WHERE editor_id IS NOT NULL;
 
 -- Text search indexes for academic content
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_manuscripts_title_search ON manuscripts USING gin(to_tsvector('english', title));
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_manuscripts_abstract_search ON manuscripts USING gin(to_tsvector('english', abstract));
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_manuscripts_keywords_search ON manuscripts USING gin(keywords);
+-- Note: Removing tsvector indexes due to immutability constraints in migrations
+-- These can be added manually later if needed for full-text search
+-- CREATE INDEX IF NOT EXISTS idx_manuscripts_title_search ON manuscripts USING gin(to_tsvector(title));
+-- CREATE INDEX IF NOT EXISTS idx_manuscripts_abstract_search ON manuscripts USING gin(to_tsvector(abstract));
+CREATE INDEX IF NOT EXISTS idx_manuscripts_keywords_search ON manuscripts USING gin(keywords);
 
 -- Partial indexes for published articles (most queried)
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_manuscripts_published_only ON manuscripts(published_at DESC, view_count DESC) WHERE status = 'published';
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_manuscripts_popular ON manuscripts(view_count DESC, citation_count DESC) WHERE status = 'published';
+CREATE INDEX IF NOT EXISTS idx_manuscripts_published_only ON manuscripts(published_at DESC, view_count DESC) WHERE status = 'published';
+CREATE INDEX IF NOT EXISTS idx_manuscripts_popular ON manuscripts(view_count DESC, citation_count DESC) WHERE status = 'published';
 
 -- Indexes for dashboard queries
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_review_assignments_reviewer_status ON review_assignments(reviewer_id, status, due_date);
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_review_assignments_due_pending ON review_assignments(due_date ASC) WHERE status IN ('invited', 'accepted');
+CREATE INDEX IF NOT EXISTS idx_review_assignments_reviewer_status ON review_assignments(reviewer_id, status, due_date);
+CREATE INDEX IF NOT EXISTS idx_review_assignments_due_pending ON review_assignments(due_date ASC) WHERE status IN ('invited', 'accepted');
 
 -- Indexes for statistical queries
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_manuscripts_field_published ON manuscripts(field_of_study, published_at) WHERE status = 'published';
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_manuscripts_created_month ON manuscripts(date_trunc('month', created_at));
+CREATE INDEX IF NOT EXISTS idx_manuscripts_field_published ON manuscripts(field_of_study, published_at) WHERE status = 'published';
+-- Remove date_trunc index due to immutability issues - use created_at directly instead
+CREATE INDEX IF NOT EXISTS idx_manuscripts_created_date ON manuscripts(created_at);
 
 -- Indexes for activity and audit queries
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_activity_logs_action_created ON activity_logs(action, created_at DESC);
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_notifications_user_unread ON notifications(user_id, created_at DESC) WHERE read = false;
+CREATE INDEX IF NOT EXISTS idx_activity_logs_action_created ON activity_logs(action, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_notifications_user_unread ON notifications(user_id, created_at DESC) WHERE read = false;
 
 -- Materialized view for homepage statistics
 CREATE MATERIALIZED VIEW IF NOT EXISTS homepage_stats AS
@@ -47,7 +51,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_homepage_stats_singleton ON homepage_stats
 CREATE OR REPLACE FUNCTION refresh_homepage_stats()
 RETURNS void AS $$
 BEGIN
-  REFRESH MATERIALIZED VIEW CONCURRENTLY homepage_stats;
+  REFRESH MATERIALIZED VIEW homepage_stats;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -114,15 +118,15 @@ BEGIN
     CASE 
       WHEN search_query = '' THEN 1.0::REAL
       ELSE ts_rank(
-        to_tsvector('english', m.title || ' ' || m.abstract), 
-        plainto_tsquery('english', search_query)
+        to_tsvector(m.title || ' ' || m.abstract), 
+        plainto_tsquery(search_query)
       )
     END as search_rank
   FROM manuscripts m
   JOIN profiles p ON m.author_id = p.id
   WHERE m.status = 'published'
     AND (search_query = '' OR (
-      to_tsvector('english', m.title || ' ' || m.abstract) @@ plainto_tsquery('english', search_query)
+      to_tsvector(m.title || ' ' || m.abstract) @@ plainto_tsquery(search_query)
     ))
     AND (field_filter = '' OR m.field_of_study = field_filter)
   ORDER BY search_rank DESC, m.published_at DESC
@@ -132,8 +136,8 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Optimize JSON queries for manuscript metadata
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_manuscripts_suggested_reviewers ON manuscripts USING gin(suggested_reviewers);
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_payments_billing_details ON payments USING gin(billing_details);
+CREATE INDEX IF NOT EXISTS idx_manuscripts_suggested_reviewers ON manuscripts USING gin(suggested_reviewers);
+CREATE INDEX IF NOT EXISTS idx_payments_billing_details ON payments USING gin(billing_details);
 
 -- Performance monitoring table
 CREATE TABLE IF NOT EXISTS query_performance_log (
@@ -182,6 +186,4 @@ ANALYZE manuscript_files;
 ANALYZE activity_logs;
 ANALYZE notifications;
 
--- Update table statistics
-UPDATE pg_stat_user_tables SET n_tup_ins = 0, n_tup_upd = 0, n_tup_del = 0 
-WHERE schemaname = 'public';
+-- Note: Removed pg_stat_user_tables update - system views are not directly updatable

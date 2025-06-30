@@ -136,7 +136,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Function to get reviewer performance analytics
-CREATE OR REPLACE FUNCTION get_reviewer_analytics(reviewer_id UUID DEFAULT NULL)
+CREATE OR REPLACE FUNCTION get_reviewer_analytics(target_reviewer_id UUID DEFAULT NULL)
 RETURNS TABLE(
   reviewer_id UUID,
   reviewer_name TEXT,
@@ -163,7 +163,7 @@ BEGIN
   LEFT JOIN reviews r ON ra.id = r.reviewer_id AND ra.manuscript_id = r.manuscript_id
   LEFT JOIN review_assignments ra2 ON p.id = ra2.reviewer_id AND ra2.status IN ('invited', 'accepted')
   WHERE p.role = 'reviewer'
-    AND (get_reviewer_analytics.reviewer_id IS NULL OR p.id = get_reviewer_analytics.reviewer_id)
+    AND (target_reviewer_id IS NULL OR p.id = target_reviewer_id)
     AND ra.invited_at >= NOW() - INTERVAL '6 months'
   GROUP BY p.id, p.full_name
   HAVING COUNT(ra.id) > 0
