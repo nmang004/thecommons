@@ -128,7 +128,7 @@ export default function ArticleView({ article }: ArticleViewProps) {
   const mainFile = article.files?.find(f => f.file_type === 'manuscript_main')
 
   return (
-    <div className="min-h-screen bg-background">
+    <>
       {/* Article Header */}
       <header className="bg-gradient-to-r from-primary/5 to-secondary/5 py-12">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -458,6 +458,6 @@ export default function ArticleView({ article }: ArticleViewProps) {
           </aside>
         </div>
       </div>
-    </div>
+    </>
   )
 }

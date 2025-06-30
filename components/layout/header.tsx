@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Menu, X, Search, User, Bell, Settings } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -45,6 +45,17 @@ export default function Header({ user, notificationCount = 0 }: HeaderProps) {
   const pathname = usePathname()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [isScrolled, setIsScrolled] = useState(false)
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.scrollY
+      setIsScrolled(scrollTop > 10)
+    }
+
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -55,7 +66,11 @@ export default function Header({ user, notificationCount = 0 }: HeaderProps) {
   }
 
   return (
-    <header className="nav-academic sticky top-0 z-50 w-full">
+    <header className={`nav-academic sticky top-0 z-50 w-full transition-all duration-300 ${
+      isScrolled 
+        ? 'bg-background/80 backdrop-blur-md shadow-sm' 
+        : 'bg-background/95'
+    }`}>
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo and Brand */}
@@ -176,10 +191,10 @@ export default function Header({ user, notificationCount = 0 }: HeaderProps) {
               </>
             ) : (
               <div className="flex items-center space-x-2">
-                <Button variant="ghost" asChild>
+                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground" asChild>
                   <Link href="/login">Sign In</Link>
                 </Button>
-                <Button asChild>
+                <Button size="sm" className="btn-primary" asChild>
                   <Link href="/register">Get Started</Link>
                 </Button>
               </div>
@@ -204,7 +219,9 @@ export default function Header({ user, notificationCount = 0 }: HeaderProps) {
         {/* Mobile Navigation */}
         {isMenuOpen && (
           <div className="md:hidden">
-            <div className="px-2 pt-2 pb-3 space-y-1 border-t border-border">
+            <div className={`px-2 pt-2 pb-3 space-y-1 border-t border-border transition-all duration-300 ${
+              isScrolled ? 'bg-background/80 backdrop-blur-md' : 'bg-background/95'
+            }`}>
               {/* Mobile Search */}
               <div className="mb-4">
                 <form onSubmit={handleSearch} className="relative">
@@ -236,10 +253,10 @@ export default function Header({ user, notificationCount = 0 }: HeaderProps) {
               {/* Mobile User Actions */}
               {!user && (
                 <div className="pt-4 space-y-2">
-                  <Button variant="ghost" className="w-full justify-start" asChild>
+                  <Button variant="ghost" className="w-full justify-start text-muted-foreground hover:text-foreground" asChild>
                     <Link href="/login">Sign In</Link>
                   </Button>
-                  <Button className="w-full justify-start" asChild>
+                  <Button className="w-full justify-start btn-primary" asChild>
                     <Link href="/register">Get Started</Link>
                   </Button>
                 </div>

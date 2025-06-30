@@ -18,6 +18,8 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Separator } from '@/components/ui/separator'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
+import Header from '@/components/layout/header'
+import Footer from '@/components/layout/footer'
 
 export const metadata: Metadata = {
   title: 'Author Guidelines - The Commons',
@@ -116,6 +118,7 @@ const ethicalRequirements = [
 export default function GuidelinesPage() {
   return (
     <div className="min-h-screen bg-background">
+      <Header />
       {/* Header */}
       <section className="bg-gradient-to-r from-primary/10 to-secondary/10 py-16">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -432,6 +435,7 @@ export default function GuidelinesPage() {
           </Card>
         </section>
       </div>
+      <Footer />
     </div>
   )
 }

@@ -2,6 +2,8 @@ import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { createServiceClient } from '@/lib/supabase/server'
 import ArticleView from '@/components/public/article-view'
+import Header from '@/components/layout/header'
+import Footer from '@/components/layout/footer'
 
 interface ArticlePageProps {
   params: Promise<{ id: string }>
@@ -98,5 +100,11 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
     notFound()
   }
 
-  return <ArticleView article={article} />
+  return (
+    <div className="min-h-screen bg-background">
+      <Header />
+      <ArticleView article={article} />
+      <Footer />
+    </div>
+  )
 }

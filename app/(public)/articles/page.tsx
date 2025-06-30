@@ -2,6 +2,8 @@ import { Metadata } from 'next'
 import { Suspense } from 'react'
 import ArticleArchive from '@/components/public/article-archive'
 import { Skeleton } from '@/components/ui/skeleton'
+import Header from '@/components/layout/header'
+import Footer from '@/components/layout/footer'
 
 export const metadata: Metadata = {
   title: 'Article Archive - The Commons',
@@ -17,6 +19,7 @@ export default async function ArticlesPage({
   const resolvedSearchParams = await searchParams
   return (
     <div className="min-h-screen bg-background">
+      <Header />
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="text-center mb-12">
           <h1 className="heading-1 mb-4">Article Archive</h1>
@@ -30,6 +33,7 @@ export default async function ArticlesPage({
           <ArticleArchive searchParams={resolvedSearchParams} />
         </Suspense>
       </div>
+      <Footer />
     </div>
   )
 }

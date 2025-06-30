@@ -13,6 +13,8 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import Header from '@/components/layout/header'
+import Footer from '@/components/layout/footer'
 
 export const metadata: Metadata = {
   title: 'About Us - The Commons',
@@ -133,6 +135,7 @@ const stats = [
 export default function AboutPage() {
   return (
     <div className="min-h-screen bg-background">
+      <Header />
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-primary/10 to-secondary/10 py-20">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -317,6 +320,7 @@ export default function AboutPage() {
           </Card>
         </section>
       </div>
+      <Footer />
     </div>
   )
 }
