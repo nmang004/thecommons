@@ -79,7 +79,7 @@ export async function GET(_request: NextRequest) {
   ${articles?.map(article => `
   <url>
     <loc>${baseUrl}/articles/${article.id}</loc>
-    <lastmod>${new Date(article.updated_at || article.published_at || article.created_at).toISOString()}</lastmod>
+    <lastmod>${new Date(article.updated_at || article.published_at || new Date().toISOString()).toISOString()}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>${getArticlePriority(article.view_count || 0)}</priority>
   </url>`).join('') || ''}

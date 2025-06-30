@@ -369,7 +369,7 @@ export default function ArticleArchive({ searchParams }: ArticleArchiveProps) {
                         {keyword}
                       </Badge>
                     ))}
-                    {article.keywords?.length > 2 && (
+                    {article.keywords && article.keywords.length > 2 && (
                       <Badge variant="secondary" className="text-xs">
                         +{article.keywords.length - 2}
                       </Badge>

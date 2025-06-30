@@ -84,13 +84,15 @@ export default function ArticleView({ article }: ArticleViewProps) {
   }, [])
 
 
-  const generateCitation = (format: 'apa' | 'mla' | 'chicago' | 'bibtex') => {
+  const generateCitation = (formatType: 'apa' | 'mla' | 'chicago' | 'bibtex') => {
     const authors = [article.author, ...article.coauthors.sort((a, b) => a.author_order - b.author_order)]
-    const authorString = authors.map(a => a.name || a.full_name).join(', ')
+    const authorString = authors.map(a => 
+      'full_name' in a ? a.full_name : a.name
+    ).join(', ')
     const year = article.published_at ? new Date(article.published_at).getFullYear() : new Date().getFullYear()
     const date = article.published_at ? format(new Date(article.published_at), 'MMMM dd, yyyy') : 'No date'
 
-    switch (format) {
+    switch (formatType) {
       case 'apa':
         return `${authorString} (${year}). ${article.title}. The Commons. ${article.doi ? `https://doi.org/${article.doi}` : ''}`
       case 'mla':
@@ -145,15 +147,18 @@ export default function ArticleView({ article }: ArticleViewProps) {
               {[article.author, ...article.coauthors.sort((a, b) => a.author_order - b.author_order)].map((author, index) => (
                 <div key={index} className="flex items-center space-x-3">
                   <Avatar className="h-10 w-10">
-                    <AvatarImage src={author.avatar_url} alt={author.full_name || author.name} />
+                    <AvatarImage 
+                      src={'avatar_url' in author ? author.avatar_url : undefined} 
+                      alt={'full_name' in author ? author.full_name : author.name} 
+                    />
                     <AvatarFallback>
-                      {(author.full_name || author.name).split(' ').map(n => n[0]).join('')}
+                      {('full_name' in author ? author.full_name : author.name).split(' ').map(n => n[0]).join('')}
                     </AvatarFallback>
                   </Avatar>
                   <div>
                     <p className="font-medium text-foreground">
-                      {author.full_name || author.name}
-                      {author.is_corresponding && <sup className="text-primary ml-1">*</sup>}
+                      {'full_name' in author ? author.full_name : author.name}
+                      {'is_corresponding' in author && author.is_corresponding && <sup className="text-primary ml-1">*</sup>}
                     </p>
                     {author.affiliation && (
                       <p className="text-sm text-muted-foreground">{author.affiliation}</p>
