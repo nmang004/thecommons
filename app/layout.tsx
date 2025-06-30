@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { Inter, Playfair_Display, Crimson_Text, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
-import '@/lib/polyfills/server'
+import '@/global-polyfills'
 import { ThemeProvider } from '@/components/ui/theme-provider'
 import { AnnouncementManager } from '@/components/ui/live-region'
 import SkipNav from '@/components/ui/skip-nav'

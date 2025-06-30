@@ -4,6 +4,9 @@ import path from "path";
 // Load global polyfills immediately
 require('./global-polyfills.js');
 
+// Import custom webpack plugin
+const PolyfillPlugin = require('./webpack-polyfill-plugin.js');
+
 // Only import bundle analyzer when needed
 const withBundleAnalyzer = process.env.ANALYZE === "true" 
   ? require("@next/bundle-analyzer")({
@@ -111,6 +114,9 @@ const nextConfig: NextConfig = {
 
   // Webpack optimizations
   webpack: (config, { dev, isServer }) => {
+    // Add polyfill plugin to ensure browser globals are available
+    config.plugins.push(new PolyfillPlugin());
+    
     // Production optimizations
     if (!dev) {
       config.optimization = {
@@ -143,9 +149,23 @@ const nextConfig: NextConfig = {
 
     // Add fallbacks for browser globals in server environment
     if (isServer) {
+      // Inject polyfill for 'self' at the beginning of each entry point
+      const originalEntry = config.entry;
+      config.entry = async () => {
+        const entries = await originalEntry();
+        
+        // Add polyfill to each entry point
+        Object.keys(entries).forEach((key) => {
+          if (entries[key] && !entries[key].includes('./global-polyfills.js')) {
+            entries[key] = ['./global-polyfills.js', ...entries[key]];
+          }
+        });
+        
+        return entries;
+      };
+      
       config.resolve.fallback = {
         ...config.resolve.fallback,
-        'self': false,
       }
     }
 
