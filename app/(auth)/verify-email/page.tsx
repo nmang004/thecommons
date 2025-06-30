@@ -1,5 +1,6 @@
 'use client'
 
+import { Suspense } from 'react'
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
@@ -10,7 +11,7 @@ import { CheckCircle, XCircle, Mail, Loader2, ArrowRight } from 'lucide-react'
 
 type VerificationStatus = 'loading' | 'success' | 'error' | 'expired'
 
-export default function VerifyEmailPage() {
+function VerifyEmailContent() {
   const [status, setStatus] = useState<VerificationStatus>('loading')
   const [isResending, setIsResending] = useState(false)
   const [resendSuccess, setResendSuccess] = useState(false)
@@ -261,5 +262,28 @@ export default function VerifyEmailPage() {
         )}
       </Card>
     </div>
+  )
+}
+
+export default function VerifyEmailPage() {
+  return (
+    <Suspense 
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 p-4">
+          <Card className="w-full max-w-md p-8">
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto mb-6 bg-blue-100 rounded-full flex items-center justify-center">
+                <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+              </div>
+              <h1 className="text-2xl font-heading font-bold text-gray-900 mb-4">
+                Loading...
+              </h1>
+            </div>
+          </Card>
+        </div>
+      }
+    >
+      <VerifyEmailContent />
+    </Suspense>
   )
 }

@@ -1,4 +1,5 @@
 import { getRedisClient } from './client'
+import type { Redis } from 'ioredis'
 
 interface CacheOptions {
   ttl?: number // Time to live in seconds
@@ -9,7 +10,39 @@ const DEFAULT_TTL = 3600 // 1 hour
 const DEFAULT_PREFIX = 'thecommons:'
 
 export class CacheService {
-  private redis = getRedisClient()
+  private redis: Redis | null = null
+  
+  private getRedis() {
+    if (!this.redis) {
+      try {
+        this.redis = getRedisClient()
+      } catch (error) {
+        console.warn('Redis not available:', error)
+        // Return a mock Redis client for build time
+        return {
+          get: async () => null,
+          set: async () => 'OK',
+          setex: async () => 'OK',
+          del: async () => 0,
+          exists: async () => 0,
+          keys: async () => [],
+          incr: async () => 1,
+          hset: async () => 1,
+          hget: async () => null,
+          hkeys: async () => [],
+          expire: async () => 1,
+          pipeline: () => ({
+            incr: () => {},
+            expire: () => {},
+            exec: async () => []
+          }),
+          on: () => {},
+          connect: async () => {},
+        } as any
+      }
+    }
+    return this.redis
+  }
 
   private getKey(key: string, prefix?: string): string {
     const keyPrefix = prefix || DEFAULT_PREFIX
@@ -19,7 +52,7 @@ export class CacheService {
   async get<T>(key: string, options: CacheOptions = {}): Promise<T | null> {
     try {
       const fullKey = this.getKey(key, options.prefix)
-      const cached = await this.redis.get(fullKey)
+      const cached = await this.getRedis().get(fullKey)
       
       if (!cached) {
         return null
@@ -42,7 +75,7 @@ export class CacheService {
       const ttl = options.ttl || DEFAULT_TTL
       const serialized = JSON.stringify(value)
       
-      await this.redis.setex(fullKey, ttl, serialized)
+      await this.getRedis().setex(fullKey, ttl, serialized)
       return true
     } catch (error) {
       console.error('Cache set error:', error)
@@ -53,7 +86,7 @@ export class CacheService {
   async del(key: string, options: CacheOptions = {}): Promise<boolean> {
     try {
       const fullKey = this.getKey(key, options.prefix)
-      await this.redis.del(fullKey)
+      await this.getRedis().del(fullKey)
       return true
     } catch (error) {
       console.error('Cache delete error:', error)
@@ -64,7 +97,7 @@ export class CacheService {
   async exists(key: string, options: CacheOptions = {}): Promise<boolean> {
     try {
       const fullKey = this.getKey(key, options.prefix)
-      const result = await this.redis.exists(fullKey)
+      const result = await this.getRedis().exists(fullKey)
       return result === 1
     } catch (error) {
       console.error('Cache exists error:', error)
@@ -75,10 +108,10 @@ export class CacheService {
   async flush(pattern?: string): Promise<boolean> {
     try {
       const searchPattern = pattern || `${DEFAULT_PREFIX}*`
-      const keys = await this.redis.keys(searchPattern)
+      const keys = await this.getRedis().keys(searchPattern)
       
       if (keys.length > 0) {
-        await this.redis.del(...keys)
+        await this.getRedis().del(...keys)
       }
       
       return true
@@ -91,7 +124,7 @@ export class CacheService {
   async increment(key: string, options: CacheOptions = {}): Promise<number> {
     try {
       const fullKey = this.getKey(key, options.prefix)
-      return await this.redis.incr(fullKey)
+      return await this.getRedis().incr(fullKey)
     } catch (error) {
       console.error('Cache increment error:', error)
       throw error
@@ -100,7 +133,7 @@ export class CacheService {
 
   // Public method to access Redis client for specialized operations
   public getRedisClient() {
-    return this.redis
+    return this.getRedis()
   }
 
   async setHash(
@@ -111,10 +144,10 @@ export class CacheService {
   ): Promise<boolean> {
     try {
       const fullKey = this.getKey(key, options.prefix)
-      await this.redis.hset(fullKey, field, JSON.stringify(value))
+      await this.getRedis().hset(fullKey, field, JSON.stringify(value))
       
       if (options.ttl) {
-        await this.redis.expire(fullKey, options.ttl)
+        await this.getRedis().expire(fullKey, options.ttl)
       }
       
       return true
@@ -131,7 +164,7 @@ export class CacheService {
   ): Promise<T | null> {
     try {
       const fullKey = this.getKey(key, options.prefix)
-      const cached = await this.redis.hget(fullKey, field)
+      const cached = await this.getRedis().hget(fullKey, field)
       
       if (!cached) {
         return null
@@ -300,7 +333,7 @@ export const invalidateByTag = async (tag: string): Promise<void> => {
   
   if (keys.length > 0) {
     // Delete all keys associated with this tag
-    await cache.getRedisClient().del(...keys.map(key => `${DEFAULT_PREFIX}${key}`))
+    await cache.getRedisClient().del(...keys.map((key: string) => `${DEFAULT_PREFIX}${key}`))
     // Delete the tag itself
     await cache.del(tagKey)
   }

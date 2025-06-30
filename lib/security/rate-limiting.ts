@@ -37,7 +37,9 @@ export const RATE_LIMITS = {
 } as const
 
 class RateLimiter {
-  private redis = cache.getRedisClient()
+  private getRedis() {
+    return cache.getRedisClient()
+  }
 
   private getKey(identifier: string, windowStart: number): string {
     return `ratelimit:${identifier}:${windowStart}`
@@ -56,7 +58,7 @@ class RateLimiter {
     
     try {
       // Get current count
-      const current = await this.redis.get(key)
+      const current = await this.getRedis().get(key)
       const currentCount = current ? parseInt(current) : 0
       
       const info: RateLimitInfo = {
@@ -72,7 +74,7 @@ class RateLimiter {
       }
       
       // Increment counter
-      const pipeline = this.redis.pipeline()
+      const pipeline = this.getRedis().pipeline()
       pipeline.incr(key)
       pipeline.expire(key, Math.ceil(config.windowMs / 1000))
       await pipeline.exec()
@@ -105,7 +107,7 @@ class RateLimiter {
     const key = this.getKey(identifier, windowStart)
     
     try {
-      const current = await this.redis.get(key)
+      const current = await this.getRedis().get(key)
       const currentCount = current ? parseInt(current) : 0
       return Math.max(0, config.maxRequests - currentCount)
     } catch {
@@ -118,7 +120,7 @@ class RateLimiter {
     const key = this.getKey(identifier, windowStart)
     
     try {
-      await this.redis.del(key)
+      await this.getRedis().del(key)
     } catch (error) {
       console.error('Error resetting rate limit:', error)
     }
