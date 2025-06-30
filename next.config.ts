@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 import path from "path";
 
+// Load global polyfills immediately
+require('./global-polyfills.js');
+
 // Only import bundle analyzer when needed
 const withBundleAnalyzer = process.env.ANALYZE === "true" 
   ? require("@next/bundle-analyzer")({
@@ -144,15 +147,6 @@ const nextConfig: NextConfig = {
         ...config.resolve.fallback,
         'self': false,
       }
-      
-      // Define global variables for server environment using require
-      const webpack = require('webpack')
-      config.plugins.push(
-        new webpack.DefinePlugin({
-          'typeof self': '"undefined"',
-          'self': 'undefined'
-        })
-      )
     }
 
     // Configure path aliases for both development and production
