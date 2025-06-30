@@ -46,7 +46,6 @@ const nextConfig: NextConfig = {
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 31536000, // 1 year
     dangerouslyAllowSVG: true,
-    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
 
   // Performance optimizations
@@ -108,7 +107,7 @@ const nextConfig: NextConfig = {
   },
 
   // Webpack optimizations
-  webpack: (config, { dev, isServer: _isServer }) => {
+  webpack: (config, { dev, isServer }) => {
     // Production optimizations
     if (!dev) {
       config.optimization = {
@@ -137,6 +136,23 @@ const nextConfig: NextConfig = {
           },
         },
       }
+    }
+
+    // Add fallbacks for browser globals in server environment
+    if (isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        'self': false,
+      }
+      
+      // Define global variables for server environment using require
+      const webpack = require('webpack')
+      config.plugins.push(
+        new webpack.DefinePlugin({
+          'typeof self': '"undefined"',
+          'self': 'undefined'
+        })
+      )
     }
 
     // Configure path aliases for both development and production
