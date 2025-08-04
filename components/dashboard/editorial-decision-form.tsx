@@ -4,24 +4,19 @@ import { useState, useEffect, useReducer } from 'react'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Textarea } from '@/components/ui/textarea'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { DecisionSummaryEditor } from './decision-components/DecisionSummaryEditor'
 import { AuthorLetterBuilder } from './decision-components/AuthorLetterBuilder'
 import { PostDecisionActions } from './decision-components/PostDecisionActions'
 import { DecisionProcessingService, ProcessDecisionInput } from '@/lib/services/decision-processing-service'
 import { createClient } from '@/lib/supabase/client'
-import type { DecisionTemplate as DBDecisionTemplate, DecisionActions, ReviewComment } from '@/types/database'
+import type { DecisionActions, ReviewComment } from '@/types/database'
 import { 
   CheckCircle,
   XCircle,
   RefreshCw,
   FileText,
-  Eye,
-  History,
-  Users,
   Send,
   Save,
   AlertTriangle,
@@ -342,7 +337,7 @@ export function EditorialDecisionForm({
   reviews,
   onSubmit,
   onCancel,
-  isLoading = false,
+  _isLoading = false,
   availableEditors = [],
   templates = [],
   userId
@@ -385,7 +380,7 @@ export function EditorialDecisionForm({
     return () => clearInterval(autoSaveInterval)
   }, [state])
 
-  const allTemplates = [...DEFAULT_TEMPLATES, ...customTemplates, ...templates]
+  const _allTemplates = [...DEFAULT_TEMPLATES, ...customTemplates, ...templates]
 
   // Decision step configuration
   const DECISION_STEPS = [
@@ -446,7 +441,7 @@ export function EditorialDecisionForm({
   }
 
   // Get review statistics
-  const reviewStats = {
+  const _reviewStats = {
     total: reviews.length,
     accept: reviews.filter(r => r.recommendation === 'accept').length,
     minorRevisions: reviews.filter(r => r.recommendation === 'minor_revisions').length,
@@ -456,7 +451,7 @@ export function EditorialDecisionForm({
       Math.round(reviews.reduce((sum, r) => sum + r.confidence_level, 0) / reviews.length * 10) / 10 : 0
   }
 
-  const getRecommendationColor = (recommendation: string) => {
+  const _getRecommendationColor = (recommendation: string) => {
     switch (recommendation) {
       case 'accept': return 'text-green-600 bg-green-50'
       case 'minor_revisions': return 'text-blue-600 bg-blue-50'

@@ -6,9 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
+  XAxis,
   YAxis, 
   CartesianGrid, 
   Tooltip, 
@@ -26,7 +24,6 @@ import {
   AlertCircle,
   Users,
   FileText,
-  Calendar,
   Download
 } from 'lucide-react'
 

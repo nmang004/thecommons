@@ -4,11 +4,12 @@ import { DecisionProcessingService } from '@/lib/services/decision-processing-se
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient()
-    const manuscriptId = params.id
+    const resolvedParams = await params
+    const manuscriptId = resolvedParams.id
     
     // Get the authenticated user
     const {
@@ -146,11 +147,11 @@ export async function POST(
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient()  
-    const manuscriptId = params.id
+    const { id: manuscriptId } = await params
     
     const {
       data: { user },
@@ -189,11 +190,12 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient()
-    const _manuscriptId = params.id
+    const resolvedParams = await params
+    const _manuscriptId = resolvedParams.id
     
     const {
       data: { user },

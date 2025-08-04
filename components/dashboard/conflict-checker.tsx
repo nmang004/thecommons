@@ -1,10 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { Checkbox } from '@/components/ui/checkbox'
 import { Textarea } from '@/components/ui/textarea'
 import { 
   AlertTriangle, 
@@ -13,7 +12,6 @@ import {
   ShieldCheck,
   X,
   Info,
-  FileText,
   Users,
   Building,
   DollarSign,

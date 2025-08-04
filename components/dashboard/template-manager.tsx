@@ -10,7 +10,6 @@ import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { RichTextEditor } from '@/components/ui/rich-text-editor'
 import { 
   Plus, 
   Edit3, 
@@ -19,16 +18,14 @@ import {
   Copy, 
   FileText, 
   Users, 
-  Star,
   Search,
   Filter,
-  MoreHorizontal
 } from 'lucide-react'
 import { DecisionTemplate, DecisionActions } from '@/types/database'
 
 interface TemplateManagerProps {
   onTemplateSelect?: (template: DecisionTemplate) => void
-  selectedTemplate?: DecisionTemplate | null
+  _selectedTemplate?: DecisionTemplate | null
   readOnly?: boolean
   className?: string
 }
@@ -69,7 +66,7 @@ const DECISION_TYPES = [
 
 export function TemplateManager({ 
   onTemplateSelect, 
-  selectedTemplate, 
+  _selectedTemplate, 
   readOnly = false,
   className 
 }: TemplateManagerProps) {

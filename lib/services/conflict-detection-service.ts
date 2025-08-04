@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { Database, ConflictEvidence } from '@/types/database'
+import { ConflictEvidence } from '@/types/database'
 
 export type ConflictType = 
   | 'institutional_current'

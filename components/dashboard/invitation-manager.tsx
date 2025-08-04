@@ -19,7 +19,6 @@ import {
   AlertTriangle,
   Settings,
   Template,
-  Calendar,
   FileText,
   Eye,
   EyeOff,

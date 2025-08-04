@@ -557,7 +557,7 @@ export class ReviewerMatchingService {
    */
   private calculateDiversityScore(
     candidate: ReviewerProfile,
-    criteria: MatchingCriteria
+    _criteria: MatchingCriteria
   ): number {
     // This is a simplified implementation
     // In production, you'd check against already selected reviewers
@@ -580,7 +580,7 @@ export class ReviewerMatchingService {
   private createFinalMatches(
     scoredCandidates: ReviewerMatch[],
     coiEligibility: ReviewerEligibility[],
-    criteria: MatchingCriteria
+    _criteria: MatchingCriteria
   ): ReviewerMatch[] {
     const eligibilityMap = new Map(
       coiEligibility.map(e => [e.reviewer_id, e])

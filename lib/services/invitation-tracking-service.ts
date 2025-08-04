@@ -327,7 +327,7 @@ export class InvitationTrackingService {
   async sendReminder(
     invitationId: string,
     reminderType: string,
-    templateId?: string
+    _templateId?: string
   ): Promise<void> {
     const supabase = await this.getSupabase()
     // Get the original invitation details

@@ -31,7 +31,7 @@ interface AuthorLetterBuilderProps {
   value: string
   onChange: (value: string) => void
   selectedTemplate?: any
-  onTemplateSelect?: (template: any) => void
+  _onTemplateSelect?: (template: any) => void
   className?: string
 }
 
@@ -53,7 +53,7 @@ export function AuthorLetterBuilder({
   value,
   onChange,
   selectedTemplate,
-  onTemplateSelect,
+  _onTemplateSelect,
   className
 }: AuthorLetterBuilderProps) {
   const [previewMode, setPreviewMode] = useState(false)

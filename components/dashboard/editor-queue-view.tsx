@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -9,23 +9,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Checkbox } from '@/components/ui/checkbox'
 import { 
   FileText, 
-  Search,
   Filter,
   ArrowUpDown,
   Eye,
   UserPlus,
   Users,
-  Mail,
   MoreHorizontal,
   AlertTriangle,
   Clock,
   CheckCircle,
-  Download,
   X
 } from 'lucide-react'
 import { ManuscriptFilters } from './manuscript-filters'
 import { BulkActions } from './bulk-actions'
-import { PriorityIndicator, Priority, usePrioritySorting } from './priority-indicator'
+import { PriorityIndicator, Priority } from './priority-indicator'
 
 export interface QueueFilters {
   status?: string[]
@@ -91,7 +88,7 @@ export function EditorQueueView({ manuscripts, currentEditor, onRefresh }: Edito
   const [showFilters, setShowFilters] = useState(false)
   const [filters, setFilters] = useState<QueueFilters>({})
   const [sortBy, setSortBy] = useState<'submitted_at' | 'title' | 'status' | 'priority'>('submitted_at')
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
+  const [_sortOrder, _setSortOrder] = useState<'asc' | 'desc'>('desc')
   const [activeView, setActiveView] = useState(searchParams.get('view') || 'all')
 
   // Filter manuscripts based on active view and filters
@@ -183,7 +180,7 @@ export function EditorQueueView({ manuscripts, currentEditor, onRefresh }: Edito
     })
 
     return filtered
-  }, [manuscripts, activeView, filters, sortBy, sortOrder, currentEditor.id])
+  }, [manuscripts, activeView, filters, sortBy, currentEditor.id])
 
   // Calculate counts for each view
   const viewCounts = useMemo(() => {
@@ -434,7 +431,7 @@ export function EditorQueueView({ manuscripts, currentEditor, onRefresh }: Edito
                                       {reviewerCount} assigned
                                     </span>
                                     <div className="text-xs text-gray-500 mt-1">
-                                      {manuscript.review_assignments?.map((assignment, idx) => (
+                                      {manuscript.review_assignments?.map((assignment, _idx) => (
                                         <div key={assignment.id}>
                                           {assignment.profiles?.full_name} 
                                           <span className={`ml-1 ${

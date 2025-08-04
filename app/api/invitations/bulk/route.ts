@@ -269,7 +269,7 @@ export async function POST(_request: NextRequest) {
 }
 
 // GET endpoint to retrieve invitation templates
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const supabase = await createClient()
     
