@@ -4,16 +4,47 @@ import { z } from 'zod'
 import { withSecurity, ValidationSchemas, logSecurityEvent } from '@/lib/security/api-security'
 import { RATE_LIMITS } from '@/lib/security/rate-limiting'
 import { invalidateManuscriptCache } from '@/lib/redis/cache'
+import type { Profile } from '@/types/database'
+
+// Types for submission data
+interface AuthorData {
+  name: string
+  email: string
+  affiliation?: string
+  orcid?: string
+  isCorresponding: boolean
+  contributionStatement?: string
+}
+
+interface SubmissionData {
+  title: string
+  abstract: string
+  keywords: string[]
+  fieldOfStudy: string
+  subfield?: string
+  coverLetter?: string
+  suggestedReviewers?: any[] // This could be typed more specifically
+  excludedReviewers?: any[] // This could be typed more specifically
+  fundingStatement?: string
+  conflictOfInterest?: string
+  dataAvailability?: string
+  authors: AuthorData[]
+}
+
+interface AuthenticatedUser {
+  id: string
+  profile: Profile
+}
 
 
-async function handler(request: NextRequest, data: any, user: any): Promise<NextResponse> {
+async function handler(request: NextRequest, data: SubmissionData, user: AuthenticatedUser): Promise<NextResponse> {
   
   try {
     const supabase = await createClient()
     const profile = user.profile
 
     // Find corresponding author  
-    const correspondingAuthor = data.authors.find((author: any) => author.isCorresponding)
+    const correspondingAuthor = data.authors.find((author) => author.isCorresponding)
     if (!correspondingAuthor) {
       return NextResponse.json(
         { error: 'A corresponding author must be designated' },
@@ -56,7 +87,7 @@ async function handler(request: NextRequest, data: any, user: any): Promise<Next
 
     // Add co-authors
     if (data.authors.length > 0) {
-      const coauthorsData = data.authors.map((author: any, index: number) => ({
+      const coauthorsData = data.authors.map((author, index: number) => ({
         manuscript_id: manuscript.id,
         name: author.name,
         email: author.email,

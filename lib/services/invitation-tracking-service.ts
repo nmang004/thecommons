@@ -6,7 +6,7 @@ export interface InvitationTemplate {
   category: string
   subject_template: string
   body_template: string
-  variables: any
+  variables: Record<string, string>
   usage_count: number
   is_system_template: boolean
   is_active: boolean
@@ -31,7 +31,7 @@ export interface InvitationTracking {
   reminder_count: number
   last_reminder_at?: string
   scheduled_for?: string
-  metadata?: any
+  metadata?: Record<string, unknown>
 }
 
 export interface InvitationAnalytics {
@@ -73,17 +73,18 @@ export interface InvitationVariables {
 }
 
 export class InvitationTrackingService {
-  private supabase
+  private getSupabase: () => Promise<Awaited<ReturnType<typeof createClient>>>
 
   constructor() {
-    this.supabase = createClient()
+    this.getSupabase = () => createClient()
   }
 
   /**
    * Get all available invitation templates
    */
   async getTemplates(category?: string): Promise<InvitationTemplate[]> {
-    let query = this.supabase
+    const supabase = await this.getSupabase()
+    let query = supabase
       .from('invitation_templates')
       .select('*')
       .eq('is_active', true)
@@ -111,10 +112,11 @@ export class InvitationTrackingService {
     category: string,
     subjectTemplate: string,
     bodyTemplate: string,
-    variables: any,
+    variables: Record<string, string>,
     createdBy: string
   ): Promise<InvitationTemplate | null> {
-    const { data: template, error } = await this.supabase
+    const supabase = await this.getSupabase()
+    const { data: template, error } = await supabase
       .from('invitation_templates')
       .insert({
         name,
@@ -143,7 +145,8 @@ export class InvitationTrackingService {
     templateId: string,
     variables: InvitationVariables
   ): Promise<{ subject: string; body: string }> {
-    const { data: result, error } = await this.supabase
+    const supabase = await this.getSupabase()
+    const { data: result, error } = await supabase
       .rpc('render_invitation_template', {
         template_id_param: templateId,
         variables_param: variables
@@ -175,9 +178,10 @@ export class InvitationTrackingService {
     subject: string,
     body: string,
     scheduledFor?: Date,
-    metadata?: any
+    metadata?: Record<string, unknown>
   ): Promise<InvitationTracking> {
-    const { data: tracking, error } = await this.supabase
+    const supabase = await this.getSupabase()
+    const { data: tracking, error } = await supabase
       .from('invitation_tracking')
       .insert({
         assignment_id: assignmentId,
@@ -212,9 +216,10 @@ export class InvitationTrackingService {
   async updateDeliveryStatus(
     invitationId: string,
     status: 'delivered' | 'bounced' | 'failed',
-    metadata?: any
+    metadata?: Record<string, unknown>
   ): Promise<void> {
-    const { error } = await this.supabase
+    const supabase = await this.getSupabase()
+    const { error } = await supabase
       .from('invitation_tracking')
       .update({
         delivery_status: status,
@@ -232,7 +237,8 @@ export class InvitationTrackingService {
    * Track invitation opened
    */
   async trackOpened(invitationId: string): Promise<void> {
-    const { error } = await this.supabase
+    const supabase = await this.getSupabase()
+    const { error } = await supabase
       .from('invitation_tracking')
       .update({
         opened_at: new Date().toISOString()
@@ -249,7 +255,8 @@ export class InvitationTrackingService {
    * Track invitation link clicked
    */
   async trackClicked(invitationId: string): Promise<void> {
-    const { error } = await this.supabase
+    const supabase = await this.getSupabase()
+    const { error } = await supabase
       .from('invitation_tracking')
       .update({
         clicked_at: new Date().toISOString()
@@ -269,7 +276,8 @@ export class InvitationTrackingService {
     invitationId: string,
     responseType: 'accepted' | 'declined'
   ): Promise<void> {
-    const { error } = await this.supabase
+    const supabase = await this.getSupabase()
+    const { error } = await supabase
       .from('invitation_tracking')
       .update({
         responded_at: new Date().toISOString(),
@@ -290,8 +298,9 @@ export class InvitationTrackingService {
     invitationId: string,
     assignmentId: string
   ): Promise<void> {
+    const supabase = await this.getSupabase()
     // Get the due date from the assignment
-    const { data: assignment } = await this.supabase
+    const { data: assignment } = await supabase
       .from('review_assignments')
       .select('due_date')
       .eq('id', assignmentId)
@@ -301,7 +310,7 @@ export class InvitationTrackingService {
       return
     }
 
-    const { error } = await this.supabase
+    const { error } = await supabase
       .rpc('schedule_invitation_reminders', {
         invitation_id_param: invitationId,
         initial_due_date: assignment.due_date
@@ -320,8 +329,9 @@ export class InvitationTrackingService {
     reminderType: string,
     templateId?: string
   ): Promise<void> {
+    const supabase = await this.getSupabase()
     // Get the original invitation details
-    const { data: invitation } = await this.supabase
+    const { data: invitation } = await supabase
       .from('invitation_tracking')
       .select(`
         *,
@@ -346,7 +356,7 @@ export class InvitationTrackingService {
     }
 
     // Update reminder count and last reminder date
-    const { error: updateError } = await this.supabase
+    const { error: updateError } = await supabase
       .from('invitation_tracking')
       .update({
         reminder_count: invitation.reminder_count + 1,
@@ -359,7 +369,7 @@ export class InvitationTrackingService {
     }
 
     // Mark reminder as sent
-    await this.supabase
+    await supabase
       .from('invitation_reminders')
       .update({
         sent_at: new Date().toISOString(),
@@ -372,8 +382,33 @@ export class InvitationTrackingService {
   /**
    * Get pending reminders that need to be sent
    */
-  async getPendingReminders(): Promise<any[]> {
-    const { data: reminders, error } = await this.supabase
+  async getPendingReminders(): Promise<Array<{
+    id: string
+    invitation_id: string
+    reminder_type: string
+    scheduled_for: string
+    sent_at?: string | null
+    status: string
+    invitation_tracking: {
+      assignment_id: string
+      recipient_email: string
+      response_type?: string | null
+      review_assignments: {
+        manuscript_id: string
+        due_date: string
+        manuscripts: {
+          title: string
+          field_of_study: string
+        }
+        profiles: {
+          full_name: string
+          email: string
+        }
+      }
+    }
+  }>> {
+    const supabase = await this.getSupabase()
+    const { data: reminders, error } = await supabase
       .from('invitation_reminders')
       .select(`
         *,
@@ -420,7 +455,8 @@ export class InvitationTrackingService {
     avg_response_time_hours: number
     pending_count: number
   }> {
-    const { data: stats, error } = await this.supabase
+    const supabase = await this.getSupabase()
+    const { data: stats, error } = await supabase
       .from('invitation_tracking')
       .select(`
         delivery_status,
@@ -478,7 +514,8 @@ export class InvitationTrackingService {
     templateId?: string,
     fieldOfStudy?: string
   ): Promise<InvitationAnalytics[]> {
-    let query = this.supabase
+    const supabase = await this.getSupabase()
+    let query = supabase
       .from('invitation_analytics')
       .select('*')
       .gte('period_start', startDate.toISOString().split('T')[0])
@@ -506,7 +543,8 @@ export class InvitationTrackingService {
    * Calculate and store analytics for a time period
    */
   async calculateAnalytics(startDate: Date, endDate: Date): Promise<void> {
-    const { error } = await this.supabase
+    const supabase = await this.getSupabase()
+    const { error } = await supabase
       .rpc('calculate_invitation_analytics', {
         start_date_param: startDate.toISOString().split('T')[0],
         end_date_param: endDate.toISOString().split('T')[0]
@@ -532,7 +570,8 @@ export class InvitationTrackingService {
     avg_response_time_hours: number
     open_rate: number
   }>> {
-    const { data: performance, error } = await this.supabase
+    const supabase = await this.getSupabase()
+    const { data: performance, error } = await supabase
       .from('invitation_analytics')
       .select(`
         template_id,
@@ -577,10 +616,11 @@ export class InvitationTrackingService {
     avg_response_time_hours: number
     preferred_fields: string[]
   }> {
+    const supabase = await this.getSupabase()
     const startDate = new Date()
     startDate.setMonth(startDate.getMonth() - months)
 
-    const { data: invitations, error } = await this.supabase
+    const { data: invitations, error } = await supabase
       .from('invitation_tracking')
       .select(`
         response_type,

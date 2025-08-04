@@ -1,5 +1,134 @@
 export type UserRole = 'author' | 'editor' | 'reviewer' | 'admin'
 
+// Enhanced type definitions for reviewer-related data
+export interface ReviewerSpecializations {
+  fields: string[]
+  keywords: string[]
+  methodologies?: string[]
+  languages?: string[]
+}
+
+export interface CollaborationHistory {
+  coauthors: {
+    profileId: string
+    name: string
+    collaborationCount: number
+    recentCollaborations: string[] // manuscript IDs or DOIs
+  }[]
+  institutionalAffiliations: {
+    institution: string
+    department?: string
+    startDate?: string
+    endDate?: string
+  }[]
+}
+
+export interface ReviewPreferences {
+  maxReviewsPerMonth?: number
+  preferredReviewTurnaroundDays?: number
+  excludedFields?: string[]
+  preferredManuscriptTypes?: string[]
+  availabilityWindows?: {
+    startDate: string
+    endDate: string
+    maxReviews: number
+  }[]
+}
+
+export interface COIDeclarations {
+  financialInterests: {
+    organization: string
+    relationship: string
+    amount?: number
+    currency?: string
+    startDate?: string
+    endDate?: string
+  }[]
+  personalRelationships: {
+    name: string
+    relationship: string
+    institution?: string
+  }[]
+  institutionalAffiliations: {
+    institution: string
+    role: string
+    startDate?: string
+    endDate?: string
+  }[]
+  otherConflicts?: {
+    description: string
+    severity: 'low' | 'medium' | 'high'
+  }[]
+}
+
+export interface SuggestedReviewers {
+  reviewers: {
+    name: string
+    email: string
+    affiliation?: string
+    expertise: string[]
+    justification: string
+  }[]
+}
+
+export interface ExcludedReviewers {
+  reviewers: {
+    name: string
+    email?: string
+    affiliation?: string
+    reason: string
+  }[]
+}
+
+export interface BillingDetails {
+  name: string
+  email: string
+  address?: {
+    line1: string
+    line2?: string
+    city: string
+    state?: string
+    postal_code: string
+    country: string
+  }
+  phone?: string
+}
+
+export interface ActivityDetails {
+  manuscriptId?: string
+  manuscriptTitle?: string
+  reviewerId?: string
+  editorId?: string
+  previousStatus?: string
+  newStatus?: string
+  reason?: string
+  metadata?: Record<string, unknown>
+}
+
+export interface NotificationData {
+  manuscriptId?: string
+  manuscriptTitle?: string
+  actionUrl?: string
+  metadata?: Record<string, unknown>
+}
+
+export interface ConflictEvidence {
+  type: 'publication' | 'affiliation' | 'financial' | 'personal' | 'other'
+  source: string
+  confidence: number
+  details: Record<string, unknown>
+}
+
+export interface Publications {
+  publications: {
+    title: string
+    doi?: string
+    year: number
+    journal?: string
+    authors: string[]
+  }[]
+}
+
 export type ManuscriptStatus =
   | 'draft'
   | 'submitted'
@@ -41,13 +170,13 @@ export interface Profile {
   current_review_load?: number | null
   avg_review_quality_score?: number | null
   response_rate?: number | null
-  specializations?: any | null
-  collaboration_history?: any | null
+  specializations?: ReviewerSpecializations | null
+  collaboration_history?: CollaborationHistory | null
   preferred_fields?: string[] | null
   availability_status?: string | null
   max_concurrent_reviews?: number | null
-  review_preferences?: any | null
-  coi_declarations?: any | null
+  review_preferences?: ReviewPreferences | null
+  coi_declarations?: COIDeclarations | null
   coi_last_updated?: string | null
   created_at: string
   updated_at: string
@@ -73,8 +202,8 @@ export interface Manuscript {
   download_count: number
   citation_count: number
   cover_letter?: string | null
-  suggested_reviewers?: any | null
-  excluded_reviewers?: any | null
+  suggested_reviewers?: SuggestedReviewers | null
+  excluded_reviewers?: ExcludedReviewers | null
   funding_statement?: string | null
   conflict_of_interest?: string | null
   data_availability?: string | null
@@ -148,7 +277,7 @@ export interface Payment {
   status: string
   receipt_url?: string | null
   invoice_url?: string | null
-  billing_details?: any | null
+  billing_details?: BillingDetails | null
   created_at: string
 }
 
@@ -187,7 +316,7 @@ export interface EditorialDecision {
   } | null
   
   // Draft and versioning
-  draft_data?: any | null
+  draft_data?: Record<string, unknown> | null
   version: number
   is_draft?: boolean
   
@@ -249,7 +378,7 @@ export interface ActivityLog {
   manuscript_id?: string | null
   user_id?: string | null
   action: string
-  details?: any | null
+  details?: ActivityDetails | null
   ip_address?: string | null
   user_agent?: string | null
   created_at: string
@@ -261,7 +390,7 @@ export interface Notification {
   type: string
   title: string
   message: string
-  data?: any | null
+  data?: NotificationData | null
   read: boolean
   created_at: string
 }
@@ -283,7 +412,7 @@ export interface ReviewerConflict {
   conflict_type: string
   severity: string
   description?: string | null
-  evidence?: any | null
+  evidence?: ConflictEvidence | null
   detected_automatically: boolean
   reported_by?: string | null
   status: string
@@ -314,7 +443,7 @@ export interface CollaborationNetwork {
   collaboration_count: number
   first_collaboration_date?: string | null
   last_collaboration_date?: string | null
-  publications?: any | null
+  publications?: Publications | null
   confidence_score: number
   source?: string | null
   created_at: string

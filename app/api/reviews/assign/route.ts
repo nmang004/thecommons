@@ -186,7 +186,11 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    const updateData: any = {
+    const updateData: {
+      responded_at: string
+      status?: 'accepted' | 'declined'
+      decline_reason?: string
+    } = {
       responded_at: new Date().toISOString()
     }
 

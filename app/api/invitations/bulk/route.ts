@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { ConflictDetectionService } from '@/lib/services/conflict-detection-service'
+import type { ConflictEvidence } from '@/types/database'
 
 interface BulkInvitationRequest {
   manuscript_id: string
@@ -18,11 +19,11 @@ interface InvitationResult {
   success: boolean
   assignment_id?: string
   error?: string
-  conflicts?: any[]
+  conflicts?: ConflictEvidence[]
   scheduled_for?: string
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     const supabase = await createClient()
     

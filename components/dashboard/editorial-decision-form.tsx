@@ -13,6 +13,7 @@ import { AuthorLetterBuilder } from './decision-components/AuthorLetterBuilder'
 import { PostDecisionActions } from './decision-components/PostDecisionActions'
 import { DecisionProcessingService, ProcessDecisionInput } from '@/lib/services/decision-processing-service'
 import { createClient } from '@/lib/supabase/client'
+import type { DecisionTemplate as DBDecisionTemplate, DecisionActions, ReviewComment } from '@/types/database'
 import { 
   CheckCircle,
   XCircle,
@@ -68,7 +69,7 @@ interface EditorialDecisionFormProps {
     }
   }
   reviews: Review[]
-  onSubmit: (decision: any) => void
+  onSubmit: (decision: ProcessDecisionInput) => void
   onCancel: () => void
   isLoading?: boolean
   availableEditors?: Array<{
@@ -80,7 +81,17 @@ interface EditorialDecisionFormProps {
     id: string
     name: string
     category: string
-    template_content: any
+    template_content: {
+    sections: Array<{
+      id: string
+      type: string
+      content: string
+      required: boolean
+      order: number
+    }>
+    variables: string[]
+    defaultActions?: DecisionActions
+  }
   }>
   userId?: string
 }
@@ -92,7 +103,7 @@ interface DecisionState {
   components: {
     editorSummary: string
     authorLetter: string
-    reviewerComments: any[]
+    reviewerComments: ReviewComment[]
     internalNotes: string
     conditions: string[]
     nextSteps: string[]
@@ -107,7 +118,7 @@ interface DecisionState {
     sendToProduction: boolean
     followUpDate?: string | null
   }
-  selectedTemplate?: any
+  selectedTemplate?: DecisionTemplate
   isDraft: boolean
   isValid: boolean
 }
@@ -115,9 +126,9 @@ interface DecisionState {
 type DecisionAction = 
   | { type: 'SET_STEP'; step: number }
   | { type: 'SET_DECISION'; decision: string }
-  | { type: 'UPDATE_COMPONENT'; key: string; value: any }
-  | { type: 'UPDATE_ACTIONS'; actions: any }
-  | { type: 'SET_TEMPLATE'; template: any }
+  | { type: 'UPDATE_COMPONENT'; key: string; value: string | string[] }
+  | { type: 'UPDATE_ACTIONS'; actions: DecisionActions }
+  | { type: 'SET_TEMPLATE'; template: DecisionTemplate }
   | { type: 'SET_DRAFT'; isDraft: boolean }
   | { type: 'VALIDATE' }
   | { type: 'RESET' }
@@ -413,12 +424,12 @@ export function EditorialDecisionForm({
   }
 
   // Handle template application
-  const applyTemplate = (template: any) => {
+  const applyTemplate = (template: DecisionTemplate) => {
     dispatch({ type: 'SET_TEMPLATE', template })
     dispatch({ type: 'SET_DECISION', decision: template.decision_type || template.decision })
     
     // Apply template content to author letter
-    let letterContent = template.template || template.template_content?.sections?.map((s: any) => s.content).join('\n\n') || ''
+    let letterContent = template.template_content?.sections?.map((s) => s.content).join('\n\n') || ''
     
     // Replace variables
     letterContent = letterContent.replace(/{{author_name}}/g, manuscript.profiles?.full_name || 'Author')

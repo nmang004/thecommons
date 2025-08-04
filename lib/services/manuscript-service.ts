@@ -258,7 +258,11 @@ export class ManuscriptService {
     return monitorDatabaseQuery('updateManuscriptStatus', async () => {
       const supabase = await this.getSupabase()
       
-      const updateData: any = { 
+      const updateData: {
+        status: string
+        updated_at: string
+        editor_id?: string
+      } = { 
         status,
         updated_at: new Date().toISOString()
       }

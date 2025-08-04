@@ -24,6 +24,15 @@ import {
   Users,
   Send
 } from 'lucide-react'
+import type { ConflictEvidence, SuggestedReviewers, ExcludedReviewers } from '@/types/database'
+
+interface InvitationData {
+  message?: string
+  dueDate: string
+  templateId?: string
+  staggered?: boolean
+  staggerHours?: number
+}
 
 interface Reviewer {
   id: string
@@ -46,7 +55,7 @@ interface Reviewer {
   match_reasons?: string[]
   // COI information
   coi_eligible?: boolean
-  coi_conflicts?: any[]
+  coi_conflicts?: ConflictEvidence[]
   coi_risk_score?: number
 }
 
@@ -59,10 +68,10 @@ interface ReviewerFinderProps {
     subfield?: string
     keywords?: string[]
     author_id: string
-    suggested_reviewers?: any
-    excluded_reviewers?: any
+    suggested_reviewers?: SuggestedReviewers
+    excluded_reviewers?: ExcludedReviewers
   }
-  onAssign: (reviewerIds: string[], invitationData: any) => void
+  onAssign: (reviewerIds: string[], invitationData: InvitationData) => void
   onCancel: () => void
   isLoading?: boolean
 }

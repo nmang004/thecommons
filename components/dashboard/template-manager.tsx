@@ -24,7 +24,7 @@ import {
   Filter,
   MoreHorizontal
 } from 'lucide-react'
-import { DecisionTemplate } from '@/types/database'
+import { DecisionTemplate, DecisionActions } from '@/types/database'
 
 interface TemplateManagerProps {
   onTemplateSelect?: (template: DecisionTemplate) => void
@@ -47,7 +47,7 @@ interface TemplateFormData {
       order: number
     }>
     variables: string[]
-    defaultActions?: any
+    defaultActions?: DecisionActions
   }
   is_public: boolean
   tags: string[]
@@ -441,7 +441,7 @@ export function TemplateManager({
                   <Label htmlFor="category">Category</Label>
                   <Select 
                     value={formData.category} 
-                    onValueChange={(value: any) => setFormData(prev => ({ ...prev, category: value }))}
+                    onValueChange={(value: TemplateFormData['category']) => setFormData(prev => ({ ...prev, category: value }))}
                   >
                     <SelectTrigger>
                       <SelectValue />

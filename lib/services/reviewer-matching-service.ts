@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { ConflictDetectionService, ReviewerEligibility } from './conflict-detection-service'
+import type { ReviewerSpecializations } from '@/types/database'
 
 export interface ReviewerProfile {
   id: string
@@ -16,7 +17,7 @@ export interface ReviewerProfile {
   avg_review_time?: number
   availability_score?: number
   last_active_date?: string
-  specializations?: any
+  specializations?: ReviewerSpecializations
   bio?: string
   orcid?: string
 }
@@ -63,11 +64,11 @@ export interface MatchingResult {
 }
 
 export class ReviewerMatchingService {
-  private supabase
+  private getSupabase: () => Promise<Awaited<ReturnType<typeof createClient>>>
   private conflictService: ConflictDetectionService
 
   constructor() {
-    this.supabase = createClient()
+    this.getSupabase = () => createClient()
     this.conflictService = new ConflictDetectionService()
   }
 
@@ -127,7 +128,8 @@ export class ReviewerMatchingService {
     criteria: MatchingCriteria,
     limit: number
   ): Promise<ReviewerProfile[]> {
-    let query = this.supabase
+    const supabase = await this.getSupabase()
+    let query = supabase
       .from('profiles')
       .select(`
         id,
@@ -180,20 +182,40 @@ export class ReviewerMatchingService {
   /**
    * Enrich reviewer profiles with performance statistics
    */
-  private async enrichReviewerProfiles(profiles: any[]): Promise<ReviewerProfile[]> {
+  private async enrichReviewerProfiles(profiles: Array<{
+    id: string
+    full_name: string
+    email: string
+    affiliation?: string
+    expertise?: string[]
+    h_index?: number
+    total_publications: number
+    current_review_load?: number
+    avg_review_quality_score?: number
+    response_rate?: number
+    specializations?: ReviewerSpecializations
+    bio?: string
+    orcid?: string
+  }>): Promise<ReviewerProfile[]> {
     if (profiles.length === 0) return []
 
     const reviewerIds = profiles.map(p => p.id)
 
     // Get review assignment statistics
-    const { data: assignments } = await this.supabase
+    const supabase = await this.getSupabase()
+    const { data: assignments } = await supabase
       .from('review_assignments')
       .select('reviewer_id, status, invited_at, completed_at, due_date')
       .in('reviewer_id', reviewerIds)
       .gte('invited_at', new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString())
 
     // Calculate stats for each reviewer
-    const reviewerStats: { [key: string]: any } = {}
+    const reviewerStats: { [key: string]: {
+      recent_reviews: number
+      avg_review_time: number
+      availability_score: number
+      last_active_date?: string
+    } } = {}
     
     reviewerIds.forEach(reviewerId => {
       const reviewerAssignments = assignments?.filter(a => a.reviewer_id === reviewerId) || []

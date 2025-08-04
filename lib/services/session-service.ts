@@ -1,6 +1,26 @@
 import { cache, CACHE_KEYS, CACHE_TTL, invalidateUserCache } from '@/lib/redis/cache'
 import { createClient } from '@/lib/supabase/server'
 import { User } from '@supabase/supabase-js'
+import type { Manuscript, Notification } from '@/types/database'
+
+// Dashboard data types
+interface DashboardStats {
+  manuscriptCount: number
+  reviewCount: number
+  pendingActions: number
+  recentActivity: Array<{
+    id: string
+    action: string
+    timestamp: string
+    details: string
+  }>
+}
+
+interface DashboardData {
+  manuscripts: Manuscript[]
+  notifications: Notification[]
+  stats: DashboardStats
+}
 
 export interface UserSession {
   user: User
@@ -19,18 +39,14 @@ export interface UserSession {
     notifications: boolean
     language: string
   }
-  dashboardData?: {
-    manuscripts: any[]
-    notifications: any[]
-    stats: any
-  }
+  dashboardData?: DashboardData
 }
 
 export interface SessionActivity {
   userId: string
   action: string
   timestamp: string
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 }
 
 export class SessionService {
@@ -77,7 +93,7 @@ export class SessionService {
   }
 
   // Cache dashboard data for faster loading
-  async cacheDashboardData(userId: string, role: string, dashboardData: any): Promise<void> {
+  async cacheDashboardData(userId: string, role: string, dashboardData: DashboardData): Promise<void> {
     const cacheKey = CACHE_KEYS.USERS.DASHBOARDS(userId, role)
     await cache.set(cacheKey, dashboardData, { ttl: CACHE_TTL.SHORT })
   }
@@ -176,7 +192,14 @@ export class SessionService {
     return await cache.get<any[]>(recsKey)
   }
 
-  async cacheRecommendations(userId: string, recommendations: any[]): Promise<void> {
+  async cacheRecommendations(userId: string, recommendations: Array<{
+    id: string
+    type: string
+    title: string
+    description: string
+    priority: number
+    metadata?: Record<string, unknown>
+  }>): Promise<void> {
     const recsKey = `recommendations:${userId}`
     await cache.set(recsKey, recommendations, { ttl: CACHE_TTL.LONG })
   }
@@ -187,7 +210,7 @@ export class SessionService {
     return await cache.get<any[]>(notifKey)
   }
 
-  async cacheNotifications(userId: string, notifications: any[]): Promise<void> {
+  async cacheNotifications(userId: string, notifications: Notification[]): Promise<void> {
     const notifKey = `notifications:${userId}`
     await cache.set(notifKey, notifications, { ttl: CACHE_TTL.SHORT })
   }
@@ -242,8 +265,8 @@ export class SessionService {
   async batchCacheUserData(userId: string, data: {
     profile?: UserSession['profile']
     preferences?: UserSession['preferences']
-    dashboardData?: any
-    notifications?: any[]
+    dashboardData?: DashboardData
+    notifications?: Notification[]
   }): Promise<void> {
     const operations = []
 

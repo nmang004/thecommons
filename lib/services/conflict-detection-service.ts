@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { Database } from '@/types/database'
+import { Database, ConflictEvidence } from '@/types/database'
 
 export type ConflictType = 
   | 'institutional_current'
@@ -22,7 +22,7 @@ export interface ConflictDetection {
   conflict_type: ConflictType
   severity: ConflictSeverity
   description: string
-  evidence: any
+  evidence: ConflictEvidence
   is_blocking: boolean
 }
 
@@ -43,10 +43,10 @@ export interface ReviewerEligibility {
 }
 
 export class ConflictDetectionService {
-  private supabase
+  private getSupabase: () => Promise<Awaited<ReturnType<typeof createClient>>>
 
   constructor() {
-    this.supabase = createClient()
+    this.getSupabase = () => createClient()
   }
 
   /**
@@ -56,7 +56,8 @@ export class ConflictDetectionService {
     reviewerId: string,
     manuscriptId: string
   ): Promise<COICheckResult> {
-    const { data: conflicts, error } = await this.supabase
+    const supabase = await this.getSupabase()
+    const { data: conflicts, error } = await supabase
       .rpc('check_reviewer_conflicts', {
         reviewer_id_param: reviewerId,
         manuscript_id_param: manuscriptId
@@ -123,7 +124,8 @@ export class ConflictDetectionService {
     reviewerId: string,
     authorIds: string[]
   ): Promise<ConflictDetection[]> {
-    const { data: conflicts, error } = await this.supabase
+    const supabase = await this.getSupabase()
+    const { data: conflicts, error } = await supabase
       .rpc('detect_institutional_conflicts', {
         reviewer_id_param: reviewerId,
         author_ids_param: authorIds
@@ -144,7 +146,8 @@ export class ConflictDetectionService {
     reviewerId: string,
     authorIds: string[]
   ): Promise<ConflictDetection[]> {
-    const { data: conflicts, error } = await this.supabase
+    const supabase = await this.getSupabase()
+    const { data: conflicts, error } = await supabase
       .rpc('detect_collaboration_conflicts', {
         reviewer_id_param: reviewerId,
         author_ids_param: authorIds
@@ -167,10 +170,11 @@ export class ConflictDetectionService {
     conflictType: ConflictType,
     severity: ConflictSeverity,
     description: string,
-    evidence?: any,
+    evidence?: ConflictEvidence,
     reportedBy?: string
   ): Promise<void> {
-    const { error } = await this.supabase
+    const supabase = await this.getSupabase()
+    const { error } = await supabase
       .from('reviewer_conflicts')
       .insert({
         reviewer_id: reviewerId,
@@ -204,14 +208,15 @@ export class ConflictDetectionService {
       source?: string
     }>
   ): Promise<void> {
+    const supabase = await this.getSupabase()
     // Clear existing affiliations for this profile
-    await this.supabase
+    await supabase
       .from('institutional_affiliations_history')
       .delete()
       .eq('profile_id', profileId)
 
     // Insert new affiliations
-    const { error } = await this.supabase
+    const { error } = await supabase
       .from('institutional_affiliations_history')
       .insert(
         affiliations.map(aff => ({
@@ -239,11 +244,12 @@ export class ConflictDetectionService {
       doi?: string
     }
   ): Promise<void> {
+    const supabase = await this.getSupabase()
     // Ensure person_a_id < person_b_id for uniqueness constraint
     const [person_a_id, person_b_id] = [personAId, personBId].sort()
 
     // Check if collaboration already exists
-    const { data: existing } = await this.supabase
+    const { data: existing } = await supabase
       .from('collaboration_networks')
       .select('*')
       .eq('person_a_id', person_a_id)
@@ -258,7 +264,7 @@ export class ConflictDetectionService {
         publications.push(publicationData)
       }
 
-      await this.supabase
+      await supabase
         .from('collaboration_networks')
         .update({
           collaboration_count: existing.collaboration_count + 1,
@@ -268,7 +274,7 @@ export class ConflictDetectionService {
         .eq('id', existing.id)
     } else {
       // Create new collaboration record
-      await this.supabase
+      await supabase
         .from('collaboration_networks')
         .insert({
           person_a_id,
@@ -287,8 +293,19 @@ export class ConflictDetectionService {
   /**
    * Get COI detection rules configuration
    */
-  async getCOIRules(): Promise<any[]> {
-    const { data: rules, error } = await this.supabase
+  async getCOIRules(): Promise<Array<{
+    id: string
+    rule_name: string
+    conflict_type: ConflictType
+    severity: ConflictSeverity
+    description: string
+    enabled: boolean
+    parameters: Record<string, unknown>
+    created_at: string
+    updated_at: string
+  }>> {
+    const supabase = await this.getSupabase()
+    const { data: rules, error } = await supabase
       .from('coi_detection_rules')
       .select('*')
       .eq('enabled', true)
@@ -311,7 +328,8 @@ export class ConflictDetectionService {
     overrideReason?: string,
     approvedBy?: string
   ): Promise<void> {
-    const { error } = await this.supabase
+    const supabase = await this.getSupabase()
+    const { error } = await supabase
       .from('review_assignments')
       .update({
         coi_checked_at: new Date().toISOString(),
@@ -374,18 +392,19 @@ export class ConflictDetectionService {
     blocked_assignments: number
     override_rate: number
   }> {
+    const supabase = await this.getSupabase()
     const dateFilter = {
       week: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
       month: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
       year: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000)
     }[timeRange]
 
-    const { data: conflicts } = await this.supabase
+    const { data: conflicts } = await supabase
       .from('reviewer_conflicts')
       .select('conflict_type, severity, created_at')
       .gte('created_at', dateFilter.toISOString())
 
-    const { data: assignments } = await this.supabase
+    const { data: assignments } = await supabase
       .from('review_assignments')
       .select('coi_flags, coi_override_reason')
       .gte('coi_checked_at', dateFilter.toISOString())

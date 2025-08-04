@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { ReviewerMatchingService } from '@/lib/services/reviewer-matching-service'
+import type { SuggestedReviewers } from '@/types/database'
 
 export async function GET(request: NextRequest) {
   try {
@@ -162,7 +163,7 @@ export async function GET(request: NextRequest) {
     }))
 
     // Get suggested reviewers from manuscript if available
-    let suggestedReviewers: any[] = []
+    let suggestedReviewers: SuggestedReviewers['reviewers'] = []
     if (manuscriptId) {
       const { data: manuscript } = await supabase
         .from('manuscripts')

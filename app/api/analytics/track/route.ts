@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
 
         const manuscriptEvent: ManuscriptAnalyticsEvent = {
           manuscriptId: eventData.manuscriptId,
-          eventType: eventType.replace('manuscript_', '') as any,
+          eventType: eventType.replace('manuscript_', '') as 'view' | 'download' | 'share' | 'citation',
           eventData: eventData.metadata || {},
           userId: user?.id,
           sessionId: eventData.sessionId,
@@ -204,7 +204,7 @@ export async function GET(request: NextRequest) {
           .limit(1000)
 
         // Group by hour and event type
-        data = events?.reduce((acc: any, event) => {
+        data = events?.reduce((acc: Record<string, Record<string, number>>, event) => {
           const hour = event.created_at.substring(0, 13) // YYYY-MM-DDTHH
           if (!acc[hour]) acc[hour] = {}
           if (!acc[hour][event.event_type]) acc[hour][event.event_type] = 0
@@ -222,7 +222,7 @@ export async function GET(request: NextRequest) {
           .order('created_at', { ascending: false })
           .limit(1000)
 
-        data = activity?.reduce((acc: any, event) => {
+        data = activity?.reduce((acc: Record<string, Record<string, number>>, event) => {
           const hour = event.created_at.substring(0, 13)
           if (!acc[hour]) acc[hour] = {}
           if (!acc[hour][event.action]) acc[hour][event.action] = 0

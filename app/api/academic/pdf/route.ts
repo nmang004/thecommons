@@ -2,6 +2,26 @@ import { NextRequest, NextResponse } from 'next/server'
 import { withRateLimit } from '@/lib/security/rate-limiting'
 import { pdfGenerator } from '@/lib/academic/pdf-generator'
 import { createClient } from '@/lib/supabase/server'
+import type { ManuscriptCoauthor } from '@/types/database'
+
+// Types for the database query results
+interface AuthorProfile {
+  full_name: string
+  affiliation?: string | null
+  orcid?: string | null
+}
+
+interface ArticleQueryResult {
+  id: string
+  title: string
+  abstract: string
+  keywords: string[] | null
+  field_of_study: string
+  published_at: string | null
+  doi: string | null
+  author: AuthorProfile | AuthorProfile[]
+  coauthors: ManuscriptCoauthor[]
+}
 
 async function handler(request: NextRequest): Promise<NextResponse> {
   try {
@@ -44,7 +64,7 @@ async function handler(request: NextRequest): Promise<NextResponse> {
       `)
       .eq('id', articleId)
       .eq('status', 'published')
-      .single()
+      .single() as Promise<{ data: ArticleQueryResult | null; error: any }>
 
     if (error || !article) {
       return NextResponse.json(
@@ -54,17 +74,18 @@ async function handler(request: NextRequest): Promise<NextResponse> {
     }
 
     // Transform data for PDF generation
+    const mainAuthor = Array.isArray(article.author) ? article.author[0] : article.author
     const articleData = {
       id: article.id,
       title: article.title,
       abstract: article.abstract,
       authors: [
         {
-          name: (article.author as any)?.full_name || (article.author as any)?.[0]?.full_name,
-          affiliation: (article.author as any)?.affiliation || (article.author as any)?.[0]?.affiliation,
-          orcid: (article.author as any)?.orcid || (article.author as any)?.[0]?.orcid
+          name: mainAuthor?.full_name || 'Unknown Author',
+          affiliation: mainAuthor?.affiliation,
+          orcid: mainAuthor?.orcid
         },
-        ...article.coauthors.map((coauthor: any) => ({
+        ...article.coauthors.map((coauthor) => ({
           name: coauthor.name,
           affiliation: coauthor.affiliation,
           orcid: coauthor.orcid

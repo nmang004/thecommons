@@ -40,9 +40,9 @@ export interface ProcessDecisionResult {
 }
 
 export class DecisionProcessingService {
-  private supabase: ReturnType<typeof createClient>
+  private supabase: Awaited<ReturnType<typeof createClient>>
 
-  constructor(supabase: ReturnType<typeof createClient>) {
+  constructor(supabase: Awaited<ReturnType<typeof createClient>>) {
     this.supabase = supabase
   }
 
@@ -282,7 +282,14 @@ export class DecisionProcessingService {
     return queuedActions
   }
 
-  private async queueNotification(type: string, data: any): Promise<void> {
+  private async queueNotification(type: string, data: {
+    manuscriptId: string
+    manuscriptTitle: string
+    authorId?: string
+    reviewerId?: string
+    decisionId?: string
+    metadata?: Record<string, unknown>
+  }): Promise<void> {
     // In a real implementation, this would use a proper job queue like BullMQ
     // For now, we'll create notifications directly
     await this.supabase
@@ -300,7 +307,7 @@ export class DecisionProcessingService {
       })
   }
 
-  private async queueAction(actionType: string, data: any): Promise<void> {
+  private async queueAction(actionType: string, data: Record<string, unknown>): Promise<void> {
     // In a real implementation, this would use a proper job queue
     // For now, we'll log the action and could implement immediate processing
     console.log(`Queuing action: ${actionType}`, data)
@@ -315,7 +322,14 @@ export class DecisionProcessingService {
       })
   }
 
-  private getNotificationTitle(type: string, data: any): string {
+  private getNotificationTitle(type: string, data: {
+    manuscriptId: string
+    manuscriptTitle: string
+    authorId?: string
+    reviewerId?: string
+    decisionId?: string
+    metadata?: Record<string, unknown>
+  }): string {
     switch (type) {
       case 'editorial_decision':
         return `Editorial Decision: ${data.decision?.replace('_', ' ').toUpperCase()}`
@@ -326,7 +340,14 @@ export class DecisionProcessingService {
     }
   }
 
-  private getNotificationMessage(type: string, data: any): string {
+  private getNotificationMessage(type: string, data: {
+    manuscriptId: string
+    manuscriptTitle: string
+    authorId?: string
+    reviewerId?: string
+    decisionId?: string
+    metadata?: Record<string, unknown>
+  }): string {
     switch (type) {
       case 'editorial_decision':
         return `Your manuscript "${data.title}" has received an editorial decision.`

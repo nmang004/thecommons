@@ -145,7 +145,7 @@ export async function POST(
 }
 
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
@@ -193,7 +193,7 @@ export async function PUT(
 ) {
   try {
     const supabase = await createClient()
-    const manuscriptId = params.id
+    const _manuscriptId = params.id
     
     const {
       data: { user },

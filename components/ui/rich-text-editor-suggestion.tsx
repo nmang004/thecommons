@@ -1,3 +1,4 @@
+import React from 'react'
 import { ReactRenderer } from '@tiptap/react'
 import tippy from 'tippy.js'
 import { SuggestionProps } from '@tiptap/suggestion'
