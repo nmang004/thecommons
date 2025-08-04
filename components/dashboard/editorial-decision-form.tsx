@@ -1,12 +1,18 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useReducer } from 'react'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
-import { Card } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Progress } from '@/components/ui/progress'
+import { DecisionSummaryEditor } from './decision-components/DecisionSummaryEditor'
+import { AuthorLetterBuilder } from './decision-components/AuthorLetterBuilder'
+import { PostDecisionActions } from './decision-components/PostDecisionActions'
+import { DecisionProcessingService, ProcessDecisionInput } from '@/lib/services/decision-processing-service'
+import { createClient } from '@/lib/supabase/client'
 import { 
   CheckCircle,
   XCircle,
@@ -19,7 +25,11 @@ import {
   Save,
   AlertTriangle,
   Clock,
-  X
+  X,
+  ArrowRight,
+  ArrowLeft,
+  Settings,
+  MessageSquare
 } from 'lucide-react'
 
 interface Review {
@@ -50,6 +60,8 @@ interface EditorialDecisionFormProps {
     title: string
     abstract: string
     status: string
+    submitted_at?: string
+    field_of_study: string
     profiles?: {
       full_name: string
       email: string
@@ -59,7 +71,56 @@ interface EditorialDecisionFormProps {
   onSubmit: (decision: any) => void
   onCancel: () => void
   isLoading?: boolean
+  availableEditors?: Array<{
+    id: string
+    full_name: string
+    role: string
+  }>
+  templates?: Array<{
+    id: string
+    name: string
+    category: string
+    template_content: any
+  }>
+  userId?: string
 }
+
+// Decision form state management
+interface DecisionState {
+  currentStep: number
+  decision: string
+  components: {
+    editorSummary: string
+    authorLetter: string
+    reviewerComments: any[]
+    internalNotes: string
+    conditions: string[]
+    nextSteps: string[]
+    decisionRationale: string
+  }
+  actions: {
+    notifyAuthor: boolean
+    notifyReviewers: boolean
+    schedulePublication?: string | null
+    assignProductionEditor?: string | null
+    generateDOI: boolean
+    sendToProduction: boolean
+    followUpDate?: string | null
+  }
+  selectedTemplate?: any
+  isDraft: boolean
+  isValid: boolean
+}
+
+type DecisionAction = 
+  | { type: 'SET_STEP'; step: number }
+  | { type: 'SET_DECISION'; decision: string }
+  | { type: 'UPDATE_COMPONENT'; key: string; value: any }
+  | { type: 'UPDATE_ACTIONS'; actions: any }
+  | { type: 'SET_TEMPLATE'; template: any }
+  | { type: 'SET_DRAFT'; isDraft: boolean }
+  | { type: 'VALIDATE' }
+  | { type: 'RESET' }
 
 const DECISION_OPTIONS = [
   {
@@ -200,19 +261,86 @@ Best regards,`,
   }
 ]
 
+const decisionReducer = (state: DecisionState, action: DecisionAction): DecisionState => {
+  switch (action.type) {
+    case 'SET_STEP':
+      return { ...state, currentStep: action.step }
+    case 'SET_DECISION':
+      return { 
+        ...state, 
+        decision: action.decision,
+        actions: {
+          ...state.actions,
+          // Set default actions based on decision
+          notifyAuthor: true,
+          generateDOI: action.decision === 'accepted',
+          sendToProduction: action.decision === 'accepted'
+        }
+      }
+    case 'UPDATE_COMPONENT':
+      return {
+        ...state,
+        components: {
+          ...state.components,
+          [action.key]: action.value
+        }
+      }
+    case 'UPDATE_ACTIONS':
+      return {
+        ...state,
+        actions: { ...state.actions, ...action.actions }
+      }
+    case 'SET_TEMPLATE':
+      return { ...state, selectedTemplate: action.template }
+    case 'SET_DRAFT':
+      return { ...state, isDraft: action.isDraft }
+    case 'VALIDATE':       
+      const isValid = !!state.decision && !!state.components.authorLetter.trim()
+      return { ...state, isValid }
+    case 'RESET':
+      return initialDecisionState
+    default:
+      return state
+  }
+}
+
+const initialDecisionState: DecisionState = {
+  currentStep: 1,
+  decision: '',
+  components: {
+    editorSummary: '',
+    authorLetter: '',
+    reviewerComments: [],
+    internalNotes: '',
+    conditions: [],
+    nextSteps: [],
+    decisionRationale: ''
+  },
+  actions: {
+    notifyAuthor: true,
+    notifyReviewers: false,
+    generateDOI: false,
+    sendToProduction: false
+  },
+  isDraft: false,
+  isValid: false
+}
+
 export function EditorialDecisionForm({
   manuscript,
   reviews,
   onSubmit,
   onCancel,
-  isLoading = false
+  isLoading = false,
+  availableEditors = [],
+  templates = [],
+  userId
 }: EditorialDecisionFormProps) {
-  const [selectedDecision, setSelectedDecision] = useState('')
-  const [decisionLetter, setDecisionLetter] = useState('')
-  const [internalNotes, setInternalNotes] = useState('')
-  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null)
+  const [state, dispatch] = useReducer(decisionReducer, initialDecisionState)
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [processingStep, setProcessingStep] = useState('')
   const [customTemplates, setCustomTemplates] = useState<DecisionTemplate[]>([])
-  const [activeTab, setActiveTab] = useState<'decision' | 'reviews' | 'templates'>('decision')
+  const supabase = createClient()
 
   // Load custom templates
   useEffect(() => {
@@ -230,40 +358,80 @@ export function EditorialDecisionForm({
     loadTemplates()
   }, [])
 
-  const allTemplates = [...DEFAULT_TEMPLATES, ...customTemplates]
+  // Validate form on state changes
+  useEffect(() => {
+    dispatch({ type: 'VALIDATE' })
+  }, [state.decision, state.components.authorLetter])
 
-  // Generate review summary for templates
-  const generateReviewSummary = () => {
-    if (reviews.length === 0) return 'No reviews available.'
+  // Auto-save draft every 30 seconds
+  useEffect(() => {
+    if (!state.decision || !state.components.authorLetter.trim()) return
 
-    const summaries = reviews.map((review, index) => {
-      const reviewerName = review.profiles?.full_name || `Reviewer ${index + 1}`
-      return `
-**${reviewerName}** (Recommendation: ${review.recommendation.replace('_', ' ')}, Confidence: ${review.confidence_level}/5):
+    const autoSaveInterval = setInterval(() => {
+      handleSaveDraft()
+    }, 30000) // 30 seconds
 
-${review.summary}
+    return () => clearInterval(autoSaveInterval)
+  }, [state])
 
-${review.major_comments}
+  const allTemplates = [...DEFAULT_TEMPLATES, ...customTemplates, ...templates]
 
-${review.minor_comments ? `Minor comments: ${review.minor_comments}` : ''}
-`.trim()
-    })
+  // Decision step configuration
+  const DECISION_STEPS = [
+    { id: 1, title: 'Decision Type', description: 'Select your editorial decision', icon: CheckCircle },
+    { id: 2, title: 'Editorial Summary', description: 'Summarize your assessment', icon: FileText },
+    { id: 3, title: 'Author Letter', description: 'Compose the decision letter', icon: MessageSquare },
+    { id: 4, title: 'Actions & Settings', description: 'Configure post-decision actions', icon: Settings },
+    { id: 5, title: 'Review & Submit', description: 'Final review and submission', icon: Send }
+  ]
 
-    return summaries.join('\n\n---\n\n')
+  const currentStepConfig = DECISION_STEPS.find(step => step.id === state.currentStep)
+  const progressPercentage = (state.currentStep / DECISION_STEPS.length) * 100
+
+  // Handle step navigation
+  const canGoNext = () => {
+    switch (state.currentStep) {
+      case 1: return !!state.decision
+      case 2: return !!state.components.editorSummary.trim()
+      case 3: return !!state.components.authorLetter.trim()
+      case 4: return true // Actions are optional
+      case 5: return state.isValid
+      default: return false
+    }
   }
 
-  // Apply template to decision letter
-  const applyTemplate = (template: DecisionTemplate) => {
-    let letter = template.template
+  const handleNextStep = () => {
+    if (canGoNext() && state.currentStep < DECISION_STEPS.length) {
+      dispatch({ type: 'SET_STEP', step: state.currentStep + 1 })
+    }
+  }
+
+  const handlePreviousStep = () => {
+    if (state.currentStep > 1) {
+      dispatch({ type: 'SET_STEP', step: state.currentStep - 1 })
+    }
+  }
+
+  // Handle template application
+  const applyTemplate = (template: any) => {
+    dispatch({ type: 'SET_TEMPLATE', template })
+    dispatch({ type: 'SET_DECISION', decision: template.decision_type || template.decision })
     
-    // Replace placeholders
-    letter = letter.replace('{author_name}', manuscript.profiles?.full_name || 'Author')
-    letter = letter.replace('{manuscript_title}', manuscript.title)
-    letter = letter.replace('{review_summary}', generateReviewSummary())
+    // Apply template content to author letter
+    let letterContent = template.template || template.template_content?.sections?.map((s: any) => s.content).join('\n\n') || ''
     
-    setDecisionLetter(letter)
-    setSelectedDecision(template.decision)
-    setSelectedTemplate(template.id)
+    // Replace variables
+    letterContent = letterContent.replace(/{{author_name}}/g, manuscript.profiles?.full_name || 'Author')
+    letterContent = letterContent.replace(/{{manuscript_title}}/g, manuscript.title)
+    letterContent = letterContent.replace(/{{editor_name}}/g, 'Editor Name')
+    letterContent = letterContent.replace(/{{journal_name}}/g, 'The Commons')
+    
+    dispatch({ type: 'UPDATE_COMPONENT', key: 'authorLetter', value: letterContent })
+    
+    // Apply default actions if specified
+    if (template.template_content?.defaultActions) {
+      dispatch({ type: 'UPDATE_ACTIONS', actions: template.template_content.defaultActions })
+    }
   }
 
   // Get review statistics
@@ -287,96 +455,138 @@ ${review.minor_comments ? `Minor comments: ${review.minor_comments}` : ''}
     }
   }
 
-  const handleSubmit = () => {
-    if (!selectedDecision || !decisionLetter.trim()) return
+  // Handle form submission
+  const handleSubmit = async (isDraft: boolean = false) => {
+    if (!state.isValid && !isDraft) return
 
-    onSubmit({
-      decision: selectedDecision,
-      decisionLetter: decisionLetter.trim(),
-      internalNotes: internalNotes.trim(),
-      templateUsed: selectedTemplate
-    })
+    setIsProcessing(true)
+    setProcessingStep(isDraft ? 'Saving draft...' : 'Processing decision...')
+
+    try {
+      const decisionService = new DecisionProcessingService(supabase)
+      
+      const input: ProcessDecisionInput = {
+        manuscriptId: manuscript.id,
+        editorId: userId || '',
+        decision: state.decision as any,
+        components: state.components,
+        actions: state.actions,
+        templateId: state.selectedTemplate?.id,
+        templateVersion: 1,
+        isDraft
+      }
+
+      const result = await decisionService.processDecision(input)
+
+      if (result.success) {
+        onSubmit({
+          success: true,
+          decisionId: result.decisionId,
+          isDraft,
+          queuedActions: result.queuedActions
+        })
+      } else {
+        throw new Error(result.error || 'Failed to process decision')
+      }
+    } catch (error) {
+      console.error('Decision submission error:', error)
+      // Handle error (show toast, etc.)
+    } finally {
+      setIsProcessing(false)
+      setProcessingStep('')
+    }
   }
 
+  const handleSaveDraft = () => handleSubmit(true)
+  const handleFinalSubmit = () => handleSubmit(false)
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-6xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-heading font-semibold text-gray-900">
-            Editorial Decision
+        <div className="flex-1">
+          <h3 className="text-xl font-heading font-semibold text-gray-900">
+            Editorial Decision Workflow
           </h3>
-          <p className="text-sm text-gray-600 line-clamp-1">
+          <p className="text-sm text-gray-600 line-clamp-2 max-w-2xl">
             {manuscript.title}
           </p>
         </div>
-        <Button variant="outline" onClick={onCancel} disabled={isLoading}>
+        <Button variant="outline" onClick={onCancel} disabled={isProcessing}>
           <X className="w-4 h-4" />
         </Button>
       </div>
 
-      {/* Review Summary */}
-      <Card className="p-4 bg-blue-50 border-blue-200">
-        <div className="flex items-center justify-between mb-3">
-          <h4 className="font-medium text-blue-900">Review Summary</h4>
-          <Badge variant="outline" className="text-blue-800">
-            {reviewStats.total} Reviews
-          </Badge>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
-          <div className="text-center">
-            <div className="text-lg font-semibold text-green-600">{reviewStats.accept}</div>
-            <div className="text-gray-600">Accept</div>
+      {/* Progress Bar */}
+      <div className="bg-white border rounded-lg p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-3">
+            {currentStepConfig && (
+              <>
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <currentStepConfig.icon className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <h4 className="font-medium text-gray-900">
+                    Step {state.currentStep}: {currentStepConfig.title}
+                  </h4>
+                  <p className="text-sm text-gray-600">
+                    {currentStepConfig.description}
+                  </p>
+                </div>
+              </>
+            )}
           </div>
-          <div className="text-center">
-            <div className="text-lg font-semibold text-blue-600">{reviewStats.minorRevisions}</div>
-            <div className="text-gray-600">Minor Rev.</div>
-          </div>
-          <div className="text-center">
-            <div className="text-lg font-semibold text-orange-600">{reviewStats.majorRevisions}</div>
-            <div className="text-gray-600">Major Rev.</div>
-          </div>
-          <div className="text-center">
-            <div className="text-lg font-semibold text-red-600">{reviewStats.reject}</div>
-            <div className="text-gray-600">Reject</div>
-          </div>
-          <div className="text-center">
-            <div className="text-lg font-semibold text-gray-600">{reviewStats.avgConfidence}</div>
-            <div className="text-gray-600">Avg. Confidence</div>
+          <div className="text-sm text-gray-500">
+            {state.currentStep} of {DECISION_STEPS.length}
           </div>
         </div>
-      </Card>
+        
+        <Progress value={progressPercentage} className="w-full" />
+        
+        <div className="flex justify-between mt-2 text-xs text-gray-500">
+          {DECISION_STEPS.map((step) => (
+            <div key={step.id} className={`flex-1 text-center ${
+              step.id === state.currentStep ? 'font-medium text-blue-600' : 
+              step.id < state.currentStep ? 'text-green-600' : ''
+            }`}>
+              {step.title}
+            </div>
+          ))}
+        </div>
+      </div>
 
-      {/* Tabbed Content */}
-      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)}>
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="decision">Decision</TabsTrigger>
-          <TabsTrigger value="reviews">Review Details</TabsTrigger>
-          <TabsTrigger value="templates">Templates</TabsTrigger>
-        </TabsList>
+      {/* Step Content */}
+      <div className="bg-white border rounded-lg">
+        {/* Step 1: Decision Selection */}
+        {state.currentStep === 1 && (
+          <div className="p-6">
+            <div className="mb-6">
+              <h4 className="text-lg font-medium text-gray-900 mb-2">Select Editorial Decision</h4>
+              <p className="text-sm text-gray-600">
+                Choose the appropriate decision based on the peer review feedback and your editorial assessment.
+              </p>
+            </div>
 
-        {/* Decision Tab */}
-        <TabsContent value="decision" className="space-y-6 mt-6">
-          {/* Decision Selection */}
-          <div>
-            <Label className="text-base font-medium mb-4 block">Select Decision</Label>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {DECISION_OPTIONS.map((option) => {
                 const Icon = option.icon
-                const isSelected = selectedDecision === option.value
+                const isSelected = state.decision === option.value
                 
                 return (
                   <Card
                     key={option.value}
-                    className={`p-4 cursor-pointer transition-colors ${
+                    className={`p-4 cursor-pointer transition-all hover:shadow-md ${
                       isSelected 
-                        ? `${option.color} ring-2 ring-offset-2` 
+                        ? `${option.color} ring-2 ring-offset-2 ring-blue-500` 
                         : 'hover:bg-gray-50'
                     }`}
-                    onClick={() => setSelectedDecision(option.value)}
+                    onClick={() => dispatch({ type: 'SET_DECISION', decision: option.value })}
                   >
                     <div className="flex items-center space-x-3">
-                      <Icon className={`w-6 h-6 ${isSelected ? '' : 'text-gray-400'}`} />
+                      <Icon className={`w-6 h-6 ${
+                        isSelected ? 'text-current' : 'text-gray-400'
+                      }`} />
                       <div>
                         <h4 className="font-medium">{option.label}</h4>
                         <p className="text-sm text-gray-600">{option.description}</p>
@@ -387,197 +597,175 @@ ${review.minor_comments ? `Minor comments: ${review.minor_comments}` : ''}
               })}
             </div>
           </div>
+        )}
 
-          {/* Decision Letter */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <Label htmlFor="decisionLetter" className="text-base font-medium">
-                Decision Letter
-              </Label>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setActiveTab('templates')}
-              >
-                <FileText className="w-4 h-4 mr-2" />
-                Use Template
-              </Button>
-            </div>
-            <Textarea
-              id="decisionLetter"
-              value={decisionLetter}
-              onChange={(e) => setDecisionLetter(e.target.value)}
-              rows={12}
-              placeholder="Write your decision letter to the author..."
-              className="font-mono text-sm"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              This letter will be sent to the corresponding author and all co-authors.
-            </p>
-          </div>
+        {/* Step 2: Editorial Summary */}
+        {state.currentStep === 2 && (
+          <DecisionSummaryEditor
+            manuscript={manuscript}
+            reviews={reviews}
+            value={state.components.editorSummary}
+            onChange={(value) => dispatch({ type: 'UPDATE_COMPONENT', key: 'editorSummary', value })}
+            className="p-6"
+          />
+        )}
 
-          {/* Internal Notes */}
-          <div>
-            <Label htmlFor="internalNotes" className="text-base font-medium mb-2 block">
-              Internal Notes (Optional)
-            </Label>
-            <Textarea
-              id="internalNotes"
-              value={internalNotes}
-              onChange={(e) => setInternalNotes(e.target.value)}
-              rows={4}
-              placeholder="Add any internal notes for the editorial record (not visible to authors)..."
-            />
-          </div>
-        </TabsContent>
+        {/* Step 3: Author Letter */}
+        {state.currentStep === 3 && (
+          <AuthorLetterBuilder
+            manuscript={manuscript}
+            reviews={reviews}
+            value={state.components.authorLetter}
+            onChange={(value) => dispatch({ type: 'UPDATE_COMPONENT', key: 'authorLetter', value })}
+            selectedTemplate={state.selectedTemplate}
+            onTemplateSelect={applyTemplate}
+            className="p-6"
+          />
+        )}
 
-        {/* Reviews Tab */}
-        <TabsContent value="reviews" className="space-y-4 mt-6">
-          {reviews.length > 0 ? (
-            reviews.map((review, index) => (
-              <Card key={review.id} className="p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h4 className="font-medium text-gray-900">
-                      {review.profiles?.full_name || `Reviewer ${index + 1}`}
-                    </h4>
-                    <p className="text-sm text-gray-600">
-                      Submitted {new Date(review.submitted_at).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <Badge className={`${getRecommendationColor(review.recommendation)} border mb-1`}>
-                      {review.recommendation.replace('_', ' ')}
-                    </Badge>
-                    <p className="text-xs text-gray-600">
-                      Confidence: {review.confidence_level}/5
-                    </p>
-                  </div>
-                </div>
+        {/* Step 4: Post-Decision Actions */}
+        {state.currentStep === 4 && (
+          <PostDecisionActions
+            decision={state.decision}
+            actions={state.actions}
+            onChange={(actions) => dispatch({ type: 'UPDATE_ACTIONS', actions })}
+            availableEditors={availableEditors}
+            className="p-6"
+          />
+        )}
 
-                <div className="space-y-4">
-                  <div>
-                    <h5 className="text-sm font-medium text-gray-700 mb-2">Summary</h5>
-                    <p className="text-sm text-gray-600 leading-relaxed">{review.summary}</p>
-                  </div>
-
-                  <div>
-                    <h5 className="text-sm font-medium text-gray-700 mb-2">Major Comments</h5>
-                    <p className="text-sm text-gray-600 leading-relaxed">{review.major_comments}</p>
-                  </div>
-
-                  {review.minor_comments && (
-                    <div>
-                      <h5 className="text-sm font-medium text-gray-700 mb-2">Minor Comments</h5>
-                      <p className="text-sm text-gray-600 leading-relaxed">{review.minor_comments}</p>
-                    </div>
-                  )}
-
-                  {review.comments_for_editor && (
-                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                      <h5 className="text-sm font-medium text-yellow-800 mb-2">
-                        Confidential Comments (Editor Only)
-                      </h5>
-                      <p className="text-sm text-yellow-700 leading-relaxed">
-                        {review.comments_for_editor}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </Card>
-            ))
-          ) : (
-            <div className="text-center py-8">
-              <Users className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-              <h4 className="text-lg font-medium text-gray-900 mb-2">No Reviews Available</h4>
-              <p className="text-gray-600">
-                No peer reviews have been submitted for this manuscript yet.
+        {/* Step 5: Review & Submit */}
+        {state.currentStep === 5 && (
+          <div className="p-6 space-y-6">
+            <div className="mb-6">
+              <h4 className="text-lg font-medium text-gray-900 mb-2">Review Your Decision</h4>
+              <p className="text-sm text-gray-600">
+                Please review all details before submitting your editorial decision.
               </p>
             </div>
-          )}
-        </TabsContent>
 
-        {/* Templates Tab */}
-        <TabsContent value="templates" className="space-y-4 mt-6">
-          <div className="grid gap-4">
-            {allTemplates
-              .filter(template => !selectedDecision || template.decision === selectedDecision)
-              .map((template) => (
-                <Card key={template.id} className="p-4">
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <h4 className="font-medium text-gray-900 mb-1">{template.name}</h4>
-                      <Badge variant="outline" className="mb-2">
-                        {template.decision.replace('_', ' ')}
+            {/* Decision Summary */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Decision Summary</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Decision</Label>
+                    <div className="mt-1">
+                      <Badge className={DECISION_OPTIONS.find(d => d.value === state.decision)?.color}>
+                        {DECISION_OPTIONS.find(d => d.value === state.decision)?.label}
                       </Badge>
-                      <p className="text-sm text-gray-600 line-clamp-3">
-                        {template.template.substring(0, 200)}...
-                      </p>
-                    </div>
-                    <div className="flex space-x-2 ml-4">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          // Preview template in a modal or expanded view
-                          console.log('Preview template:', template)
-                        }}
-                      >
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={() => {
-                          applyTemplate(template)
-                          setActiveTab('decision')
-                        }}
-                      >
-                        Use Template
-                      </Button>
                     </div>
                   </div>
-                </Card>
-              ))}
-          </div>
-        </TabsContent>
-      </Tabs>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Template Used</Label>
+                    <div className="mt-1 text-sm">
+                      {state.selectedTemplate?.name || 'No template'}
+                    </div>
+                  </div>
+                </div>
+                
+                <div>
+                  <Label className="text-sm font-medium text-gray-600">Active Actions</Label>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {Object.entries(state.actions)
+                      .filter(([_, value]) => value === true)
+                      .map(([key, _]) => (
+                      <Badge key={key} variant="outline" className="text-xs">
+                        {key.replace(/([A-Z])/g, ' $1').toLowerCase()}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-      {/* Action Buttons */}
-      <div className="flex justify-between items-center pt-6 border-t">
-        <div className="flex items-center space-x-2 text-sm text-gray-600">
-          <AlertTriangle className="w-4 h-4" />
-          <span>This decision will be permanent and cannot be undone.</span>
-        </div>
-        
-        <div className="flex space-x-3">
-          <Button variant="outline" onClick={onCancel} disabled={isLoading}>
-            Cancel
-          </Button>
+            {/* Warning */}
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <div className="flex items-start space-x-3">
+                <AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5" />
+                <div>
+                  <h4 className="font-medium text-amber-900">Important Notice</h4>
+                  <p className="text-sm text-amber-700 mt-1">
+                    Once submitted, this editorial decision cannot be undone. The decision letter will be sent to the author and all configured actions will be triggered automatically.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+      </div>
+
+
+
+
+      {/* Navigation & Action Buttons */}
+      <div className="flex justify-between items-center pt-6 border-t bg-gray-50 px-6 py-4 rounded-b-lg">
+        <div className="flex items-center space-x-3">
           <Button
             variant="outline"
-            disabled={!selectedDecision || !decisionLetter.trim() || isLoading}
+            onClick={handlePreviousStep}
+            disabled={state.currentStep === 1 || isProcessing}
           >
-            <Save className="w-4 h-4 mr-2" />
-            Save Draft
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Previous
           </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={!selectedDecision || !decisionLetter.trim() || isLoading}
-          >
-            {isLoading ? (
-              <>
-                <Clock className="w-4 h-4 mr-2 animate-spin" />
-                Submitting...
-              </>
-            ) : (
-              <>
-                <Send className="w-4 h-4 mr-2" />
-                Submit Decision
-              </>
-            )}
-          </Button>
+        </div>
+        
+        <div className="flex items-center space-x-3">
+          {state.currentStep < DECISION_STEPS.length ? (
+            <>
+              <Button
+                variant="outline"
+                onClick={handleSaveDraft}
+                disabled={!state.decision || isProcessing}
+              >
+                <Save className="w-4 h-4 mr-2" />
+                Save Draft
+              </Button>
+              <Button
+                onClick={handleNextStep}
+                disabled={!canGoNext() || isProcessing}
+              >
+                Next
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                variant="outline"
+                onClick={handleSaveDraft}
+                disabled={isProcessing}
+              >
+                <Save className="w-4 h-4 mr-2" />
+                Save Draft
+              </Button>
+              <Button
+                onClick={handleFinalSubmit}
+                disabled={!state.isValid || isProcessing}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                {isProcessing ? (
+                  <>
+                    <Clock className="w-4 h-4 mr-2 animate-spin" />
+                    {processingStep}
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4 mr-2" />
+                    Submit Decision
+                  </>
+                )}
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </div>
   )
 }
+

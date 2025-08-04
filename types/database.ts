@@ -159,7 +159,89 @@ export interface EditorialDecision {
   decision: ManuscriptStatus
   decision_letter: string
   internal_notes?: string | null
+  
+  // Enhanced decision components
+  components?: {
+    editorSummary?: string
+    authorLetter: string
+    reviewerComments: ReviewComment[]
+    internalNotes?: string
+    conditions?: string[]
+    nextSteps?: string[]
+    decisionRationale?: string
+  } | null
+  
+  // Template information
+  template_id?: string | null
+  template_version?: number | null
+  
+  // Post-decision actions
+  actions?: {
+    notifyAuthor: boolean
+    notifyReviewers: boolean
+    schedulePublication?: string | null // ISO date string
+    assignProductionEditor?: string | null // user ID
+    generateDOI?: boolean
+    sendToProduction?: boolean
+    followUpDate?: string | null // ISO date string
+  } | null
+  
+  // Draft and versioning
+  draft_data?: any | null
+  version: number
+  is_draft?: boolean
+  
+  // Metadata
+  submitted_at?: string | null
   created_at: string
+  updated_at?: string | null
+}
+
+export interface ReviewComment {
+  id: string
+  review_id: string
+  reviewer_name?: string
+  comment_type: 'summary' | 'major' | 'minor' | 'confidential'
+  content: string
+  include_in_letter: boolean
+  position?: number
+}
+
+export interface DecisionTemplate {
+  id: string
+  name: string
+  category: 'accept' | 'minor_revision' | 'major_revision' | 'reject' | 'desk_reject'
+  decision_type: ManuscriptStatus
+  template_content: {
+    sections: TemplateSection[]
+    variables: string[]
+    defaultActions?: DecisionActions
+  }
+  is_public: boolean
+  created_by: string
+  usage_count: number
+  tags?: string[] | null
+  description?: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface TemplateSection {
+  id: string
+  type: 'text' | 'variable' | 'review_summary' | 'conditions' | 'next_steps'
+  content: string
+  required: boolean
+  order: number
+}
+
+export interface DecisionActions {
+  notifyAuthor: boolean
+  notifyReviewers: boolean
+  schedulePublication?: boolean
+  assignProductionEditor?: boolean
+  generateDOI?: boolean
+  sendToProduction?: boolean
+  daysUntilFollowUp?: number
 }
 
 export interface ActivityLog {
@@ -342,11 +424,23 @@ export interface Database {
       }
       editorial_decisions: {
         Row: EditorialDecision
-        Insert: Omit<EditorialDecision, 'id' | 'created_at'> & {
+        Insert: Omit<EditorialDecision, 'id' | 'created_at' | 'updated_at' | 'version'> & {
           id?: string
           created_at?: string
+          updated_at?: string
+          version?: number
         }
         Update: Partial<Omit<EditorialDecision, 'id' | 'created_at'>>
+      }
+      editorial_templates: {
+        Row: DecisionTemplate
+        Insert: Omit<DecisionTemplate, 'id' | 'created_at' | 'updated_at' | 'usage_count'> & {
+          id?: string
+          created_at?: string
+          updated_at?: string
+          usage_count?: number
+        }
+        Update: Partial<Omit<DecisionTemplate, 'id' | 'created_at'>>
       }
       activity_logs: {
         Row: ActivityLog
