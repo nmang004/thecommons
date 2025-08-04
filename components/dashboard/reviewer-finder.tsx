@@ -39,6 +39,15 @@ interface Reviewer {
   conflicts?: string[]
   bio?: string
   orcid?: string
+  // Enhanced matching scores
+  relevance_score?: number
+  quality_score?: number
+  overall_score?: number
+  match_reasons?: string[]
+  // COI information
+  coi_eligible?: boolean
+  coi_conflicts?: any[]
+  coi_risk_score?: number
 }
 
 interface ReviewerFinderProps {
@@ -408,6 +417,15 @@ Best regards,`
                               </div>
                             </div>
                           )}
+
+                          {reviewer.overall_score && (
+                            <div className="text-center">
+                              <div className="text-xs text-gray-500">Overall</div>
+                              <div className={`font-medium ${getRelevanceColor(reviewer.overall_score)}`}>
+                                {reviewer.overall_score}%
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -429,6 +447,42 @@ Best regards,`
                       </div>
                     )}
                     
+                    {/* Match Reasons */}
+                    {reviewer.match_reasons && reviewer.match_reasons.length > 0 && (
+                      <div className="mt-3">
+                        <div className="text-xs text-gray-500 mb-1">Match Reasons:</div>
+                        <div className="flex flex-wrap gap-1">
+                          {reviewer.match_reasons.slice(0, 3).map((reason, idx) => (
+                            <Badge key={idx} variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                              {reason}
+                            </Badge>
+                          ))}
+                          {reviewer.match_reasons.length > 3 && (
+                            <Badge variant="outline" className="text-xs">
+                              +{reviewer.match_reasons.length - 3} more
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* COI Status */}
+                    {reviewer.coi_eligible !== undefined && (
+                      <div className="mt-2">
+                        {!reviewer.coi_eligible ? (
+                          <Badge variant="destructive" className="text-xs">
+                            <AlertTriangle className="w-3 h-3 mr-1" />
+                            Conflict of Interest
+                          </Badge>
+                        ) : reviewer.coi_conflicts && reviewer.coi_conflicts.length > 0 ? (
+                          <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-800 border-yellow-200">
+                            <AlertTriangle className="w-3 h-3 mr-1" />
+                            {reviewer.coi_conflicts.length} COI Warning{reviewer.coi_conflicts.length !== 1 ? 's' : ''}
+                          </Badge>
+                        ) : null}
+                      </div>
+                    )}
+
                     {reviewer.recent_reviews !== undefined && reviewer.avg_review_time && (
                       <div className="mt-2 flex items-center space-x-4 text-xs text-gray-500">
                         <span>Recent reviews: {reviewer.recent_reviews}</span>

@@ -37,6 +37,18 @@ export interface Profile {
   linkedin_url?: string | null
   twitter_handle?: string | null
   website_url?: string | null
+  // Enhanced reviewer fields
+  current_review_load?: number | null
+  avg_review_quality_score?: number | null
+  response_rate?: number | null
+  specializations?: any | null
+  collaboration_history?: any | null
+  preferred_fields?: string[] | null
+  availability_status?: string | null
+  max_concurrent_reviews?: number | null
+  review_preferences?: any | null
+  coi_declarations?: any | null
+  coi_last_updated?: string | null
   created_at: string
   updated_at: string
 }
@@ -180,6 +192,81 @@ export interface FieldOfStudy {
   icon?: string | null
   color?: string | null
   manuscript_count: number
+}
+
+export interface ReviewerConflict {
+  id: string
+  reviewer_id: string
+  conflicted_with_id: string
+  conflict_type: string
+  severity: string
+  description?: string | null
+  evidence?: any | null
+  detected_automatically: boolean
+  reported_by?: string | null
+  status: string
+  valid_from: string
+  valid_until?: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface InstitutionalAffiliationHistory {
+  id: string
+  profile_id: string
+  institution_name: string
+  department?: string | null
+  position_title?: string | null
+  start_date?: string | null
+  end_date?: string | null
+  is_primary: boolean
+  source?: string | null
+  created_at: string
+}
+
+export interface CollaborationNetwork {
+  id: string
+  person_a_id: string
+  person_b_id: string
+  relationship_type: string
+  collaboration_count: number
+  first_collaboration_date?: string | null
+  last_collaboration_date?: string | null
+  publications?: any | null
+  confidence_score: number
+  source?: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface ReviewerPerformanceMetrics {
+  id: string
+  reviewer_id: string
+  period_start: string
+  period_end: string
+  invitations_received: number
+  invitations_accepted: number
+  reviews_completed: number
+  reviews_completed_on_time: number
+  avg_review_time_days?: number | null
+  avg_quality_score?: number | null
+  total_review_time_hours?: number | null
+  reliability_score?: number | null
+  expertise_alignment_score?: number | null
+  created_at: string
+  updated_at: string
+}
+
+export interface ReviewerAvailability {
+  id: string
+  reviewer_id: string
+  available_from: string
+  available_until?: string | null
+  max_reviews: number
+  preferred_fields?: string[] | null
+  notes?: string | null
+  created_at: string
+  updated_at: string
 }
 
 // Database types for Supabase

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { ReviewerMatchingService } from '@/lib/services/reviewer-matching-service'
 
 export async function GET(request: NextRequest) {
   try {
@@ -36,6 +37,9 @@ export async function GET(request: NextRequest) {
     const manuscriptId = searchParams.get('manuscriptId')
     const field = searchParams.get('field')
     const limit = parseInt(searchParams.get('limit') || '50')
+    const minHIndex = searchParams.get('minHIndex') ? parseInt(searchParams.get('minHIndex')!) : undefined
+    const minPublications = searchParams.get('minPublications') ? parseInt(searchParams.get('minPublications')!) : undefined
+    const maxCurrentLoad = searchParams.get('maxCurrentLoad') ? parseInt(searchParams.get('maxCurrentLoad')!) : undefined
 
     if (!manuscriptId && !field) {
       return NextResponse.json(
@@ -47,14 +51,24 @@ export async function GET(request: NextRequest) {
     let manuscriptField = field
     let manuscriptSubfield = null
     let manuscriptKeywords: string[] = []
-    let authorId = null
+    let authorIds: string[] = []
     let excludedReviewers: string[] = []
+    let references: string[] = []
 
-    // If manuscript ID is provided, get manuscript details
+    // If manuscript ID is provided, get comprehensive manuscript details
     if (manuscriptId) {
       const { data: manuscript } = await supabase
         .from('manuscripts')
-        .select('field_of_study, subfield, keywords, author_id, excluded_reviewers')
+        .select(`
+          field_of_study, 
+          subfield, 
+          keywords, 
+          author_id, 
+          corresponding_author_id,
+          excluded_reviewers,
+          abstract,
+          title
+        `)
         .eq('id', manuscriptId)
         .single()
 
@@ -62,8 +76,33 @@ export async function GET(request: NextRequest) {
         manuscriptField = manuscript.field_of_study
         manuscriptSubfield = manuscript.subfield
         manuscriptKeywords = manuscript.keywords || []
-        authorId = manuscript.author_id
+        authorIds = [manuscript.author_id, manuscript.corresponding_author_id].filter(Boolean)
         excludedReviewers = manuscript.excluded_reviewers?.reviewer_ids || []
+
+        // Get co-authors
+        const { data: coauthors } = await supabase
+          .from('manuscript_coauthors')
+          .select('email')
+          .eq('manuscript_id', manuscriptId)
+
+        if (coauthors) {
+          // Find profiles for co-authors by email
+          const coauthorEmails = coauthors.map(ca => ca.email)
+          if (coauthorEmails.length > 0) {
+            const { data: coauthorProfiles } = await supabase
+              .from('profiles')
+              .select('id')
+              .in('email', coauthorEmails)
+
+            if (coauthorProfiles) {
+              authorIds.push(...coauthorProfiles.map(p => p.id))
+            }
+          }
+        }
+
+        // Extract references from abstract for citation matching  
+        // This is a simplified implementation - in production you'd want more sophisticated reference extraction
+        references = extractReferences(manuscript.abstract + ' ' + manuscript.title)
       }
     }
 
@@ -74,157 +113,53 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Build reviewer query
-    let reviewerQuery = supabase
-      .from('profiles')
-      .select(`
-        id,
-        full_name,
-        email,
-        affiliation,
-        expertise,
-        h_index,
-        total_publications,
-        bio,
-        orcid
-      `)
-      .eq('role', 'reviewer')
-
-    // Exclude the manuscript author
-    if (authorId) {
-      reviewerQuery = reviewerQuery.neq('id', authorId)
-    }
-
-    // Exclude explicitly excluded reviewers
-    if (excludedReviewers.length > 0) {
-      reviewerQuery = reviewerQuery.not('id', 'in', `(${excludedReviewers.join(',')})`)
-    }
-
-    reviewerQuery = reviewerQuery.limit(limit * 2) // Get more to allow for filtering
-
-    const { data: potentialReviewers, error: reviewerError } = await reviewerQuery
-
-    if (reviewerError) {
-      console.error('Error fetching reviewers:', reviewerError)
-      return NextResponse.json(
-        { error: 'Failed to fetch reviewers' },
-        { status: 500 }
-      )
-    }
-
-    // Get reviewer activity data (recent reviews, avg review time)
-    const reviewerIds = potentialReviewers?.map(r => r.id) || []
+    // Use the enhanced reviewer matching service
+    const matchingService = new ReviewerMatchingService()
     
-    const reviewerStats: { [key: string]: any } = {}
-    if (reviewerIds.length > 0) {
-      // Get review assignments in the last 12 months
-      const { data: recentAssignments } = await supabase
-        .from('review_assignments')
-        .select('reviewer_id, status, invited_at, completed_at')
-        .in('reviewer_id', reviewerIds)
-        .gte('invited_at', new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString())
-
-      // Calculate stats for each reviewer
-      reviewerIds.forEach(reviewerId => {
-        const assignments = recentAssignments?.filter(a => a.reviewer_id === reviewerId) || []
-        const completedReviews = assignments.filter(a => a.status === 'completed')
-        
-        // Calculate average review time
-        let avgReviewTime = null
-        if (completedReviews.length > 0) {
-          const totalTime = completedReviews.reduce((sum, review) => {
-            if (review.completed_at && review.invited_at) {
-              const days = Math.floor(
-                (new Date(review.completed_at).getTime() - new Date(review.invited_at).getTime()) 
-                / (1000 * 60 * 60 * 24)
-              )
-              return sum + days
-            }
-            return sum
-          }, 0)
-          avgReviewTime = Math.round(totalTime / completedReviews.length)
-        }
-
-        // Calculate availability score (simplified)
-        const totalAssignments = assignments.length
-        const completedCount = completedReviews.length
-        const declinedCount = assignments.filter(a => a.status === 'declined').length
-        const pendingCount = assignments.filter(a => a.status === 'invited').length
-
-        let availabilityScore = 100
-        if (totalAssignments > 0) {
-          // Reduce score based on decline rate and pending reviews
-          const declineRate = declinedCount / totalAssignments
-          availabilityScore = Math.max(0, 
-            100 - (declineRate * 50) - (pendingCount * 10) - (totalAssignments > 5 ? 20 : 0)
-          )
-        }
-
-        reviewerStats[reviewerId] = {
-          recent_reviews: completedCount,
-          avg_review_time: avgReviewTime,
-          availability_score: Math.round(availabilityScore)
-        }
-      })
+    const matchingCriteria = {
+      manuscript_id: manuscriptId || 'unknown',
+      field_of_study: manuscriptField,
+      subfield: manuscriptSubfield,
+      keywords: manuscriptKeywords,
+      author_ids: [...new Set(authorIds)], // Remove duplicates
+      references: references,
+      exclude_reviewer_ids: excludedReviewers,
+      min_h_index: minHIndex,
+      min_publications: minPublications,
+      max_current_load: maxCurrentLoad,
+      geographic_diversity: true,
+      institution_diversity: true
     }
 
-    // Enhanced reviewer matching and scoring
-    const enrichedReviewers = potentialReviewers?.map(reviewer => {
-      const stats = reviewerStats[reviewer.id] || {}
-      
-      // Calculate expertise match score
-      let expertiseScore = 0
-      if (reviewer.expertise) {
-        const reviewerExpertise = reviewer.expertise.map((e: string) => e.toLowerCase())
-        
-        // Field match
-        if (reviewerExpertise.some((exp: string) => exp.includes(manuscriptField.toLowerCase()))) {
-          expertiseScore += 40
-        }
-        
-        // Subfield match
-        if (manuscriptSubfield && reviewerExpertise.some((exp: string) => 
-          exp.includes(manuscriptSubfield.toLowerCase())
-        )) {
-          expertiseScore += 30
-        }
-        
-        // Keyword matches
-        manuscriptKeywords.forEach(keyword => {
-          if (reviewerExpertise.some((exp: string) => exp.includes(keyword.toLowerCase()))) {
-            expertiseScore += 5
-          }
-        })
-      }
+    const matchingResult = await matchingService.findReviewers(matchingCriteria, limit)
 
-      // Add conflicts check (simplified - would need more complex logic in production)
-      const conflicts = []
-      if (authorId === reviewer.id) {
-        conflicts.push(authorId)
-      }
-
-      return {
-        ...reviewer,
-        ...stats,
-        expertise_score: expertiseScore,
-        conflicts
-      }
-    }) || []
-
-    // Filter reviewers with reasonable expertise match
-    const qualifiedReviewers = enrichedReviewers
-      .filter(reviewer => reviewer.expertise_score > 20) // Minimum expertise threshold
-      .sort((a, b) => {
-        // Sort by composite score (expertise + availability + h-index)
-        const scoreA = (a.expertise_score || 0) + 
-                      (a.availability_score || 50) * 0.3 + 
-                      (a.h_index || 0) * 0.5
-        const scoreB = (b.expertise_score || 0) + 
-                      (b.availability_score || 50) * 0.3 + 
-                      (b.h_index || 0) * 0.5
-        return scoreB - scoreA
-      })
-      .slice(0, limit)
+    // Transform the results to match the expected frontend format
+    const transformedReviewers = matchingResult.matches.map(match => ({
+      id: match.reviewer.id,
+      full_name: match.reviewer.full_name,
+      email: match.reviewer.email,
+      affiliation: match.reviewer.affiliation,
+      expertise: match.reviewer.expertise,
+      h_index: match.reviewer.h_index,
+      total_publications: match.reviewer.total_publications,
+      recent_reviews: match.reviewer.recent_reviews,
+      avg_review_time: match.reviewer.avg_review_time,
+      availability_score: match.reviewer.availability_score,
+      bio: match.reviewer.bio,
+      orcid: match.reviewer.orcid,
+      // Enhanced matching scores
+      relevance_score: match.relevance_score,
+      quality_score: match.quality_score,
+      overall_score: match.overall_score,
+      match_reasons: match.match_reasons,
+      // COI information
+      coi_eligible: match.coi_eligibility?.is_eligible ?? true,
+      coi_conflicts: match.coi_eligibility?.conflicts || [],
+      coi_risk_score: match.coi_eligibility?.risk_score || 0,
+      // Legacy compatibility
+      expertise_score: match.relevance_score,
+      conflicts: match.coi_eligibility?.conflicts.map(c => c.author_id) || []
+    }))
 
     // Get suggested reviewers from manuscript if available
     let suggestedReviewers: any[] = []
@@ -241,16 +176,19 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({
-      reviewers: qualifiedReviewers,
+      reviewers: transformedReviewers,
       suggested: suggestedReviewers,
       metadata: {
-        total_potential: potentialReviewers?.length || 0,
-        qualified_count: qualifiedReviewers.length,
+        total_potential: matchingResult.total_candidates,
+        qualified_count: transformedReviewers.length,
         field: manuscriptField,
         subfield: manuscriptSubfield,
+        matching_strategy: matchingResult.metadata.matching_strategy,
         exclusions: {
-          author_excluded: !!authorId,
-          explicit_exclusions: excludedReviewers.length
+          author_excluded: authorIds.length > 0,
+          explicit_exclusions: excludedReviewers.length,
+          coi_filtered: matchingResult.metadata.exclusions.coi_filtered,
+          availability_filtered: matchingResult.metadata.exclusions.availability_filtered
         }
       }
     })
@@ -262,4 +200,26 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     )
   }
+}
+
+// Helper function to extract potential references/citations from text
+function extractReferences(text: string): string[] {
+  const references: string[] = []
+  
+  // Look for author names followed by years (simplified)
+  const authorYearPattern = /([A-Z][a-z]+(?:\s+[A-Z][a-z]*)*)\s*(?:et\s+al\.?)?\s*\((\d{4})\)/g
+  let match
+  
+  while ((match = authorYearPattern.exec(text)) !== null) {
+    references.push(`${match[1]} (${match[2]})`)
+  }
+  
+  // Look for DOI patterns
+  const doiPattern = /10\.\d{4,}\/[^\s]+/g
+  const doiMatches = text.match(doiPattern)
+  if (doiMatches) {
+    references.push(...doiMatches)
+  }
+  
+  return references.slice(0, 50) // Limit to 50 references
 }
