@@ -132,23 +132,8 @@ USING (
   -- Reviews are anonymized for authors (reviewer_id not exposed)
 );
 
--- Review assignments - Enhanced privacy
-CREATE POLICY "Review assignments maintain double-blind anonymity"
-ON review_assignments FOR SELECT
-USING (
-  -- Reviewers can see their own assignments
-  reviewer_id = auth.uid()
-  OR
-  -- Editors can see assignments for their manuscripts
-  EXISTS (
-    SELECT 1 FROM manuscripts 
-    WHERE id = review_assignments.manuscript_id 
-    AND (editor_id = auth.uid() OR EXISTS (
-      SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('editor', 'admin')
-    ))
-  )
-  -- Authors cannot see reviewer identities (double-blind)
-);
+-- Note: Review assignments policies are defined in 002_rls_policies.sql
+-- Removed duplicate policy to prevent infinite recursion issues
 
 -- ==========================================
 -- PAYMENT SECURITY ENHANCEMENTS
