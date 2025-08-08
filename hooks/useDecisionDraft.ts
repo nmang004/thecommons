@@ -122,24 +122,27 @@ export function useDecisionDraft({
       if (drafts.length > 0) {
         const latestDraft = drafts[0] // Most recent draft
         
-        // Convert database format to hook format
+        // Convert database format to hook format - using type assertion due to interface mismatches
         const draftState: DecisionDraftState = {
           decision: latestDraft.decision,
-          components: latestDraft.components || {
-            editorSummary: '',
-            authorLetter: latestDraft.decision_letter || '',
-            reviewerComments: [],
-            internalNotes: latestDraft.internal_notes || '',
-            conditions: [],
-            nextSteps: [],
-            decisionRationale: ''
+          components: {
+            editorSummary: latestDraft.components?.editorSummary || '',
+            authorLetter: latestDraft.decision_letter || latestDraft.components?.authorLetter || '',
+            reviewerComments: latestDraft.components?.reviewerComments || [],
+            internalNotes: latestDraft.internal_notes || latestDraft.components?.internalNotes || '',
+            conditions: latestDraft.components?.conditions || [],
+            nextSteps: latestDraft.components?.nextSteps || [],
+            decisionRationale: latestDraft.components?.decisionRationale || ''
           },
-          actions: latestDraft.actions || {
-            notifyAuthor: true,
-            notifyReviewers: false,
-            generateDOI: false,
-            sendToProduction: false
-          },
+          actions: {
+            notifyAuthor: latestDraft.actions?.notifyAuthor ?? true,
+            notifyReviewers: latestDraft.actions?.notifyReviewers ?? false,
+            schedulePublication: Boolean(latestDraft.actions?.schedulePublication),
+            assignProductionEditor: Boolean(latestDraft.actions?.assignProductionEditor),
+            generateDOI: latestDraft.actions?.generateDOI ?? false,
+            sendToProduction: latestDraft.actions?.sendToProduction ?? false,
+            daysUntilFollowUp: (latestDraft.actions as any)?.daysUntilFollowUp || (latestDraft.actions as any)?.followUpDate
+          } as any,
           selectedTemplate: latestDraft.template_id ? {
             id: latestDraft.template_id,
             version: latestDraft.template_version
@@ -171,7 +174,7 @@ export function useDecisionDraft({
         editorId: userId,
         decision: state.decision as any,
         components: state.components,
-        actions: state.actions,
+        actions: state.actions as any,
         templateId: state.selectedTemplate?.id,
         templateVersion: state.selectedTemplate?.version,
         isDraft: true

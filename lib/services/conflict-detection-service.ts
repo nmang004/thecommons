@@ -419,8 +419,8 @@ export class ConflictDetectionService {
 
     // Count by type and severity
     conflicts?.forEach(conflict => {
-      stats.by_type[conflict.conflict_type] = (stats.by_type[conflict.conflict_type] || 0) + 1
-      stats.by_severity[conflict.severity] = (stats.by_severity[conflict.severity] || 0) + 1
+      stats.by_type[conflict.conflict_type as keyof typeof stats.by_type] = (stats.by_type[conflict.conflict_type as keyof typeof stats.by_type] || 0) + 1
+      stats.by_severity[conflict.severity as keyof typeof stats.by_severity] = (stats.by_severity[conflict.severity as keyof typeof stats.by_severity] || 0) + 1
     })
 
     // Calculate blocked assignments and override rate

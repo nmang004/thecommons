@@ -202,13 +202,13 @@ export class DecisionProcessingService {
         await this.queueNotification('author', {
           decisionId,
           manuscriptId,
-          recipientId: manuscript.author_id,
+          authorId: manuscript.author_id,
           type: 'editorial_decision',
           data: {
             decision: manuscript.editorial_decisions[0]?.decision,
             title: manuscript.title
           }
-        })
+        } as any)
         queuedActions.push('notify_author')
       }
 
@@ -225,12 +225,12 @@ export class DecisionProcessingService {
             await this.queueNotification('reviewer', {
               decisionId,
               manuscriptId,
-              recipientId: reviewer.reviewer_id,
+              reviewerId: reviewer.reviewer_id,
               type: 'decision_published',
               data: {
                 title: manuscript.title
               }
-            })
+            } as any)
           }
           queuedActions.push('notify_reviewers')
         }
@@ -282,7 +282,7 @@ export class DecisionProcessingService {
     return queuedActions
   }
 
-  private async queueNotification(type: string, data: {
+  private async queueNotification(_type: string, data: {
     manuscriptId: string
     manuscriptTitle: string
     authorId?: string
@@ -295,14 +295,14 @@ export class DecisionProcessingService {
     await this.supabase
       .from('notifications')
       .insert({
-        user_id: data.recipientId,
-        type: data.type,
-        title: this.getNotificationTitle(data.type, data.data),
-        message: this.getNotificationMessage(data.type, data.data),
+        user_id: data.authorId || data.reviewerId,
+        type: (data as any).type,
+        title: this.getNotificationTitle((data as any).type, (data as any).data),
+        message: this.getNotificationMessage((data as any).type, (data as any).data),
         data: {
           manuscript_id: data.manuscriptId,
           decision_id: data.decisionId,
-          ...data.data
+          ...(data as any).data
         }
       })
   }
@@ -332,7 +332,7 @@ export class DecisionProcessingService {
   }): string {
     switch (type) {
       case 'editorial_decision':
-        return `Editorial Decision: ${data.decision?.replace('_', ' ').toUpperCase()}`
+        return `Editorial Decision: ${(data as any).decision?.replace('_', ' ').toUpperCase() || 'Unknown'}`
       case 'decision_published':
         return 'Editorial Decision Published'
       default:
@@ -350,9 +350,9 @@ export class DecisionProcessingService {
   }): string {
     switch (type) {
       case 'editorial_decision':
-        return `Your manuscript "${data.title}" has received an editorial decision.`
+        return `Your manuscript "${(data as any).title}" has received an editorial decision.`
       case 'decision_published':
-        return `The editorial decision for "${data.title}" has been published.`
+        return `The editorial decision for "${(data as any).title}" has been published.`
       default:
         return 'You have a new notification.'
     }

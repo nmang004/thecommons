@@ -138,7 +138,7 @@ export class PostDecisionActionOrchestrator {
             user_id: reviewer.reviewer_id,
             type: 'decision_published',
             title: 'Editorial Decision Published',
-            message: `The editorial decision for "${manuscript.title}" has been published. Thank you for your review.`,
+            message: `The editorial decision for "${(manuscript as any).title}" has been published. Thank you for your review.`,
             data: {
               manuscript_id: data.manuscriptId,
               decision_id: data.decisionId
@@ -147,12 +147,12 @@ export class PostDecisionActionOrchestrator {
 
         // Send email
         await this.sendEmailNotification({
-          to: reviewer.profiles.email,
-          subject: `Editorial Decision Published - ${manuscript.title}`,
+          to: (reviewer as any).profiles.email,
+          subject: `Editorial Decision Published - ${(manuscript as any).title}`,
           template: 'reviewer_decision_notification',
           variables: {
-            reviewer_name: reviewer.profiles.full_name,
-            manuscript_title: manuscript.title,
+            reviewer_name: (reviewer as any).profiles.full_name,
+            manuscript_title: (manuscript as any).title,
             journal_name: 'The Commons'
           }
         })

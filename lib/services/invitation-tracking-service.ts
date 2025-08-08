@@ -592,7 +592,7 @@ export class InvitationTrackingService {
       return []
     }
 
-    return (performance || []).map(p => ({
+    return (performance || []).map((p: any) => ({
       template_name: p.invitation_templates?.name || 'Unknown Template',
       template_id: p.template_id,
       total_sent: p.total_sent || 0,
@@ -657,7 +657,7 @@ export class InvitationTrackingService {
     // Calculate preferred fields based on acceptance rate
     const fieldStats: { [field: string]: { total: number; accepted: number } } = {}
     data.forEach(inv => {
-      const field = inv.review_assignments?.manuscripts?.field_of_study
+      const field = (inv as any).review_assignments?.manuscripts?.field_of_study
       if (field) {
         if (!fieldStats[field]) {
           fieldStats[field] = { total: 0, accepted: 0 }

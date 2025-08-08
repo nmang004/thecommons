@@ -105,7 +105,7 @@ Best regards,`
       manuscript.field_of_study.toLowerCase(),
       manuscript.subfield?.toLowerCase(),
       ...(manuscript.keywords?.map(k => k.toLowerCase()) || [])
-    ].filter(Boolean)
+    ].filter((term): term is string => Boolean(term))
 
     const reviewerExpertise = reviewer.expertise.map(e => e.toLowerCase())
 
@@ -115,7 +115,7 @@ Best regards,`
     }
 
     // Subfield match
-    if (manuscript.subfield && reviewerExpertise.some(exp => exp.includes(manuscript.subfield.toLowerCase()))) {
+    if (manuscript.subfield && reviewerExpertise.some(exp => exp.includes(manuscript.subfield?.toLowerCase() ?? ''))) {
       score += 30
     }
 

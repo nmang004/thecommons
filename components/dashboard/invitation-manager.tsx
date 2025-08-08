@@ -17,7 +17,7 @@ import {
   Eye,
   EyeOff,
   RefreshCw,
-  Template
+  FileText
 } from 'lucide-react'
 
 interface InvitationTemplate {
@@ -142,7 +142,7 @@ export function InvitationManager({
       }
     } catch (error) {
       console.error('Error sending invitations:', error)
-      alert(`Error sending invitations: ${error.message}`)
+      alert(`Error sending invitations: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
       setLoading(false)
     }
@@ -229,7 +229,7 @@ export function InvitationManager({
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="compose">
-            <Template className="w-4 h-4 mr-2" />
+            <FileText className="w-4 h-4 mr-2" />
             Compose
           </TabsTrigger>
           <TabsTrigger value="conflicts">

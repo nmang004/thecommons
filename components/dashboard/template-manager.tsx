@@ -64,12 +64,8 @@ const DECISION_TYPES = [
   { value: 'rejected', label: 'Rejected' }
 ]
 
-export function TemplateManager({ 
-  onTemplateSelect, 
-  _selectedTemplate, 
-  readOnly = false,
-  className 
-}: TemplateManagerProps) {
+export function TemplateManager(props: TemplateManagerProps) {
+  const { onTemplateSelect, readOnly = false, className } = props
   const [templates, setTemplates] = useState<DecisionTemplate[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
@@ -84,7 +80,10 @@ export function TemplateManager({
     template_content: {
       sections: [],
       variables: [],
-      defaultActions: {}
+      defaultActions: {
+        notifyAuthor: false,
+        notifyReviewers: false
+      }
     },
     is_public: false,
     tags: []

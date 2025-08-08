@@ -272,9 +272,9 @@ export class ManuscriptService {
       }
 
       if (status === 'published') {
-        updateData.published_at = new Date().toISOString()
+        (updateData as any).published_at = new Date().toISOString()
       } else if (status === 'accepted') {
-        updateData.accepted_at = new Date().toISOString()
+        (updateData as any).accepted_at = new Date().toISOString()
       }
 
       const { error } = await supabase

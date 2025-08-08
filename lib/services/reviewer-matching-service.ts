@@ -252,7 +252,7 @@ export class ReviewerMatchingService {
 
       reviewerStats[reviewerId] = {
         recent_reviews: completed.length,
-        avg_review_time: avgReviewTime,
+        avg_review_time: avgReviewTime || 0,
         current_review_load: currentLoad,
         response_rate: Math.round(responseRate * 100) / 100,
         availability_score: Math.round(availabilityScore),
@@ -261,14 +261,14 @@ export class ReviewerMatchingService {
               .sort((a, b) => new Date(b.invited_at).getTime() - new Date(a.invited_at).getTime())[0]
               .invited_at
           : null
-      }
+      } as any
     })
 
     // Combine profile data with stats
     return profiles.map(profile => ({
       ...profile,
       ...reviewerStats[profile.id]
-    }))
+    })) as any
   }
 
   /**
@@ -444,8 +444,8 @@ export class ReviewerMatchingService {
     // Subfield match
     if (criteria.subfield) {
       if (candidateExpertise.some(exp => 
-        exp.includes(criteria.subfield.toLowerCase()) ||
-        criteria.subfield.toLowerCase().includes(exp)
+        exp.includes(criteria.subfield?.toLowerCase() || '') ||
+        (criteria.subfield?.toLowerCase() || '').includes(exp)
       )) {
         score += 30
       }
@@ -480,7 +480,7 @@ export class ReviewerMatchingService {
       criteria.field_of_study,
       criteria.subfield,
       ...(criteria.keywords || [])
-    ].filter(Boolean).map(term => term.toLowerCase())
+    ].filter(Boolean).map(term => term?.toLowerCase()).filter(Boolean) as string[]
 
     const candidateTerms = candidateExpertise.flatMap(exp => 
       exp.split(/[\s,\-_]+/).filter(term => term.length > 2)
@@ -592,7 +592,7 @@ export class ReviewerMatchingService {
       // Reduce overall score for reviewers with COI issues
       overall_score: eligibilityMap.get(match.reviewer.id)?.is_eligible === false
         ? Math.round(match.overall_score * 0.3) // Severely penalize blocked reviewers
-        : eligibilityMap.get(match.reviewer.id)?.conflicts.length > 0
+        : (eligibilityMap.get(match.reviewer.id)?.conflicts?.length || 0) > 0
         ? Math.round(match.overall_score * 0.8) // Moderately penalize reviewers with warnings
         : match.overall_score
     }))
