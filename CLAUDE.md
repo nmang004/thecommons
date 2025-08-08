@@ -72,6 +72,17 @@ lib/
 - Use established CSS classes and design tokens
 - Implement proper error handling and loading states
 
+### 🚨 Critical Development Rules
+
+#### ALWAYS Run Build Before Committing
+```bash
+npm run build  # Must pass with zero errors
+```
+- **Never commit** code that doesn't compile
+- **Fix ALL TypeScript errors** before proceeding
+- Build errors indicate systemic issues that compound over time
+- Clean builds ensure deployment success
+
 ### 🔧 TypeScript Best Practices
 
 #### Next.js 15 API Routes
@@ -99,18 +110,51 @@ export default async function Page({ params, searchParams }: PageProps) {
 }
 ```
 
-#### Common Fixes
-- **Unused parameters**: Prefix with underscore `_request`
-- **Supabase relations**: Use `(data as any)?.property` for complex types
-- **Optional values**: Provide defaults `queryParams.limit || 10`
-- **Array operations**: Explicit typing `items.map((item: any) => ...)`
+#### Import Management
+- **Remove unused imports**: Always clean up unused import statements
+- **Component imports**: Only import icons/components that are actually used
+- **Type imports**: Remove unused type imports from interfaces
+
+#### Null Safety Patterns
+```typescript
+// ✅ CORRECT - Always check for undefined objects
+if (!data) return null
+
+// ✅ CORRECT - Safe property access with defaults
+const length = data?.items?.length || 0
+
+// ✅ CORRECT - Safe method chaining
+const results = items?.filter?.(item => item.active) || []
+```
+
+#### Parameter Handling
+- **Unused parameters**: Prefix with underscore `_request`, `_channel`
+- **Unused destructured variables**: Use underscore `const [, setValue] = useState()`
+- **Function signatures**: Match interface definitions exactly
+
+#### Complex Object Access
+```typescript
+// ✅ CORRECT - Type assertion for dynamic access
+const value = (complexObject as any)[dynamicKey]?.property
+
+// ✅ CORRECT - Safe array operations with typing
+items?.map((item: any, index: number) => ...)
+```
+
+#### Third-party Library Compatibility
+- **Redis/ioredis**: Use only supported configuration options
+- **Zustand stores**: Match interface definitions exactly
+- **Supabase relations**: Use type assertions for complex nested data
 
 #### Pre-commit Checklist
 1. All `createClient()` calls are awaited
 2. API routes use `await context.params` 
 3. Page props use Promise patterns
-4. No unused variable warnings
-5. Type assertions for Supabase relations
+4. **No unused imports or variables**
+5. **All object property access is null-safe**
+6. **Type assertions used for dynamic property access**
+7. **Function parameters match interface definitions**
+8. **Third-party library options are valid**
 
 ### Academic Publishing Focus
 Remember this is a scholarly platform requiring:

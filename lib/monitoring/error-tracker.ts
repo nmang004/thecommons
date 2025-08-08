@@ -1,4 +1,3 @@
-import { createClient } from '@/lib/supabase/server'
 import { createBrowserClient } from '@/lib/supabase/client'
 
 // ===========================

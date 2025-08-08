@@ -35,6 +35,177 @@ export interface ReviewPreferences {
   }[]
 }
 
+// Enhanced reviewer dashboard interfaces
+export interface ReviewerSettings {
+  monthlyCapacity: number
+  preferredDeadlines: number
+  blackoutDates: string[] // ISO date strings
+  autoDeclineRules: AutoDeclineRule[]
+  workloadPreferences: {
+    maxConcurrentReviews: number
+    preferredFields: string[]
+    availabilityStatus: 'available' | 'busy' | 'unavailable'
+    notificationPreferences: {
+      emailReminders: boolean
+      deadlineWarnings: boolean
+      achievementNotifications: boolean
+    }
+  }
+}
+
+export interface AutoDeclineRule {
+  id: string
+  name: string
+  enabled: boolean
+  conditions: {
+    fieldsToExclude?: string[]
+    maxWorkloadPercentage?: number
+    minDaysToDeadline?: number
+    excludeKeywords?: string[]
+  }
+}
+
+export interface ReviewerAnalytics {
+  id: string
+  reviewer_id: string
+  total_reviews_completed: number
+  total_invitations_received: number
+  total_invitations_accepted: number
+  average_review_time_days: number
+  acceptance_rate: number
+  average_quality_score: number
+  on_time_completion_rate: number
+  response_rate: number
+  total_badges_earned: number
+  quality_badge_count: number
+  timeliness_badge_count: number
+  volume_badge_count: number
+  current_month_reviews: number
+  last_month_reviews: number
+  current_year_reviews: number
+  last_calculated_at: string
+  created_at: string
+  updated_at: string
+}
+
+export interface Badge {
+  id: string
+  name: string
+  description: string
+  category: 'volume' | 'quality' | 'timeliness' | 'expertise' | 'service' | 'special'
+  icon_url?: string
+  color: string
+  rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary'
+  criteria: Record<string, any>
+  is_active: boolean
+  is_public: boolean
+  sort_order: number
+  created_at: string
+  updated_at: string
+}
+
+export interface ProfileBadge {
+  id: string
+  profile_id: string
+  badge_id: string
+  awarded_at: string
+  awarded_for?: Record<string, any>
+  progress_data?: Record<string, any>
+  created_at: string
+  // Joined data
+  badge?: Badge
+}
+
+export interface ReviewerWorkloadHistory {
+  id: string
+  reviewer_id: string
+  date: string
+  active_reviews: number
+  pending_invitations: number
+  monthly_capacity: number
+  workload_percentage: number
+  availability_status: string
+  notes?: string
+  created_at: string
+}
+
+// Dashboard interface matching the technical spec
+export interface ReviewerDashboard {
+  // Review Queue
+  queue: {
+    pending: ReviewAssignment[]
+    inProgress: ReviewAssignment[]
+    completed: ReviewAssignment[]
+    declined: ReviewAssignment[]
+  }
+  
+  // Performance Analytics
+  analytics: {
+    totalReviews: number
+    averageReviewTime: number
+    acceptanceRate: number
+    qualityScore: number
+    timeliness: number
+    recognition: Badge[]
+  }
+  
+  // Workload Management
+  workload: {
+    currentAssignments: number
+    monthlyCapacity: number
+    blackoutDates: DateRange[]
+    preferredDeadlines: number
+    autoDeclineRules: AutoDeclineRule[]
+  }
+  
+  // Professional Development
+  development: {
+    reviewTraining: Course[]
+    certifications: Certificate[]
+    mentorshipProgram: MentorshipStatus
+    reviewFeedback: Feedback[]
+  }
+}
+
+export interface DateRange {
+  startDate: string
+  endDate: string
+}
+
+export interface Course {
+  id: string
+  title: string
+  description: string
+  duration: string
+  status: 'not_started' | 'in_progress' | 'completed'
+  completedAt?: string
+}
+
+export interface Certificate {
+  id: string
+  name: string
+  issuedBy: string
+  issuedAt: string
+  expiresAt?: string
+  credentialUrl?: string
+}
+
+export interface MentorshipStatus {
+  role?: 'mentor' | 'mentee' | 'both'
+  activeMentorships: number
+  completedMentorships: number
+  averageRating?: number
+}
+
+export interface Feedback {
+  id: string
+  type: 'editor' | 'author'
+  rating: number
+  comments: string
+  receivedAt: string
+  manuscriptTitle: string
+}
+
 export interface COIDeclarations {
   financialInterests: {
     organization: string
@@ -176,6 +347,7 @@ export interface Profile {
   availability_status?: string | null
   max_concurrent_reviews?: number | null
   review_preferences?: ReviewPreferences | null
+  reviewer_settings?: ReviewerSettings | null
   coi_declarations?: COIDeclarations | null
   coi_last_updated?: string | null
   created_at: string
@@ -595,6 +767,42 @@ export interface Database {
           manuscript_count?: number
         }
         Update: Partial<Omit<FieldOfStudy, 'id'>>
+      }
+      reviewer_analytics: {
+        Row: ReviewerAnalytics
+        Insert: Omit<ReviewerAnalytics, 'id' | 'created_at' | 'updated_at' | 'last_calculated_at'> & {
+          id?: string
+          created_at?: string
+          updated_at?: string
+          last_calculated_at?: string
+        }
+        Update: Partial<Omit<ReviewerAnalytics, 'id' | 'created_at'>>
+      }
+      badges: {
+        Row: Badge
+        Insert: Omit<Badge, 'id' | 'created_at' | 'updated_at'> & {
+          id?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: Partial<Omit<Badge, 'id' | 'created_at'>>
+      }
+      profile_badges: {
+        Row: ProfileBadge
+        Insert: Omit<ProfileBadge, 'id' | 'created_at' | 'awarded_at'> & {
+          id?: string
+          created_at?: string
+          awarded_at?: string
+        }
+        Update: Partial<Omit<ProfileBadge, 'id' | 'created_at'>>
+      }
+      reviewer_workload_history: {
+        Row: ReviewerWorkloadHistory
+        Insert: Omit<ReviewerWorkloadHistory, 'id' | 'created_at'> & {
+          id?: string
+          created_at?: string
+        }
+        Update: Partial<Omit<ReviewerWorkloadHistory, 'id' | 'created_at'>>
       }
     }
     Views: {}
