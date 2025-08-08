@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { AnalyticsReportRequest } from '@/types/editorial'
 
 export async function GET(request: NextRequest) {
   try {
@@ -38,7 +37,6 @@ export async function GET(request: NextRequest) {
     const reportType = searchParams.get('reportType') || 'editorial'
     const dateRangeStart = searchParams.get('dateRangeStart')
     const dateRangeEnd = searchParams.get('dateRangeEnd')
-    const format = searchParams.get('format') || 'json'
     const editors = searchParams.getAll('editors')
     const fields = searchParams.getAll('fields')
     const status = searchParams.getAll('status')
@@ -184,15 +182,15 @@ async function generateEditorialReport(
 
   // Calculate editorial metrics
   const totalManuscripts = manuscripts?.length || 0
-  const assignedManuscripts = manuscripts?.filter(m => m.editor_id).length || 0
-  const decisionsCount = manuscripts?.filter(m => 
+  const assignedManuscripts = manuscripts?.filter((m: any) => m.editor_id).length || 0
+  const decisionsCount = manuscripts?.filter((m: any) => 
     m.editorial_decisions?.length > 0
   ).length || 0
 
   // Editor performance breakdown
   const editorStats = new Map()
   
-  manuscripts?.forEach(manuscript => {
+  manuscripts?.forEach((manuscript: any) => {
     if (!manuscript.editor_id) return
     
     const editorId = manuscript.editor_id
@@ -286,7 +284,7 @@ async function generateReviewerReport(
       .select('id')
       .in('field_of_study', filters.fields)
     
-    const manuscriptIds = filteredManuscripts?.map(m => m.id) || []
+    const manuscriptIds = filteredManuscripts?.map((m: any) => m.id) || []
     query = query.in('manuscript_id', manuscriptIds)
   }
 
@@ -295,8 +293,8 @@ async function generateReviewerReport(
   if (error) throw error
 
   const totalReviews = reviews?.length || 0
-  const completedReviews = reviews?.filter(r => r.status === 'completed').length || 0
-  const onTimeReviews = reviews?.filter(r => 
+  const completedReviews = reviews?.filter((r: any) => r.status === 'completed').length || 0
+  const onTimeReviews = reviews?.filter((r: any) => 
     r.status === 'completed' && 
     r.completed_at && 
     r.due_date &&
@@ -306,7 +304,7 @@ async function generateReviewerReport(
   // Reviewer performance breakdown
   const reviewerStats = new Map()
   
-  reviews?.forEach(review => {
+  reviews?.forEach((review: any) => {
     const reviewerId = review.reviewer_id
     const reviewer = review.profiles
     
@@ -420,7 +418,7 @@ async function generateManuscriptReport(
   if (error) throw error
 
   // Calculate flow metrics
-  const flowMetrics = manuscripts?.map(manuscript => {
+  const flowMetrics = manuscripts?.map((manuscript: any) => {
     const submissionDate = new Date(manuscript.submitted_at)
     const assignment = manuscript.editorial_assignments?.[0]
     const decision = manuscript.editorial_decisions?.[0]
@@ -450,7 +448,7 @@ async function generateManuscriptReport(
       timeToAssignment,
       timeToDecision,
       reviewCount: manuscript.review_assignments?.length || 0,
-      completedReviews: manuscript.review_assignments?.filter(r => 
+      completedReviews: manuscript.review_assignments?.filter((r: any) => 
         r.status === 'completed'
       ).length || 0
     }
@@ -498,7 +496,7 @@ async function generateCustomReport(
 // Helper functions
 function getStatusBreakdown(manuscripts: any[]) {
   const breakdown = new Map()
-  manuscripts?.forEach(manuscript => {
+  manuscripts?.forEach((manuscript: any) => {
     const status = manuscript.status
     breakdown.set(status, (breakdown.get(status) || 0) + 1)
   })
@@ -507,7 +505,7 @@ function getStatusBreakdown(manuscripts: any[]) {
 
 function getFieldBreakdown(manuscripts: any[]) {
   const breakdown = new Map()
-  manuscripts?.forEach(manuscript => {
+  manuscripts?.forEach((manuscript: any) => {
     const field = manuscript.field_of_study
     breakdown.set(field, (breakdown.get(field) || 0) + 1)
   })
@@ -516,7 +514,7 @@ function getFieldBreakdown(manuscripts: any[]) {
 
 function getReviewStatusBreakdown(reviews: any[]) {
   const breakdown = new Map()
-  reviews?.forEach(review => {
+  reviews?.forEach((review: any) => {
     const status = review.status
     breakdown.set(status, (breakdown.get(status) || 0) + 1)
   })
@@ -535,7 +533,7 @@ function calculateTimelineMetrics(manuscripts: any[]) {
   let assignmentCount = 0
   let decisionCount = 0
 
-  manuscripts?.forEach(manuscript => {
+  manuscripts?.forEach((manuscript: any) => {
     const submissionDate = new Date(manuscript.submitted_at)
     const assignment = manuscript.editorial_assignments?.[0]
     const decision = manuscript.editorial_decisions?.[0]

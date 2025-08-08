@@ -165,8 +165,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Apply pagination
-    const from = (queryParams.page - 1) * queryParams.limit
-    const to = from + queryParams.limit - 1
+    const from = ((queryParams.page || 1) - 1) * (queryParams.limit || 10)
+    const to = from + (queryParams.limit || 10) - 1
     query = query.range(from, to)
 
     const { data: manuscripts, error, count } = await query
@@ -273,7 +273,7 @@ export async function GET(request: NextRequest) {
         page: queryParams.page,
         limit: queryParams.limit,
         total: count || 0,
-        totalPages: Math.ceil((count || 0) / queryParams.limit)
+        totalPages: Math.ceil((count || 0) / (queryParams.limit || 10))
       },
       summary,
       workload: workloadInfo,

@@ -3,10 +3,11 @@ import { createClient } from '@/lib/supabase/server'
 import { ReviewerAvailabilityResponse } from '@/types/editorial'
 
 export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
+  _request: NextRequest,
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const params = await context.params
     const supabase = await createClient()
     
     const {
@@ -130,9 +131,9 @@ export async function GET(
     const pendingInvitationsCount = pendingInvitations?.length || 0
     const totalCurrentLoad = currentReviews + pendingInvitationsCount
 
-    const maxReviews = reviewer.reviewer_profile?.max_reviews_per_month || 3
-    const preferredTurnaroundDays = reviewer.reviewer_profile?.preferred_turnaround_days || 21
-    const availabilityStatus = reviewer.reviewer_profile?.availability_status || 'available'
+    const maxReviews = (reviewer.reviewer_profile as any)?.max_reviews_per_month || 3
+    const preferredTurnaroundDays = (reviewer.reviewer_profile as any)?.preferred_turnaround_days || 21
+    const availabilityStatus = (reviewer.reviewer_profile as any)?.availability_status || 'available'
 
     // Determine if reviewer is available
     const isOverloaded = totalCurrentLoad >= maxReviews
@@ -172,16 +173,16 @@ export async function GET(
       }, 0) / completedReviews.length : null
 
     // Get specializations
-    const specializations = reviewer.reviewer_profile?.specializations || []
+    const specializations = (reviewer.reviewer_profile as any)?.specializations || []
 
     // Format recent manuscripts for response
-    const recentManuscripts = (activeReviews || []).map(review => ({
-      id: review.manuscripts?.id || '',
-      title: review.manuscripts?.title || '',
+    const recentManuscripts = (activeReviews || []).map((review: any) => ({
+      id: (review.manuscripts as any)?.id || '',
+      title: (review.manuscripts as any)?.title || '',
       status: review.status,
       assignedDate: new Date(review.invited_at),
       dueDate: review.due_date ? new Date(review.due_date) : null,
-      fieldOfStudy: review.manuscripts?.field_of_study
+      fieldOfStudy: (review.manuscripts as any)?.field_of_study
     }))
 
     const availabilityResponse: ReviewerAvailabilityResponse = {
@@ -212,7 +213,7 @@ export async function GET(
         status: availabilityStatus,
         is_overloaded: isOverloaded,
         capacity_remaining: Math.max(0, maxReviews - totalCurrentLoad),
-        last_activity: reviewer.reviewer_profile?.last_activity_date
+        last_activity: (reviewer.reviewer_profile as any)?.last_activity_date
       },
       recent_activity: {
         total_reviews_6_months: recentReviews?.length || 0,
@@ -244,9 +245,10 @@ export async function GET(
 // PATCH endpoint to update reviewer availability status
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const params = await context.params
     const supabase = await createClient()
     
     const {

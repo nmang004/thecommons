@@ -106,18 +106,15 @@ export async function POST(request: NextRequest) {
 
     // Convert data to requested format
     let exportContent: string
-    let contentType: string
     let sizeBytes: number
 
     try {
       switch (format) {
         case 'csv':
           exportContent = convertToCSV(reportData, reportType)
-          contentType = 'text/csv'
           break
         case 'json':
           exportContent = JSON.stringify(reportData, null, 2)
-          contentType = 'application/json'
           break
         case 'pdf':
           // For PDF generation, you would typically use a library like puppeteer or PDFKit
@@ -127,7 +124,6 @@ export async function POST(request: NextRequest) {
             generatedBy: profile.full_name,
             includeCharts
           })
-          contentType = 'application/pdf'
           break
         default:
           throw new Error('Unsupported format')
@@ -313,7 +309,7 @@ export async function GET(request: NextRequest) {
 }
 
 // Export data generation functions
-async function generateEditorialExport(supabase: any, startDate: Date, endDate: Date, filters: any) {
+async function generateEditorialExport(supabase: any, startDate: Date, endDate: Date, _filters: any) {
   const { data: manuscripts } = await supabase
     .from('manuscripts')
     .select(`
@@ -351,7 +347,7 @@ async function generateEditorialExport(supabase: any, startDate: Date, endDate: 
   }
 }
 
-async function generateReviewerExport(supabase: any, startDate: Date, endDate: Date, filters: any) {
+async function generateReviewerExport(supabase: any, startDate: Date, endDate: Date, _filters: any) {
   const { data: reviews } = await supabase
     .from('review_assignments')
     .select(`
@@ -377,7 +373,7 @@ async function generateReviewerExport(supabase: any, startDate: Date, endDate: D
   }
 }
 
-async function generateManuscriptExport(supabase: any, startDate: Date, endDate: Date, filters: any) {
+async function generateManuscriptExport(supabase: any, startDate: Date, endDate: Date, _filters: any) {
   const { data: manuscripts } = await supabase
     .from('manuscripts')
     .select(`
@@ -429,7 +425,7 @@ async function generateComprehensiveExport(supabase: any, startDate: Date, endDa
 }
 
 // Format conversion functions
-function convertToCSV(data: any, reportType: string): string {
+function convertToCSV(data: any, _reportType: string): string {
   if (!data.data || !Array.isArray(data.data)) {
     return 'No data available'
   }
@@ -440,7 +436,7 @@ function convertToCSV(data: any, reportType: string): string {
   }
 
   // Flatten nested objects for CSV
-  const flattenedRecords = records.map(record => flattenObject(record))
+  const flattenedRecords = records.map((record: any) => flattenObject(record))
   
   // Get all unique headers
   const headers = [...new Set(flattenedRecords.flatMap(Object.keys))]
@@ -448,9 +444,9 @@ function convertToCSV(data: any, reportType: string): string {
   // Create CSV content
   const csvRows = [
     headers.join(','), // Header row
-    ...flattenedRecords.map(record => 
+    ...flattenedRecords.map((record: any) => 
       headers.map(header => {
-        const value = record[header] || ''
+        const value = record[header as string] || ''
         // Escape quotes and wrap in quotes if contains comma or quote
         if (typeof value === 'string' && (value.includes(',') || value.includes('"'))) {
           return `"${value.replace(/"/g, '""')}"`

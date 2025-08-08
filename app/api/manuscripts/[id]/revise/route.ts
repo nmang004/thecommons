@@ -10,10 +10,11 @@ const revisionSchema = z.object({
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id: manuscriptId } = await params
+    const params = await context.params
+    const { id: manuscriptId } = params
     const supabase = await createClient()
     
     // Get the authenticated user

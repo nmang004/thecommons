@@ -4,9 +4,10 @@ import { DecisionSendRequest } from '@/types/editorial'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const params = await context.params
     const supabase = await createClient()
     
     const {
@@ -98,7 +99,7 @@ export async function POST(
     }
 
     // Default recipient is the manuscript author
-    const defaultRecipients = [decision.manuscripts?.profiles?.email].filter(Boolean)
+    const defaultRecipients = (decision as any).manuscripts?.profiles ? [(decision as any).manuscripts.profiles.email] : []
     const allRecipients = [...new Set([...defaultRecipients, ...sendRequest.recipients])]
 
     // Validate all recipient emails
@@ -118,11 +119,11 @@ export async function POST(
 
     // Replace common template variables
     const variables = {
-      '{{author_name}}': manuscriptData?.profiles?.full_name || 'Author',
-      '{{manuscript_title}}': manuscriptData?.title || 'Your manuscript',
-      '{{submission_id}}': manuscriptData?.id || '',
-      '{{editor_name}}': editorData?.full_name || profile.full_name,
-      '{{editor_email}}': editorData?.email || profile.email,
+      '{{author_name}}': (manuscriptData as any)?.profiles?.full_name || 'Author',
+      '{{manuscript_title}}': (manuscriptData as any)?.title || 'Your manuscript',
+      '{{submission_id}}': (manuscriptData as any)?.id || '',
+      '{{editor_name}}': (editorData as any)?.full_name || profile.full_name,
+      '{{editor_email}}': (editorData as any)?.email || profile.email,
       '{{decision_date}}': new Date().toLocaleDateString(),
       '{{journal_name}}': 'The Commons Academic Journal'
     }
@@ -146,7 +147,7 @@ export async function POST(
       sender_id: user.id,
       recipients: allRecipients,
       cc_recipients: sendRequest.ccRecipients || [],
-      subject: `Editorial Decision: ${decision.decision.replace('_', ' ').toUpperCase()} - ${manuscriptData?.title}`,
+      subject: `Editorial Decision: ${decision.decision.replace('_', ' ').toUpperCase()} - ${(manuscriptData as any)?.title}`,
       body: processedDecisionLetter,
       scheduled_send_time: sendTime.toISOString(),
       status: sendRequest.sendImmediately ? 'sent' : 'scheduled',
@@ -213,10 +214,10 @@ export async function POST(
     // Notify author
     if (sendRequest.sendImmediately) {
       notifications.push({
-        user_id: manuscriptData?.author_id,
+        user_id: (manuscriptData as any)?.author_id,
         type: 'editorial_decision_sent',
         title: `Editorial Decision: ${decision.decision.replace('_', ' ').toUpperCase()}`,
-        message: `The editorial decision for "${manuscriptData?.title}" has been sent to you.`,
+        message: `The editorial decision for "${(manuscriptData as any)?.title}" has been sent to you.`,
         data: {
           manuscript_id: decision.manuscript_id,
           decision_id: decisionId,
@@ -239,7 +240,7 @@ export async function POST(
           user_id: ccProfile.id,
           type: 'editorial_decision_cc',
           title: 'Editorial Decision Sent (CC)',
-          message: `You were copied on the editorial decision for "${manuscriptData?.title}"`,
+          message: `You were copied on the editorial decision for "${(manuscriptData as any)?.title}"`,
           data: {
             manuscript_id: decision.manuscript_id,
             decision_id: decisionId,
@@ -272,7 +273,7 @@ export async function POST(
             user_id: reviewer.reviewer_id,
             type: 'decision_notification',
             title: 'Editorial Decision Made',
-            message: `The editorial decision has been made for a manuscript you reviewed: "${manuscriptData?.title}"`,
+            message: `The editorial decision has been made for a manuscript you reviewed: "${(manuscriptData as any)?.title}"`,
             data: {
               manuscript_id: decision.manuscript_id,
               decision: decision.decision
@@ -315,7 +316,7 @@ export async function POST(
       recipients: allRecipients,
       scheduled_send_time: sendTime.toISOString(),
       status: sendRequest.sendImmediately ? 'sent' : 'scheduled',
-      manuscript_status: newStatus || manuscriptData?.status
+      manuscript_status: newStatus || (manuscriptData as any)?.status
     })
 
   } catch (error) {
@@ -329,10 +330,11 @@ export async function POST(
 
 // GET endpoint to check decision send status
 export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
+  _request: NextRequest,
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const params = await context.params
     const supabase = await createClient()
     
     const {

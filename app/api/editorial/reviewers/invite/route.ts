@@ -237,8 +237,8 @@ export async function POST(request: NextRequest) {
       id: invitation.id,
       reviewer: {
         id: invitation.reviewer_id,
-        name: invitation.profiles?.full_name,
-        email: invitation.profiles?.email
+        name: (invitation.profiles as any)?.full_name,
+        email: (invitation.profiles as any)?.email
       },
       review_deadline: invitation.review_deadline,
       response_deadline: invitation.response_deadline,

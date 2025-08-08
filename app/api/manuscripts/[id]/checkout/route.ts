@@ -4,10 +4,11 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(
   _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id: manuscriptId } = await params
+    const params = await context.params
+    const { id: manuscriptId } = params
     const supabase = await createClient()
     
     // Get the authenticated user

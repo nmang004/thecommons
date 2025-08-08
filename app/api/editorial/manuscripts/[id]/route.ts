@@ -3,10 +3,11 @@ import { createClient } from '@/lib/supabase/server'
 import { ManuscriptUpdateRequest } from '@/types/editorial'
 
 export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
+  _request: NextRequest,
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const params = await context.params
     const supabase = await createClient()
     
     const {
@@ -112,7 +113,7 @@ export async function GET(
     }
 
     if (manuscript.editorial_assignments?.length > 0) {
-      manuscript.editorial_assignments.forEach(assignment => {
+      manuscript.editorial_assignments.forEach((assignment: any) => {
         timeline.push({
           event: 'assigned',
           date: assignment.assigned_at,
@@ -123,7 +124,7 @@ export async function GET(
     }
 
     if (manuscript.reviewer_invitations?.length > 0) {
-      manuscript.reviewer_invitations.forEach(invitation => {
+      manuscript.reviewer_invitations.forEach((invitation: any) => {
         timeline.push({
           event: 'reviewer_invited',
           date: invitation.created_at,
@@ -134,7 +135,7 @@ export async function GET(
     }
 
     if (manuscript.review_assignments?.length > 0) {
-      manuscript.review_assignments.forEach(review => {
+      manuscript.review_assignments.forEach((review: any) => {
         if (review.completed_at) {
           timeline.push({
             event: 'review_completed',
@@ -150,7 +151,7 @@ export async function GET(
     }
 
     if (manuscript.editorial_decisions?.length > 0) {
-      manuscript.editorial_decisions.forEach(decision => {
+      manuscript.editorial_decisions.forEach((decision: any) => {
         timeline.push({
           event: 'decision_made',
           date: decision.created_at,
@@ -167,15 +168,15 @@ export async function GET(
     const daysSinceSubmission = manuscript.submitted_at ? 
       Math.floor((new Date().getTime() - new Date(manuscript.submitted_at).getTime()) / (1000 * 60 * 60 * 24)) : 0
     
-    const currentAssignment = manuscript.editorial_assignments?.find(a => a.status === 'active')
+    const currentAssignment = manuscript.editorial_assignments?.find((a: any) => a.status === 'active')
     const daysSinceAssignment = currentAssignment ? 
       Math.floor((new Date().getTime() - new Date(currentAssignment.assigned_at).getTime()) / (1000 * 60 * 60 * 24)) : 0
 
-    const activeReviews = manuscript.review_assignments?.filter(r => 
+    const activeReviews = manuscript.review_assignments?.filter((r: any) => 
       ['invited', 'accepted', 'in_progress'].includes(r.status)
     ).length || 0
 
-    const completedReviews = manuscript.review_assignments?.filter(r => 
+    const completedReviews = manuscript.review_assignments?.filter((r: any) => 
       r.status === 'completed'
     ).length || 0
 
@@ -185,10 +186,10 @@ export async function GET(
       active_reviews: activeReviews,
       completed_reviews: completedReviews,
       total_invitations: manuscript.reviewer_invitations?.length || 0,
-      pending_invitations: manuscript.reviewer_invitations?.filter(i => 
+      pending_invitations: manuscript.reviewer_invitations?.filter((i: any) => 
         i.invitation_status === 'pending'
       ).length || 0,
-      declined_invitations: manuscript.reviewer_invitations?.filter(i => 
+      declined_invitations: manuscript.reviewer_invitations?.filter((i: any) => 
         i.invitation_status === 'declined'
       ).length || 0
     }
@@ -210,9 +211,10 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const params = await context.params
     const supabase = await createClient()
     
     const {
