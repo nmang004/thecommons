@@ -8,8 +8,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { 
   BarChart, 
   Bar, 
-  LineChart, 
-  Line, 
   PieChart, 
   Pie, 
   Cell,
@@ -28,14 +26,12 @@ import {
   Users, 
   Clock, 
   CheckCircle,
-  XCircle,
   AlertTriangle,
   Mail,
   Eye,
   MousePointer,
   RefreshCw,
   Download,
-  Calendar,
   Target
 } from 'lucide-react'
 

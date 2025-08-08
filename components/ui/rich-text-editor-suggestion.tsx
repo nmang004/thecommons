@@ -121,7 +121,7 @@ function MentionListComponent({ items, command }: MentionListProps) {
   return (
     <div className="bg-white border border-gray-200 rounded-lg shadow-lg py-2 px-0 max-h-48 overflow-y-auto">
       {items.length ? (
-        items.map((item, index) => (
+        items.map((item) => (
           <button
             key={item}
             onClick={() => command({ id: item })}

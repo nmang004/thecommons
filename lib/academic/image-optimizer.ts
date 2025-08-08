@@ -1,4 +1,5 @@
 import { cache, CACHE_TTL } from '@/lib/redis/cache'
+import * as crypto from 'crypto'
 
 interface ImageOptimizationOptions {
   width?: number
@@ -283,7 +284,6 @@ export class AcademicImageOptimizer {
 
   private generateImageHash(buffer: Buffer): string {
     // Generate a simple hash for caching purposes
-    const crypto = require('crypto')
     return crypto.createHash('md5').update(buffer).digest('hex').substring(0, 16)
   }
 

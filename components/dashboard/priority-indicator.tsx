@@ -3,11 +3,9 @@
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { 
-  AlertTriangle, 
   ArrowUp, 
   Minus, 
   ArrowDown,
-  Clock,
   Zap
 } from 'lucide-react'
 

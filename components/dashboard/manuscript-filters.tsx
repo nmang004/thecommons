@@ -8,7 +8,6 @@ import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { 
   Search,
-  Calendar,
   X,
   ChevronDown,
   ChevronUp
@@ -90,11 +89,6 @@ export function ManuscriptFilters({ filters, onFiltersChange, manuscripts }: Man
 
   // Get unique values from manuscripts
   const uniqueFields = [...new Set(manuscripts.map(m => m.field_of_study))].sort()
-  const uniqueEditors = [...new Set(
-    manuscripts
-      .filter(m => m.editor_id && m.profiles?.full_name)
-      .map(m => ({ id: m.editor_id!, name: m.profiles!.full_name }))
-  )]
 
   // Handle search with debounce
   useEffect(() => {

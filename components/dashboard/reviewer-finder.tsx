@@ -10,17 +10,12 @@ import { Card } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import { 
   Search,
-  User,
-  Award,
-  BookOpen,
   MapPin,
   Mail,
   AlertTriangle,
   Star,
-  TrendingUp,
   Clock,
   X,
-  Filter,
   Users,
   Send
 } from 'lucide-react'

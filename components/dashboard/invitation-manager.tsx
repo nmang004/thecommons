@@ -16,7 +16,8 @@ import {
   Settings,
   Eye,
   EyeOff,
-  RefreshCw
+  RefreshCw,
+  Template
 } from 'lucide-react'
 
 interface InvitationTemplate {

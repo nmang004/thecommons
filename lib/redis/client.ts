@@ -1,4 +1,5 @@
 import type { Redis } from 'ioredis'
+import IORedis from 'ioredis'
 
 let redis: Redis | null = null
 
@@ -28,9 +29,8 @@ export function getRedisClient(): Redis {
       return {} as Redis
     }
 
-    // Dynamically import ioredis only when needed
-    const RedisClient = require('ioredis')
-    const redisInstance = new RedisClient(redisUrl, {
+    // Use the imported IORedis class
+    const redisInstance = new IORedis(redisUrl, {
       maxRetriesPerRequest: null,
       enableReadyCheck: false,
       lazyConnect: true,
