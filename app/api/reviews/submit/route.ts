@@ -19,52 +19,126 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { assignmentId, manuscriptId, reviewData, isDraft } = body
+    const { assignmentId, manuscriptId, reviewData, draftId, isDraft } = body
 
-    // Verify the reviewer has access to this assignment
-    const { data: assignment, error: assignmentError } = await supabase
-      .from('review_assignments')
-      .select('*')
-      .eq('id', assignmentId)
-      .eq('reviewer_id', user.id)
-      .eq('status', 'accepted')
-      .single()
-
-    if (assignmentError || !assignment) {
+    if (!manuscriptId || !reviewData) {
       return NextResponse.json(
-        { error: 'Review assignment not found or not accessible' },
-        { status: 404 }
+        { error: 'Missing required fields' },
+        { status: 400 }
       )
     }
 
+    // Verify the reviewer has access to this assignment (if provided)
+    let assignment = null
+    if (assignmentId) {
+      const { data: assignmentData, error: assignmentError } = await supabase
+        .from('review_assignments')
+        .select('*')
+        .eq('id', assignmentId)
+        .eq('reviewer_id', user.id)
+        .eq('status', 'accepted')
+        .single()
+
+      if (assignmentError || !assignmentData) {
+        return NextResponse.json(
+          { error: 'Review assignment not found or not accessible' },
+          { status: 404 }
+        )
+      }
+      assignment = assignmentData
+    }
+
     if (isDraft) {
-      // For drafts, we might store in a separate table or use a different status
-      // For now, we'll skip the database operation and just return success
       return NextResponse.json({ 
         success: true, 
         message: 'Draft saved successfully' 
       })
     }
 
+    // Validate required fields for submission
+    const validationErrors: Record<string, string[]> = {}
+    
+    if (!reviewData.sections?.summary?.recommendation) {
+      validationErrors.summary = ['Recommendation is required']
+    }
+    
+    if (!reviewData.sections?.summary?.confidence) {
+      if (!validationErrors.summary) validationErrors.summary = []
+      validationErrors.summary.push('Confidence level is required')
+    }
+    
+    if (!reviewData.sections?.summary?.expertise) {
+      if (!validationErrors.summary) validationErrors.summary = []
+      validationErrors.summary.push('Expertise level is required')
+    }
+    
+    // Check quality assessment
+    const qa = reviewData.sections?.qualityAssessment
+    if (!qa || !qa.originality?.score || !qa.significance?.score || !qa.methodology?.score || 
+        !qa.clarity?.score || !qa.references?.score) {
+      validationErrors.qualityAssessment = ['All quality assessment scores are required']
+    }
+    
+    // Check detailed comments
+    const dc = reviewData.sections?.detailedComments
+    if (!dc || (dc.majorIssues?.length === 0 && dc.minorIssues?.length === 0)) {
+      validationErrors.detailedComments = ['At least one major or minor issue must be provided']
+    }
+    
+    if (Object.keys(validationErrors).length > 0) {
+      return NextResponse.json(
+        { 
+          error: 'Validation failed',
+          validationErrors 
+        },
+        { status: 400 }
+      )
+    }
+
     // Check if review already exists
     const { data: existingReview } = await supabase
       .from('reviews')
-      .select('id')
+      .select('id, submitted_at')
       .eq('manuscript_id', manuscriptId)
       .eq('reviewer_id', user.id)
       .single()
 
+    if (existingReview && existingReview.submitted_at) {
+      return NextResponse.json(
+        { error: 'Review already submitted' },
+        { status: 400 }
+      )
+    }
+
+    // Convert new review form structure to database format
+    const sections = reviewData.sections
+    const summary = sections.summary
+    const detailedComments = sections.detailedComments
+    const confidentialComments = sections.confidentialComments
+
+    // Build detailed comments summary
+    const buildCommentsText = (comments: any[]) => {
+      if (!comments || comments.length === 0) return ''
+      return comments.map((c: any, index: number) => 
+        `${index + 1}. ${c.text}${c.type ? ` (${c.type})` : ''}`
+      ).join('\n\n')
+    }
+
     const reviewPayload = {
       manuscript_id: manuscriptId,
       reviewer_id: user.id,
-      recommendation: reviewData.recommendation,
-      summary: reviewData.summary,
-      major_comments: reviewData.majorComments,
-      minor_comments: reviewData.minorComments || null,
-      comments_for_editor: reviewData.commentsForEditor || null,
-      confidence_level: reviewData.confidenceLevel,
-      time_spent_hours: reviewData.timeSpentHours ? parseFloat(reviewData.timeSpentHours) : null,
-      round: 1 // For now, assuming first round
+      recommendation: summary.recommendation,
+      summary: summary.overallAssessment || 'Overall assessment provided via structured review form.',
+      major_comments: buildCommentsText(detailedComments.majorIssues),
+      minor_comments: buildCommentsText(detailedComments.minorIssues),
+      comments_for_editor: confidentialComments?.editorOnly || null,
+      confidence_level: summary.confidence,
+      time_spent_hours: reviewData.progress?.timeSpent ? Math.round(reviewData.progress.timeSpent / 60 * 100) / 100 : null,
+      round: 1, // For now, assuming first round
+      form_data: reviewData, // Store complete form data as JSONB
+      template_id: reviewData.templateId || null,
+      draft_id: draftId || null,
+      submitted_at: new Date().toISOString()
     }
 
     let reviewResult
@@ -93,18 +167,28 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Update assignment status to completed
-    const { error: updateError } = await supabase
-      .from('review_assignments')
-      .update({
-        status: 'completed',
-        completed_at: new Date().toISOString()
-      })
-      .eq('id', assignmentId)
+    // Update assignment status to completed (if assignment exists)
+    if (assignment) {
+      const { error: updateError } = await supabase
+        .from('review_assignments')
+        .update({
+          status: 'completed',
+          completed_at: new Date().toISOString()
+        })
+        .eq('id', assignmentId)
 
-    if (updateError) {
-      console.error('Error updating assignment status:', updateError)
-      // Don't fail the whole operation for this
+      if (updateError) {
+        console.error('Error updating assignment status:', updateError)
+        // Don't fail the whole operation for this
+      }
+    }
+
+    // Delete the draft now that review is submitted
+    if (draftId) {
+      await supabase
+        .from('review_drafts')
+        .delete()
+        .eq('id', draftId)
     }
 
     // Check if all reviews are complete and update manuscript status
@@ -113,9 +197,9 @@ export async function POST(request: NextRequest) {
       .select('status')
       .eq('manuscript_id', manuscriptId)
 
-    const allComplete = allAssignments?.every(a => a.status === 'completed')
+    const allComplete = allAssignments?.every((a: any) => a.status === 'completed')
     
-    if (allComplete) {
+    if (allComplete && allAssignments && allAssignments.length > 0) {
       // Update manuscript status to indicate reviews are complete
       await supabase
         .from('manuscripts')
@@ -132,9 +216,35 @@ export async function POST(request: NextRequest) {
         action: 'review_submitted',
         details: {
           assignment_id: assignmentId,
-          recommendation: reviewData.recommendation
+          recommendation: summary.recommendation,
+          review_id: reviewResult.data.id,
+          confidence_level: summary.confidence,
+          expertise_level: summary.expertise
         }
       })
+
+    // Create notification for editor
+    const { data: manuscript } = await supabase
+      .from('manuscripts')
+      .select('title, editor_id')
+      .eq('id', manuscriptId)
+      .single()
+
+    if (manuscript && manuscript.editor_id) {
+      await supabase
+        .from('notifications')
+        .insert({
+          user_id: manuscript.editor_id,
+          type: 'review_completed',
+          title: 'Review Completed',
+          message: `A review has been submitted for: ${manuscript.title}`,
+          data: {
+            manuscript_id: manuscriptId,
+            review_id: reviewResult.data.id,
+            recommendation: summary.recommendation
+          }
+        })
+    }
 
     return NextResponse.json({ 
       success: true, 

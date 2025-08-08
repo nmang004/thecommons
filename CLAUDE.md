@@ -72,6 +72,46 @@ lib/
 - Use established CSS classes and design tokens
 - Implement proper error handling and loading states
 
+### 🔧 TypeScript Best Practices
+
+#### Next.js 15 API Routes
+```typescript
+// ✅ CORRECT Pattern
+export async function GET(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  const params = await context.params // Always await!
+  const supabase = await createClient() // Always await!
+}
+```
+
+#### Page Components
+```typescript
+interface PageProps {
+  params: Promise<{ id: string }>
+  searchParams: Promise<{ [key: string]: string | undefined }>
+}
+
+export default async function Page({ params, searchParams }: PageProps) {
+  const resolvedParams = await params
+  const resolvedSearchParams = await searchParams
+}
+```
+
+#### Common Fixes
+- **Unused parameters**: Prefix with underscore `_request`
+- **Supabase relations**: Use `(data as any)?.property` for complex types
+- **Optional values**: Provide defaults `queryParams.limit || 10`
+- **Array operations**: Explicit typing `items.map((item: any) => ...)`
+
+#### Pre-commit Checklist
+1. All `createClient()` calls are awaited
+2. API routes use `await context.params` 
+3. Page props use Promise patterns
+4. No unused variable warnings
+5. Type assertions for Supabase relations
+
 ### Academic Publishing Focus
 Remember this is a scholarly platform requiring:
 - Professional, academic aesthetic
