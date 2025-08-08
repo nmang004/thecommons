@@ -41,7 +41,7 @@ async function handler(request: NextRequest): Promise<NextResponse> {
     const supabase = await createClient()
     
     // Get article data
-    const { data: article, error } = await supabase
+    const { data: article, error }: { data: ArticleQueryResult | null; error: any } = await supabase
       .from('manuscripts')
       .select(`
         id,
@@ -64,7 +64,7 @@ async function handler(request: NextRequest): Promise<NextResponse> {
       `)
       .eq('id', articleId)
       .eq('status', 'published')
-      .single() as Promise<{ data: ArticleQueryResult | null; error: any }>
+      .single()
 
     if (error || !article) {
       return NextResponse.json(
@@ -82,18 +82,18 @@ async function handler(request: NextRequest): Promise<NextResponse> {
       authors: [
         {
           name: mainAuthor?.full_name || 'Unknown Author',
-          affiliation: mainAuthor?.affiliation,
-          orcid: mainAuthor?.orcid
+          affiliation: mainAuthor?.affiliation || undefined,
+          orcid: mainAuthor?.orcid || undefined
         },
         ...article.coauthors.map((coauthor) => ({
           name: coauthor.name,
-          affiliation: coauthor.affiliation,
-          orcid: coauthor.orcid
+          affiliation: coauthor.affiliation || undefined,
+          orcid: coauthor.orcid || undefined
         }))
       ],
       content: `This is the article content for ${article.title}. In a real implementation, this would be the full article text.`,
-      doi: article.doi,
-      publishedAt: article.published_at,
+      doi: article.doi || undefined,
+      publishedAt: article.published_at || new Date().toISOString(),
       keywords: article.keywords || [],
       fieldOfStudy: article.field_of_study
     }

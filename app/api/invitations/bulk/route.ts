@@ -23,7 +23,7 @@ interface InvitationResult {
   scheduled_for?: string
 }
 
-export async function POST(_request: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient()
     
