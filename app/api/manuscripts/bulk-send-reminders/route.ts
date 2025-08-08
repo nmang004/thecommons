@@ -97,7 +97,10 @@ export async function POST(request: NextRequest) {
 
         if (updateError) {
           console.error('Error updating reminder count:', updateError)
-          errors.push(`Failed to update reminder for reviewer ${assignment.profiles?.full_name}`)
+          const reviewerName = Array.isArray(assignment.profiles) 
+            ? assignment.profiles[0]?.full_name 
+            : (assignment.profiles as any)?.full_name || 'Unknown'
+          errors.push(`Failed to update reminder for reviewer ${reviewerName}`)
           continue
         }
 
@@ -111,8 +114,12 @@ export async function POST(request: NextRequest) {
             message: message,
             data: {
               manuscript_id: assignment.manuscript_id,
-              manuscript_title: assignment.manuscripts?.title,
-              submission_number: assignment.manuscripts?.submission_number,
+              manuscript_title: Array.isArray(assignment.manuscripts)
+                ? assignment.manuscripts[0]?.title
+                : (assignment.manuscripts as any)?.title || 'Unknown',
+              submission_number: Array.isArray(assignment.manuscripts)
+                ? assignment.manuscripts[0]?.submission_number
+                : (assignment.manuscripts as any)?.submission_number || '',
               due_date: assignment.due_date,
               reminder_count: (assignment.reminder_count || 0) + 1,
               sent_by: user.id,
@@ -122,7 +129,10 @@ export async function POST(request: NextRequest) {
 
         if (notificationError) {
           console.error('Error creating notification:', notificationError)
-          errors.push(`Failed to send notification to ${assignment.profiles?.full_name}`)
+          const reviewerName = Array.isArray(assignment.profiles) 
+            ? assignment.profiles[0]?.full_name 
+            : (assignment.profiles as any)?.full_name || 'Unknown'
+          errors.push(`Failed to send notification to ${reviewerName}`)
           continue
         }
 
@@ -135,8 +145,12 @@ export async function POST(request: NextRequest) {
             action: 'reminder_sent',
             details: {
               reviewer_id: assignment.reviewer_id,
-              reviewer_name: assignment.profiles?.full_name,
-              reviewer_email: assignment.profiles?.email,
+              reviewer_name: Array.isArray(assignment.profiles) 
+                ? assignment.profiles[0]?.full_name 
+                : (assignment.profiles as any)?.full_name || 'Unknown',
+              reviewer_email: Array.isArray(assignment.profiles) 
+                ? assignment.profiles[0]?.email 
+                : (assignment.profiles as any)?.email || '',
               subject: subject,
               message: message,
               reminder_count: (assignment.reminder_count || 0) + 1,
@@ -153,11 +167,17 @@ export async function POST(request: NextRequest) {
         // using your email service (like Resend, SendGrid, etc.)
         /*
         await sendEmail({
-          to: assignment.profiles?.email,
+          to: Array.isArray(assignment.profiles) 
+            ? assignment.profiles[0]?.email 
+            : (assignment.profiles as any)?.email || '',
           subject: subject,
           html: generateReminderEmailTemplate({
-            reviewerName: assignment.profiles?.full_name,
-            manuscriptTitle: assignment.manuscripts?.title,
+            reviewerName: Array.isArray(assignment.profiles) 
+              ? assignment.profiles[0]?.full_name 
+              : (assignment.profiles as any)?.full_name || 'Unknown',
+            manuscriptTitle: Array.isArray(assignment.manuscripts)
+              ? assignment.manuscripts[0]?.title
+              : (assignment.manuscripts as any)?.title || 'Unknown',
             dueDate: assignment.due_date,
             message: message,
             reviewUrl: `${process.env.NEXT_PUBLIC_APP_URL}/reviewer/review/${assignment.id}`
@@ -168,7 +188,10 @@ export async function POST(request: NextRequest) {
         remindersSent++
       } catch (error) {
         console.error('Error processing reminder for assignment:', assignment.id, error)
-        errors.push(`Failed to process reminder for reviewer ${assignment.profiles?.full_name}`)
+        const reviewerName = Array.isArray(assignment.profiles) 
+          ? assignment.profiles[0]?.full_name 
+          : (assignment.profiles as any)?.full_name || 'Unknown'
+        errors.push(`Failed to process reminder for reviewer ${reviewerName}`)
       }
     }
 

@@ -194,8 +194,7 @@ export async function PUT(
 ) {
   try {
     const supabase = await createClient()
-    const resolvedParams = await params
-    const _manuscriptId = resolvedParams.id
+    await params
     
     const {
       data: { user },

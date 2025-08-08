@@ -22,7 +22,6 @@ import {
   Clock, 
   CheckCircle, 
   AlertCircle,
-  Users,
   FileText,
   Download
 } from 'lucide-react'
@@ -186,7 +185,7 @@ export function DecisionAnalytics({
           </p>
         </div>
         <div className="flex items-center space-x-3">
-          <Select value={selectedTimeRange} onValueChange={setSelectedTimeRange}>
+          <Select value={selectedTimeRange} onValueChange={(value) => setSelectedTimeRange(value as '7d' | '30d' | '90d' | '1y')}>
             <SelectTrigger className="w-32">
               <SelectValue />
             </SelectTrigger>

@@ -152,7 +152,7 @@ const DECISION_OPTIONS = [
   }
 ]
 
-const DEFAULT_TEMPLATES: DecisionTemplate[] = [
+/* const DEFAULT_TEMPLATES: DecisionTemplate[] = [
   {
     id: 'accept_standard',
     name: 'Standard Acceptance',
@@ -265,7 +265,7 @@ Thank you for your interest in our journal.
 Best regards,`,
     category: 'reject'
   }
-]
+] */
 
 const decisionReducer = (state: DecisionState, action: DecisionAction): DecisionState => {
   switch (action.type) {
@@ -294,7 +294,17 @@ const decisionReducer = (state: DecisionState, action: DecisionAction): Decision
     case 'UPDATE_ACTIONS':
       return {
         ...state,
-        actions: { ...state.actions, ...action.actions }
+        actions: { 
+          ...state.actions, 
+          ...action.actions,
+          // Ensure string types for nullable string fields
+          schedulePublication: typeof action.actions.schedulePublication === 'boolean' 
+            ? undefined 
+            : action.actions.schedulePublication,
+          assignProductionEditor: typeof action.actions.assignProductionEditor === 'boolean'
+            ? undefined
+            : action.actions.assignProductionEditor
+        }
       }
     case 'SET_TEMPLATE':
       return { ...state, selectedTemplate: action.template }
@@ -337,32 +347,29 @@ export function EditorialDecisionForm({
   reviews,
   onSubmit,
   onCancel,
-  _isLoading = false,
   availableEditors = [],
-  templates = [],
   userId
 }: EditorialDecisionFormProps) {
   const [state, dispatch] = useReducer(decisionReducer, initialDecisionState)
   const [isProcessing, setIsProcessing] = useState(false)
   const [processingStep, setProcessingStep] = useState('')
-  const [customTemplates, setCustomTemplates] = useState<DecisionTemplate[]>([])
   const supabase = createClient()
 
-  // Load custom templates
-  useEffect(() => {
-    const loadTemplates = async () => {
-      try {
-        const response = await fetch('/api/editorial/templates')
-        if (response.ok) {
-          const data = await response.json()
-          setCustomTemplates(data.templates || [])
-        }
-      } catch (error) {
-        console.error('Error loading templates:', error)
-      }
-    }
-    loadTemplates()
-  }, [])
+  // Load custom templates - currently disabled
+  // useEffect(() => {
+  //   const loadTemplates = async () => {
+  //     try {
+  //       const response = await fetch('/api/editorial/templates')
+  //       if (response.ok) {
+  //         const data = await response.json()
+  //         // setCustomTemplates(data.templates || [])
+  //       }
+  //     } catch (error) {
+  //       console.error('Error loading templates:', error)
+  //     }
+  //   }
+  //   loadTemplates()
+  // }, [])
 
   // Validate form on state changes
   useEffect(() => {
@@ -380,7 +387,6 @@ export function EditorialDecisionForm({
     return () => clearInterval(autoSaveInterval)
   }, [state])
 
-  const _allTemplates = [...DEFAULT_TEMPLATES, ...customTemplates, ...templates]
 
   // Decision step configuration
   const DECISION_STEPS = [
@@ -418,30 +424,25 @@ export function EditorialDecisionForm({
     }
   }
 
-  // Handle template application
-  const applyTemplate = (template: DecisionTemplate) => {
+  // Handle template application - currently disabled
+  /* const applyTemplate = (template: any) => {
     dispatch({ type: 'SET_TEMPLATE', template })
     dispatch({ type: 'SET_DECISION', decision: template.decision_type || template.decision })
     
-    // Apply template content to author letter
-    let letterContent = template.template_content?.sections?.map((s) => s.content).join('\n\n') || ''
+    // Apply template content to author letter (simplified)
+    let letterContent = (template as any).template || ''
     
     // Replace variables
-    letterContent = letterContent.replace(/{{author_name}}/g, manuscript.profiles?.full_name || 'Author')
-    letterContent = letterContent.replace(/{{manuscript_title}}/g, manuscript.title)
-    letterContent = letterContent.replace(/{{editor_name}}/g, 'Editor Name')
-    letterContent = letterContent.replace(/{{journal_name}}/g, 'The Commons')
+    letterContent = letterContent.replace(/\{author_name\}/g, manuscript.profiles?.full_name || 'Author')
+    letterContent = letterContent.replace(/\{manuscript_title\}/g, manuscript.title)
+    letterContent = letterContent.replace(/\{editor_name\}/g, 'Editor Name')
+    letterContent = letterContent.replace(/\{journal_name\}/g, 'The Commons')
     
     dispatch({ type: 'UPDATE_COMPONENT', key: 'authorLetter', value: letterContent })
-    
-    // Apply default actions if specified
-    if (template.template_content?.defaultActions) {
-      dispatch({ type: 'UPDATE_ACTIONS', actions: template.template_content.defaultActions })
-    }
-  }
+  } */
 
   // Get review statistics
-  const _reviewStats = {
+  /* const reviewStats = {
     total: reviews.length,
     accept: reviews.filter(r => r.recommendation === 'accept').length,
     minorRevisions: reviews.filter(r => r.recommendation === 'minor_revisions').length,
@@ -449,9 +450,9 @@ export function EditorialDecisionForm({
     reject: reviews.filter(r => r.recommendation === 'reject').length,
     avgConfidence: reviews.length > 0 ? 
       Math.round(reviews.reduce((sum, r) => sum + r.confidence_level, 0) / reviews.length * 10) / 10 : 0
-  }
+  } */
 
-  const _getRecommendationColor = (recommendation: string) => {
+  /* const getRecommendationColor = (recommendation: string) => {
     switch (recommendation) {
       case 'accept': return 'text-green-600 bg-green-50'
       case 'minor_revisions': return 'text-blue-600 bg-blue-50'
@@ -459,7 +460,7 @@ export function EditorialDecisionForm({
       case 'reject': return 'text-red-600 bg-red-50'
       default: return 'text-gray-600 bg-gray-50'
     }
-  }
+  } */
 
   // Handle form submission
   const handleSubmit = async (isDraft: boolean = false) => {
@@ -476,7 +477,15 @@ export function EditorialDecisionForm({
         editorId: userId || '',
         decision: state.decision as any,
         components: state.components,
-        actions: state.actions,
+        actions: {
+          ...state.actions,
+          schedulePublication: typeof state.actions.schedulePublication === 'string' 
+            ? state.actions.schedulePublication 
+            : undefined,
+          assignProductionEditor: typeof state.actions.assignProductionEditor === 'string'
+            ? state.actions.assignProductionEditor
+            : undefined
+        } as any,
         templateId: state.selectedTemplate?.id,
         templateVersion: 1,
         isDraft
@@ -485,12 +494,7 @@ export function EditorialDecisionForm({
       const result = await decisionService.processDecision(input)
 
       if (result.success) {
-        onSubmit({
-          success: true,
-          decisionId: result.decisionId,
-          isDraft,
-          queuedActions: result.queuedActions
-        })
+        onSubmit(input)
       } else {
         throw new Error(result.error || 'Failed to process decision')
       }
@@ -620,11 +624,10 @@ export function EditorialDecisionForm({
         {state.currentStep === 3 && (
           <AuthorLetterBuilder
             manuscript={manuscript}
-            reviews={reviews}
+            reviews={reviews as any}
             value={state.components.authorLetter}
             onChange={(value) => dispatch({ type: 'UPDATE_COMPONENT', key: 'authorLetter', value })}
             selectedTemplate={state.selectedTemplate}
-            onTemplateSelect={applyTemplate}
             className="p-6"
           />
         )}

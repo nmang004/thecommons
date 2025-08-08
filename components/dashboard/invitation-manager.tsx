@@ -12,14 +12,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ConflictChecker, ReviewerEligibility } from './conflict-checker'
 import { 
   Send, 
-  Clock, 
-  Users, 
-  CheckCircle, 
-  XCircle, 
   AlertTriangle,
   Settings,
-  Template,
-  FileText,
   Eye,
   EyeOff,
   RefreshCw

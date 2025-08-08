@@ -118,7 +118,7 @@ export function CommunicationPanel({
           ) || []
           
           if (unreadMessages.length > 0) {
-            await markMessagesAsRead(unreadMessages.map(m => m.id))
+            await markMessagesAsRead(unreadMessages.map((m: Message) => m.id))
           }
         }
       } catch (error) {

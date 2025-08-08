@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
               reviewer_id: reviewerId,
               success: false,
               error: 'Blocked by conflict of interest',
-              conflicts: coiResult.conflicts
+              conflicts: coiResult.conflicts.map(c => c.evidence)
             })
             blockedCount++
             continue

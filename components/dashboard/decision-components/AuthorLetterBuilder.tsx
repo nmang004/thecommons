@@ -53,7 +53,6 @@ export function AuthorLetterBuilder({
   value,
   onChange,
   selectedTemplate,
-  _onTemplateSelect,
   className
 }: AuthorLetterBuilderProps) {
   const [previewMode, setPreviewMode] = useState(false)
@@ -240,7 +239,7 @@ Editor-in-Chief`
                   <CardContent className="space-y-2">
                     {LETTER_VARIABLES.map(variable => (
                       <div key={variable} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                        <code className="text-xs font-mono">{{variable}}</code>
+                        <code className="text-xs font-mono">{`{{${variable}}}`}</code>
                         <Button
                           variant="ghost"
                           size="sm"

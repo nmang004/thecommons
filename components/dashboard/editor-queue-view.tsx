@@ -172,7 +172,7 @@ export function EditorQueueView({ manuscripts, currentEditor, onRefresh }: Edito
           bValue = new Date(b.submitted_at || b.created_at)
       }
       
-      if (sortOrder === 'asc') {
+      if (_sortOrder === 'asc') {
         return aValue < bValue ? -1 : aValue > bValue ? 1 : 0
       } else {
         return aValue > bValue ? -1 : aValue < bValue ? 1 : 0

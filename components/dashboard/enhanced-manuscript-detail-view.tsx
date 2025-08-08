@@ -21,11 +21,9 @@ import {
   Send,
   UserPlus,
   MoreHorizontal,
-  DollarSign,
   History,
   Flag,
   AlertTriangle,
-  Clock,
   ExternalLink
 } from 'lucide-react'
 
@@ -37,18 +35,17 @@ interface ManuscriptDetailViewProps {
 
 export function EnhancedManuscriptDetailView({ 
   manuscript, 
-  potentialReviewers,
   currentEditor 
 }: ManuscriptDetailViewProps) {
   const router = useRouter()
   const [showReviewerSelector, setShowReviewerSelector] = useState(false)
   const [showDecisionForm, setShowDecisionForm] = useState(false)
-  const [selectedReviewers, setSelectedReviewers] = useState<string[]>([])
-  const [decisionData, setDecisionData] = useState({
-    decision: '',
-    decisionLetter: '',
-    internalNotes: ''
-  })
+  // const [selectedReviewers, setSelectedReviewers] = useState<string[]>([])
+  // const [decisionData, setDecisionData] = useState({
+  //   decision: '',
+  //   decisionLetter: '',
+  //   internalNotes: ''
+  // })
   const [activeTab, setActiveTab] = useState('overview')
 
   const getStatusColor = (status: string) => {

@@ -80,11 +80,11 @@ export async function POST(request: NextRequest) {
     const exportData = manuscripts.map(manuscript => ({
       'Submission ID': manuscript.submission_number || manuscript.id.slice(-8),
       'Title': manuscript.title,
-      'Author': Array.isArray(manuscript.profiles) ? manuscript.profiles[0]?.full_name : manuscript.profiles?.full_name || 'Unknown',
-      'Author Email': Array.isArray(manuscript.profiles) ? manuscript.profiles[0]?.email : manuscript.profiles?.email || '',
-      'Author Affiliation': Array.isArray(manuscript.profiles) ? manuscript.profiles[0]?.affiliation : manuscript.profiles?.affiliation || '',
-      'Editor': Array.isArray(manuscript.editor) ? manuscript.editor[0]?.full_name : manuscript.editor?.full_name || 'Unassigned',
-      'Editor Email': Array.isArray(manuscript.editor) ? manuscript.editor[0]?.email : manuscript.editor?.email || '',
+      'Author': Array.isArray(manuscript.profiles) ? manuscript.profiles[0]?.full_name : (manuscript.profiles as any)?.full_name || 'Unknown',
+      'Author Email': Array.isArray(manuscript.profiles) ? manuscript.profiles[0]?.email : (manuscript.profiles as any)?.email || '',
+      'Author Affiliation': Array.isArray(manuscript.profiles) ? manuscript.profiles[0]?.affiliation : (manuscript.profiles as any)?.affiliation || '',
+      'Editor': Array.isArray(manuscript.editor) ? manuscript.editor[0]?.full_name : (manuscript.editor as any)?.full_name || 'Unassigned',
+      'Editor Email': Array.isArray(manuscript.editor) ? manuscript.editor[0]?.email : (manuscript.editor as any)?.email || '',
       'Field of Study': manuscript.field_of_study,
       'Subfield': manuscript.subfield || '',
       'Status': manuscript.status.split('_').map((word: string) => 
