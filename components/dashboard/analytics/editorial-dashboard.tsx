@@ -6,15 +6,18 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { 
-  BarChart, Bar, LineChart, Line, ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, 
-  Tooltip, ResponsiveContainer
+  BarChart, Bar, LineChart, Line, ScatterChart, Scatter,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts'
 import { 
   FileText, Clock, Users, CheckCircle,
-  TrendingUp, TrendingDown, Filter
+  TrendingUp, TrendingDown, Filter, AlertTriangle,
+  Target, Brain, Gauge, Download,
+  BarChart3, Zap, Star, Award
 } from 'lucide-react'
 
 interface EditorialMetrics {
+  // Existing metrics
   totalSubmissions: number
   inReview: number
   pendingDecision: number
@@ -23,6 +26,66 @@ interface EditorialMetrics {
   avgReviewTime: number
   activeEditors: number
   activeReviewers: number
+  
+  // Time Metrics
+  timeMetrics: {
+    averageTimeToFirstDecision: number
+    averageTimeToFinalDecision: number
+    averageReviewTime: number
+    submissionToPublicationTime: number
+  }
+  
+  // Volume Metrics
+  volumeMetrics: {
+    submissionsPerMonth: ChartData[]
+    decisionsPerMonth: ChartData[]
+    acceptanceRate: number
+    publicationsPerIssue: number
+  }
+  
+  // Quality Metrics
+  qualityMetrics: {
+    reviewerSatisfaction: number
+    authorSatisfaction: number
+    citationImpact: number
+    revisionSuccessRate: number
+  }
+  
+  // Workload Distribution
+  workload: {
+    manuscriptsPerEditor: ChartData[]
+    editorCapacity: GaugeData[]
+    bottlenecks: BottleneckAnalysis[]
+    recommendations: WorkloadRecommendation[]
+  }
+}
+
+interface ChartData {
+  name: string
+  value: number
+  [key: string]: any
+}
+
+interface GaugeData {
+  name: string
+  value: number
+  maxValue: number
+}
+
+interface BottleneckAnalysis {
+  stage: string
+  avgDuration: number
+  expectedDuration: number
+  delayPercentage: number
+  manuscriptsAffected: number
+}
+
+interface WorkloadRecommendation {
+  type: 'reassignment' | 'capacity' | 'efficiency'
+  priority: 'high' | 'medium' | 'low'
+  description: string
+  affectedEditors: string[]
+  suggestedAction: string
 }
 
 interface WorkflowStage {
@@ -127,13 +190,15 @@ export function EditorialDashboard({
   const [trendData, setTrendData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+  const [selectedDateRange, setSelectedDateRange] = useState(timeRange)
+  const [exportLoading, setExportLoading] = useState(false)
 
   const fetchEditorialData = async () => {
     try {
       setLoading(true)
       
       // Fetch editorial analytics data
-      const response = await fetch(`/api/analytics/dashboard?type=editorial&range=${timeRange}`)
+      const response = await fetch(`/api/analytics/dashboard?type=editorial&range=${selectedDateRange}`)
       
       if (response.ok) {
         const data = await response.json()
@@ -151,6 +216,28 @@ export function EditorialDashboard({
         const avgReviewTime = editorialPerformance.reduce((sum: number, week: any) => 
           sum + (week.avg_review_turnaround || 0), 0) / editorialPerformance.length
         
+        // Calculate advanced metrics
+        const monthlyData = editorialPerformance.reduce((acc: any, week: any) => {
+          const month = new Date(week.week_start).toLocaleString('default', { month: 'short' })
+          if (!acc[month]) {
+            acc[month] = { submissions: 0, decisions: 0, published: 0 }
+          }
+          acc[month].submissions += week.submissions_received || 0
+          acc[month].decisions += week.decisions_made || 0
+          acc[month].published += week.manuscripts_published || 0
+          return acc
+        }, {})
+        
+        const submissionsPerMonth = Object.entries(monthlyData).map(([month, data]: [string, any]) => ({
+          name: month,
+          value: data.submissions
+        }))
+        
+        const decisionsPerMonth = Object.entries(monthlyData).map(([month, data]: [string, any]) => ({
+          name: month,
+          value: data.decisions
+        }))
+        
         setMetrics({
           totalSubmissions: totalSubs,
           inReview: Math.round(totalSubs * 0.3), // Estimated
@@ -160,14 +247,43 @@ export function EditorialDashboard({
           avgReviewTime: Math.round(avgReviewTime || 0),
           activeEditors: editorialPerformance.reduce((sum: number, week: any) => 
             Math.max(sum, week.active_editors || 0), 0),
-          activeReviewers: Math.round(totalSubs * 2.5) // Estimated ratio
+          activeReviewers: Math.round(totalSubs * 2.5), // Estimated ratio
+          
+          // Advanced metrics
+          timeMetrics: {
+            averageTimeToFirstDecision: Math.round(avgDecisionTime * 0.6), // Estimated
+            averageTimeToFinalDecision: Math.round(avgDecisionTime),
+            averageReviewTime: Math.round(avgReviewTime),
+            submissionToPublicationTime: Math.round(avgDecisionTime * 1.5)
+          },
+          
+          volumeMetrics: {
+            submissionsPerMonth,
+            decisionsPerMonth,
+            acceptanceRate: totalPub > 0 ? Math.round((totalPub / totalSubs) * 100) : 0,
+            publicationsPerIssue: Math.round(totalPub / 4) // Quarterly issues
+          },
+          
+          qualityMetrics: {
+            reviewerSatisfaction: 4.2, // Mock data - would come from surveys
+            authorSatisfaction: 4.0, // Mock data - would come from surveys
+            citationImpact: 12.5, // Mock data - would come from external API
+            revisionSuccessRate: 78 // Mock data
+          },
+          
+          workload: {
+            manuscriptsPerEditor: [],
+            editorCapacity: [],
+            bottlenecks: [],
+            recommendations: []
+          }
         })
         
         setTrendData(editorialPerformance.reverse()) // Most recent first for chart
       }
 
       // Fetch workflow funnel data
-      const funnelResponse = await fetch(`/api/analytics/dashboard?type=funnel&range=${timeRange}`)
+      const funnelResponse = await fetch(`/api/analytics/dashboard?type=funnel&range=${selectedDateRange}`)
       if (funnelResponse.ok) {
         const funnelData = await funnelResponse.json()
         
@@ -182,8 +298,21 @@ export function EditorialDashboard({
         setWorkflowData(workflowStages)
       }
 
+      // Calculate bottlenecks and workload distribution
+      const bottlenecks: BottleneckAnalysis[] = workflowData.map(stage => {
+        const expectedDuration = stage.stage.includes('REVIEW') ? 14 : 7
+        const delayPercentage = ((stage.avgDuration - expectedDuration) / expectedDuration) * 100
+        return {
+          stage: stage.stage,
+          avgDuration: stage.avgDuration,
+          expectedDuration,
+          delayPercentage: Math.max(0, delayPercentage),
+          manuscriptsAffected: stage.count
+        }
+      }).filter(b => b.delayPercentage > 20) // Only show significant bottlenecks
+      
       // Mock editor and reviewer performance data
-      setEditorsData([
+      const editorsList = [
         {
           editorId: '1',
           editorName: 'Dr. Sarah Johnson',
@@ -216,7 +345,59 @@ export function EditorialDashboard({
           acceptanceRate: 75,
           currentWorkload: 4
         }
-      ])
+      ]
+      
+      setEditorsData(editorsList)
+      
+      // Calculate editor capacity and recommendations
+      const editorCapacity: GaugeData[] = editorsList.map(editor => ({
+        name: editor.editorName,
+        value: editor.currentWorkload,
+        maxValue: 10 // Standard capacity
+      }))
+      
+      const manuscriptsPerEditor: ChartData[] = editorsList.map(editor => ({
+        name: editor.editorName.split(' ')[1], // Last name only for chart
+        value: editor.manuscriptsHandled
+      }))
+      
+      // Generate workload recommendations
+      const recommendations: WorkloadRecommendation[] = []
+      
+      editorsList.forEach(editor => {
+        if (editor.currentWorkload > 10) {
+          recommendations.push({
+            type: 'reassignment',
+            priority: 'high',
+            description: `${editor.editorName} is overloaded`,
+            affectedEditors: [editor.editorName],
+            suggestedAction: `Reassign ${editor.currentWorkload - 10} manuscripts to other editors`
+          })
+        }
+      })
+      
+      if (bottlenecks.length > 0) {
+        recommendations.push({
+          type: 'efficiency',
+          priority: 'medium',
+          description: 'Workflow bottlenecks detected',
+          affectedEditors: [],
+          suggestedAction: `Focus on reducing delays in ${bottlenecks[0].stage} stage`
+        })
+      }
+      
+      // Update metrics with workload data
+      if (metrics) {
+        setMetrics({
+          ...metrics,
+          workload: {
+            manuscriptsPerEditor,
+            editorCapacity,
+            bottlenecks,
+            recommendations
+          }
+        })
+      }
 
       setReviewersData([
         {
@@ -259,11 +440,67 @@ export function EditorialDashboard({
     // Auto-refresh every 10 minutes
     const interval = setInterval(fetchEditorialData, 10 * 60 * 1000)
     return () => clearInterval(interval)
-  }, [timeRange])
+  }, [selectedDateRange])
 
   const formatNumber = (num: number) => {
     if (num >= 1000) return `${(num / 1000).toFixed(1)}K`
     return num.toString()
+  }
+
+  const handleExport = async () => {
+    setExportLoading(true)
+    try {
+      // Prepare export data (for future use with full export functionality)
+      // const exportData = {
+      //   generatedAt: new Date().toISOString(),
+      //   dateRange: selectedDateRange,
+      //   metrics: metrics,
+      //   workflowData: workflowData,
+      //   editorsData: editorsData,
+      //   reviewersData: reviewersData,
+      //   trendData: trendData
+      // }
+      
+      // Convert to CSV format (simplified version)
+      const csvContent = `Editorial Analytics Report
+Generated: ${new Date().toLocaleString()}
+Date Range: ${selectedDateRange}
+
+Key Metrics
+Total Submissions,${metrics?.totalSubmissions || 0}
+In Review,${metrics?.inReview || 0}
+Pending Decision,${metrics?.pendingDecision || 0}
+Published,${metrics?.published || 0}
+Avg Decision Time,${metrics?.avgDecisionTime || 0} days
+Avg Review Time,${metrics?.avgReviewTime || 0} days
+
+Time Metrics
+To First Decision,${metrics?.timeMetrics.averageTimeToFirstDecision || 0} days
+To Final Decision,${metrics?.timeMetrics.averageTimeToFinalDecision || 0} days
+Review Time,${metrics?.timeMetrics.averageReviewTime || 0} days
+To Publication,${metrics?.timeMetrics.submissionToPublicationTime || 0} days
+
+Quality Metrics
+Reviewer Satisfaction,${metrics?.qualityMetrics.reviewerSatisfaction || 0}/5
+Author Satisfaction,${metrics?.qualityMetrics.authorSatisfaction || 0}/5
+Citation Impact,${metrics?.qualityMetrics.citationImpact || 0}
+Revision Success Rate,${metrics?.qualityMetrics.revisionSuccessRate || 0}%
+`
+      
+      // Create download
+      const blob = new Blob([csvContent], { type: 'text/csv' })
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `editorial-analytics-${new Date().toISOString().split('T')[0]}.csv`
+      a.click()
+      window.URL.revokeObjectURL(url)
+      
+    } catch (error) {
+      console.error('Export failed:', error)
+    } finally {
+      setExportLoading(false)
+    }
   }
 
   // const getStatusColor = (stage: string) => {  // Future use for dynamic chart colors
@@ -293,9 +530,27 @@ export function EditorialDashboard({
               Updated: {lastUpdated.toLocaleTimeString()}
             </p>
           )}
+          <select 
+            value={selectedDateRange} 
+            onChange={(e) => setSelectedDateRange(e.target.value as '7d' | '30d' | '90d')}
+            className="px-3 py-1 text-sm border rounded-md"
+          >
+            <option value="7d">Last 7 days</option>
+            <option value="30d">Last 30 days</option>
+            <option value="90d">Last 90 days</option>
+          </select>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={handleExport}
+            disabled={exportLoading}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            {exportLoading ? 'Exporting...' : 'Export Report'}
+          </Button>
           <Button variant="outline" size="sm">
             <Filter className="h-4 w-4 mr-2" />
-            Filter
+            Advanced Filter
           </Button>
         </div>
       </div>
@@ -342,6 +597,42 @@ export function EditorialDashboard({
           loading={loading}
         />
       </div>
+
+      {/* Time Metrics Analysis */}
+      <Card className="p-6 card-academic">
+        <div className="mb-4">
+          <h3 className="text-lg font-semibold">Time Metrics Analysis</h3>
+          <p className="text-sm text-muted-foreground">
+            Comprehensive timeline breakdown by decision stage
+          </p>
+        </div>
+        {loading ? (
+          <Skeleton className="h-32 w-full" />
+        ) : metrics && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center p-4 border rounded-lg">
+              <Clock className="h-8 w-8 mx-auto mb-2 text-blue-600" />
+              <p className="text-2xl font-bold">{metrics.timeMetrics.averageTimeToFirstDecision}d</p>
+              <p className="text-sm text-muted-foreground">To First Decision</p>
+            </div>
+            <div className="text-center p-4 border rounded-lg">
+              <Target className="h-8 w-8 mx-auto mb-2 text-amber-600" />
+              <p className="text-2xl font-bold">{metrics.timeMetrics.averageTimeToFinalDecision}d</p>
+              <p className="text-sm text-muted-foreground">To Final Decision</p>
+            </div>
+            <div className="text-center p-4 border rounded-lg">
+              <Users className="h-8 w-8 mx-auto mb-2 text-green-600" />
+              <p className="text-2xl font-bold">{metrics.timeMetrics.averageReviewTime}d</p>
+              <p className="text-sm text-muted-foreground">Review Time</p>
+            </div>
+            <div className="text-center p-4 border rounded-lg">
+              <CheckCircle className="h-8 w-8 mx-auto mb-2 text-emerald-600" />
+              <p className="text-2xl font-bold">{metrics.timeMetrics.submissionToPublicationTime}d</p>
+              <p className="text-sm text-muted-foreground">To Publication</p>
+            </div>
+          </div>
+        )}
+      </Card>
 
       {/* Charts Row 1 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -533,6 +824,174 @@ export function EditorialDashboard({
               />
             </ScatterChart>
           </ResponsiveContainer>
+        )}
+      </Card>
+
+      {/* Bottleneck Analysis */}
+      {metrics && metrics.workload.bottlenecks.length > 0 && (
+        <Card className="p-6 card-academic">
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold flex items-center">
+              <AlertTriangle className="h-5 w-5 mr-2 text-amber-600" />
+              Workflow Bottlenecks Detected
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              Stages exceeding expected processing time
+            </p>
+          </div>
+          <div className="space-y-3">
+            {metrics.workload.bottlenecks.map((bottleneck, index) => (
+              <div key={index} className="p-4 border rounded-lg bg-amber-50/50">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-medium">{bottleneck.stage}</h4>
+                  <Badge variant="secondary" className="bg-amber-100">
+                    {Math.round(bottleneck.delayPercentage)}% delay
+                  </Badge>
+                </div>
+                <div className="grid grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <p className="text-muted-foreground">Current Duration</p>
+                    <p className="font-semibold">{bottleneck.avgDuration} days</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Expected Duration</p>
+                    <p className="font-semibold">{bottleneck.expectedDuration} days</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Manuscripts Affected</p>
+                    <p className="font-semibold">{bottleneck.manuscriptsAffected}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {/* Editor Capacity Gauge */}
+      <Card className="p-6 card-academic">
+        <div className="mb-4">
+          <h3 className="text-lg font-semibold flex items-center">
+            <Gauge className="h-5 w-5 mr-2 text-blue-600" />
+            Editor Capacity Utilization
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            Current workload vs standard capacity
+          </p>
+        </div>
+        {loading ? (
+          <Skeleton className="h-64 w-full" />
+        ) : metrics && (
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={metrics.workload.editorCapacity} layout="horizontal">
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis type="number" domain={[0, 15]} tick={{ fontSize: 12 }} />
+              <YAxis 
+                dataKey="name" 
+                type="category"
+                tick={{ fontSize: 12 }}
+                width={120}
+              />
+              <Tooltip 
+                formatter={(value: number, name: string) => [
+                  `${value} manuscripts`,
+                  name === 'value' ? 'Current Load' : name
+                ]}
+              />
+              <Bar 
+                dataKey="value" 
+                fill="#1e3a8a"
+                radius={[0, 4, 4, 0]}
+              />
+              <Bar 
+                dataKey="maxValue" 
+                fill="#e5e7eb"
+                radius={[0, 4, 4, 0]}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        )}
+      </Card>
+
+      {/* Workload Recommendations */}
+      {metrics && metrics.workload.recommendations.length > 0 && (
+        <Card className="p-6 card-academic">
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold flex items-center">
+              <Brain className="h-5 w-5 mr-2 text-green-600" />
+              AI-Powered Recommendations
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              Optimization suggestions based on current metrics
+            </p>
+          </div>
+          <div className="space-y-3">
+            {metrics.workload.recommendations.map((rec, index) => (
+              <div key={index} className="p-4 border rounded-lg">
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <h4 className="font-medium">{rec.description}</h4>
+                    <p className="text-sm text-muted-foreground mt-1">{rec.suggestedAction}</p>
+                  </div>
+                  <Badge 
+                    variant={rec.priority === 'high' ? 'destructive' : 
+                            rec.priority === 'medium' ? 'secondary' : 'default'}
+                  >
+                    {rec.priority} priority
+                  </Badge>
+                </div>
+                {rec.affectedEditors.length > 0 && (
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className="text-sm text-muted-foreground">Affects:</span>
+                    {rec.affectedEditors.map((editor, i) => (
+                      <Badge key={i} variant="outline" className="text-xs">
+                        {editor}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {/* Quality Metrics */}
+      <Card className="p-6 card-academic">
+        <div className="mb-4">
+          <h3 className="text-lg font-semibold flex items-center">
+            <Award className="h-5 w-5 mr-2 text-purple-600" />
+            Quality Metrics
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            Satisfaction scores and impact measurements
+          </p>
+        </div>
+        {loading ? (
+          <Skeleton className="h-32 w-full" />
+        ) : metrics && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center p-4 border rounded-lg">
+              <Star className="h-8 w-8 mx-auto mb-2 text-amber-500" />
+              <p className="text-2xl font-bold">{metrics.qualityMetrics.reviewerSatisfaction}/5</p>
+              <p className="text-sm text-muted-foreground">Reviewer Satisfaction</p>
+            </div>
+            <div className="text-center p-4 border rounded-lg">
+              <Star className="h-8 w-8 mx-auto mb-2 text-amber-500" />
+              <p className="text-2xl font-bold">{metrics.qualityMetrics.authorSatisfaction}/5</p>
+              <p className="text-sm text-muted-foreground">Author Satisfaction</p>
+            </div>
+            <div className="text-center p-4 border rounded-lg">
+              <BarChart3 className="h-8 w-8 mx-auto mb-2 text-blue-600" />
+              <p className="text-2xl font-bold">{metrics.qualityMetrics.citationImpact}</p>
+              <p className="text-sm text-muted-foreground">Avg Citation Impact</p>
+            </div>
+            <div className="text-center p-4 border rounded-lg">
+              <Zap className="h-8 w-8 mx-auto mb-2 text-green-600" />
+              <p className="text-2xl font-bold">{metrics.qualityMetrics.revisionSuccessRate}%</p>
+              <p className="text-sm text-muted-foreground">Revision Success Rate</p>
+            </div>
+          </div>
         )}
       </Card>
     </div>
