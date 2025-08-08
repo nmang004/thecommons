@@ -71,8 +71,6 @@ export class NotificationService {
   async sendNotification(
     request: NotificationRequest
   ): Promise<NotificationResult> {
-    const results: NotificationResult['results'] = {}
-
     // If scheduled, queue for later processing
     if (request.scheduleFor && request.scheduleFor > new Date()) {
       await this.jobQueue.scheduleJob(
@@ -441,7 +439,7 @@ export class NotificationService {
    */
   async markAsDelivered(
     trackingId: string,
-    channel: 'email' | 'inApp' | 'sms',
+    _channel: 'email' | 'inApp' | 'sms',
     deliveryData?: Record<string, unknown>
   ): Promise<void> {
     const supabase = await this.getSupabase()

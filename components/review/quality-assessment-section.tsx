@@ -7,7 +7,6 @@ import { Textarea } from '@/components/ui/textarea'
 import { Slider } from '@/components/ui/slider'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
 import { Progress } from '@/components/ui/progress'
 import { 
   AlertCircle, 
@@ -23,7 +22,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { useReviewFormStore } from '@/lib/stores/review-form-store'
-import type { ScoreWithComments, QualityAspect, ReviewTemplate } from '@/types/review'
+import type { ScoreWithComments, QualityAspect } from '@/types/review'
 
 interface QualityAssessmentSectionProps {
   className?: string
@@ -166,9 +165,9 @@ export function QualityAssessmentSection({ className }: QualityAssessmentSection
       const config = aspectsConfig[aspect]
       const assessment = qualityAssessment[aspect]
       
-      if (config.weight > 0 && assessment.score > 0) {
+      if (config.weight > 0 && (assessment?.score || 0) > 0) {
         totalWeight += config.weight
-        weightedSum += assessment.score * config.weight
+        weightedSum += (assessment?.score || 0) * config.weight
       }
     })
     
@@ -180,7 +179,7 @@ export function QualityAssessmentSection({ className }: QualityAssessmentSection
     const requiredAspects = aspects.filter(aspect => aspectsConfig[aspect].required)
     const completedAspects = requiredAspects.filter(aspect => {
       const assessment = qualityAssessment[aspect]
-      return assessment.score > 0 && assessment.comments.trim().length > 0
+      return (assessment?.score || 0) > 0 && (assessment?.comments || '').trim().length > 0
     })
     
     return requiredAspects.length > 0 ? Math.round((completedAspects.length / requiredAspects.length) * 100) : 0
@@ -248,7 +247,7 @@ export function QualityAssessmentSection({ className }: QualityAssessmentSection
             const config = aspectsConfig[aspect]
             const assessment = qualityAssessment[aspect]
             const isExpanded = expandedAspect === aspect
-            const isComplete = assessment.score > 0 && assessment.comments.trim().length > 0
+            const isComplete = (assessment?.score || 0) > 0 && (assessment?.comments || '').trim().length > 0
             
             return (
               <Card key={aspect} className={`p-6 ${isComplete ? 'ring-2 ring-green-200' : ''}`}>
@@ -290,24 +289,24 @@ export function QualityAssessmentSection({ className }: QualityAssessmentSection
                       </Tooltip>
                     </div>
                     
-                    {assessment.score > 0 && (
+                    {(assessment?.score || 0) > 0 && (
                       <div className="flex items-center space-x-2">
                         <div className="flex items-center space-x-1">
-                          {Array.from({ length: assessment.score }, (_, i) => (
+                          {Array.from({ length: (assessment?.score || 0) }, (_, i) => (
                             <Star 
                               key={i} 
                               className="w-4 h-4 fill-yellow-400 text-yellow-400" 
                             />
                           ))}
-                          {Array.from({ length: 5 - assessment.score }, (_, i) => (
+                          {Array.from({ length: 5 - (assessment?.score || 0) }, (_, i) => (
                             <Star 
-                              key={i + assessment.score} 
+                              key={i + (assessment?.score || 0)} 
                               className="w-4 h-4 text-gray-300" 
                             />
                           ))}
                         </div>
                         <span className="text-sm font-medium text-gray-700">
-                          {SCORE_LABELS[assessment.score - 1]}
+                          {SCORE_LABELS[(assessment?.score || 0) - 1]}
                         </span>
                       </div>
                     )}
@@ -316,12 +315,12 @@ export function QualityAssessmentSection({ className }: QualityAssessmentSection
                   {/* Score Slider */}
                   <div className="space-y-3">
                     <Label className="text-sm font-medium">
-                      Score ({SCORE_LABELS[assessment.score - 1] || 'Not rated'})
+                      Score ({SCORE_LABELS[(assessment?.score || 0) - 1] || 'Not rated'})
                     </Label>
                     
                     <div className="px-3">
                       <Slider
-                        value={[assessment.score]}
+                        value={[(assessment?.score || 0)]}
                         onValueChange={([value]) => updateAspect(aspect, { score: value })}
                         max={5}
                         min={1}
@@ -330,17 +329,17 @@ export function QualityAssessmentSection({ className }: QualityAssessmentSection
                       />
                       
                       <div className="flex justify-between text-xs text-gray-500 mt-1">
-                        {SCORE_LABELS.map((label, index) => (
+                        {SCORE_LABELS.map((_, index) => (
                           <span key={index}>{index + 1}</span>
                         ))}
                       </div>
                     </div>
                     
-                    {assessment.score > 0 && (
+                    {(assessment?.score || 0) > 0 && (
                       <div className="bg-blue-50 border border-blue-200 rounded p-3">
                         <p className="text-sm text-blue-800">
                           <Info className="w-4 h-4 inline mr-1" />
-                          {SCORE_DESCRIPTIONS[aspect]?.[assessment.score] || 'No description available'}
+                          {(SCORE_DESCRIPTIONS as any)[aspect]?.[(assessment?.score || 0)] || 'No description available'}
                         </p>
                       </div>
                     )}
@@ -366,7 +365,7 @@ export function QualityAssessmentSection({ className }: QualityAssessmentSection
                     
                     <Textarea
                       id={`${aspect}-comments`}
-                      value={assessment.comments}
+                      value={(assessment?.comments || '')}
                       onChange={(e) => updateAspect(aspect, { comments: e.target.value })}
                       placeholder={`Provide detailed feedback on ${aspect.replace(/([A-Z])/g, ' $1').trim().toLowerCase()}...`}
                       rows={isExpanded ? 6 : 3}
@@ -375,9 +374,9 @@ export function QualityAssessmentSection({ className }: QualityAssessmentSection
                     
                     <div className="flex justify-between items-center text-xs text-gray-500">
                       <span>
-                        {assessment.comments.length} characters
+                        {(assessment?.comments || '').length} characters
                       </span>
-                      {assessment.comments.length > 0 && assessment.comments.length < 50 && (
+                      {(assessment?.comments || '').length > 0 && (assessment?.comments || '').length < 50 && (
                         <span className="text-amber-600">
                           Consider providing more detailed feedback
                         </span>
@@ -420,7 +419,7 @@ export function QualityAssessmentSection({ className }: QualityAssessmentSection
               
               <div className="text-center">
                 <div className="text-2xl font-bold text-purple-600">
-                  {aspects.filter(a => qualityAssessment[a].score > 0).length}/{aspects.length}
+                  {aspects.filter(a => (qualityAssessment[a]?.score || 0) > 0).length}/{aspects.length}
                 </div>
                 <div className="text-sm text-gray-600">
                   Aspects Rated

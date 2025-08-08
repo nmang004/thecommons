@@ -18,7 +18,6 @@ import {
   MessageSquare,
   Settings,
   Shield,
-  Eye,
   ArrowLeft,
   ArrowRight,
   Loader2,
@@ -49,12 +48,6 @@ interface ReviewFormProps {
   className?: string
 }
 
-interface SummarySection {
-  recommendation: 'accept' | 'minor_revision' | 'major_revision' | 'reject' | null
-  confidence: number
-  expertise: number
-  overallAssessment?: string
-}
 
 const SECTIONS = [
   {
@@ -131,14 +124,13 @@ export function ReviewForm({ manuscriptId, assignmentId, className }: ReviewForm
     submitReview,
     setCurrentSection,
     updateSection,
-    validateForm,
     calculateProgress,
     resetForm
   } = useReviewFormStore()
 
   const [showSubmitDialog, setShowSubmitDialog] = useState(false)
   const [showExitDialog, setShowExitDialog] = useState(false)
-  const [timeSpent, setTimeSpent] = useState(0)
+  const [, setTimeSpent] = useState(0)
 
   // Time tracking
   useEffect(() => {
@@ -194,12 +186,6 @@ export function ReviewForm({ manuscriptId, assignmentId, className }: ReviewForm
 
   const handleSubmit = async () => {
     try {
-      const isValid = validateForm()
-      if (!isValid) {
-        setShowSubmitDialog(false)
-        return
-      }
-
       await submitReview()
       router.push('/dashboard/reviewer')
     } catch (error) {

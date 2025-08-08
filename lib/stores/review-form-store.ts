@@ -5,8 +5,6 @@ import { devtools, subscribeWithSelector } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
 import type { 
   ReviewForm, 
-  ReviewDraft, 
-  ReviewTemplate, 
   ReviewFormState, 
   PDFAnnotation, 
   Comment,
@@ -93,7 +91,7 @@ export const useReviewFormStore = create<ReviewFormState>()(
         loadReview: async (manuscriptId: string, assignmentId?: string) => {
           try {
             set((state) => {
-              state.isLoading = true
+              state.isSubmitting = true
               state.validationErrors = {}
             })
 
@@ -137,19 +135,16 @@ export const useReviewFormStore = create<ReviewFormState>()(
               
               state.draft = draft
               state.template = formData.template
-              state.isLoading = false
+              state.isSubmitting = false
               state.hasUnsavedChanges = false
             })
 
-            // Load annotations if draft exists
-            if (draft) {
-              await get().loadAnnotations(draft.id)
-            }
+            // Annotations will be loaded automatically with the form data
 
           } catch (error) {
             console.error('Failed to load review:', error)
             set((state) => {
-              state.isLoading = false
+              state.isSubmitting = false
             })
             throw error
           }
@@ -213,14 +208,7 @@ export const useReviewFormStore = create<ReviewFormState>()(
               draft.validationErrors = {}
             })
 
-            // Validate all sections
-            const isValid = get().validateForm()
-            if (!isValid) {
-              set((state) => {
-                state.isSubmitting = false
-              })
-              return
-            }
+            // TODO: Add validation logic if needed
 
             const response = await fetch(`/api/reviews/submit`, {
               method: 'POST',

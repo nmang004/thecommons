@@ -136,7 +136,7 @@ export class InvitationService {
           reviewerId: reviewer.id,
           invitationToken: '',
           status: 'failed',
-          error: `Conflict of interest: ${coiResult.conflicts?.map(c => c.type).join(', ')}`
+          error: `Conflict of interest: ${coiResult.conflicts?.map(c => (c as any).type || 'Unknown').join(', ')}`
         })
         continue
       }
@@ -157,7 +157,7 @@ export class InvitationService {
           manuscript,
           reviewer,
           editor,
-          hasConflictWarning: coiResult?.conflicts && coiResult.conflicts.length > 0
+          hasConflictWarning: Boolean(coiResult?.conflicts && coiResult.conflicts.length > 0)
         })
 
         results.push(invitationResult)

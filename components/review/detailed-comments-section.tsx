@@ -6,7 +6,6 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
 import { Progress } from '@/components/ui/progress'
 import { 
   Plus, 
@@ -38,7 +37,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
 import { useReviewFormStore } from '@/lib/stores/review-form-store'
 import type { Comment, CommentType } from '@/types/review'
 
@@ -114,7 +112,6 @@ type CommentCategory = keyof typeof COMMENT_CATEGORIES
 export function DetailedCommentsSection({ className }: DetailedCommentsSectionProps) {
   const { 
     form, 
-    updateSection, 
     addComment, 
     updateComment, 
     deleteComment,
@@ -132,16 +129,18 @@ export function DetailedCommentsSection({ className }: DetailedCommentsSectionPr
   const detailedComments = form.sections.detailedComments
   const sectionErrors = validationErrors.detailedComments || []
 
+  if (!detailedComments) return null
+
   // Calculate completion
   const calculateCompletion = () => {
     const requiredCategories = ['majorIssues', 'minorIssues'] as CommentCategory[]
     const hasRequiredComments = requiredCategories.some(category => 
-      detailedComments[category].length > 0
+      (detailedComments as any)[category]?.length > 0
     )
     
     const totalCategories = Object.keys(COMMENT_CATEGORIES).length
     const categoriesWithComments = (Object.keys(COMMENT_CATEGORIES) as CommentCategory[])
-      .filter(category => detailedComments[category].length > 0).length
+      .filter(category => (detailedComments as any)[category]?.length > 0).length
     
     // Base score for meeting minimum requirement
     let score = hasRequiredComments ? 40 : 0
@@ -157,7 +156,7 @@ export function DetailedCommentsSection({ className }: DetailedCommentsSectionPr
   // Get total comment count
   const getTotalComments = () => {
     return (Object.keys(COMMENT_CATEGORIES) as CommentCategory[])
-      .reduce((total, category) => total + detailedComments[category].length, 0)
+      .reduce((total, category) => total + (detailedComments[category]?.length || 0), 0)
   }
 
   const handleAddComment = () => {
@@ -244,7 +243,7 @@ export function DetailedCommentsSection({ className }: DetailedCommentsSectionPr
         <div className="flex bg-gray-50 border-b border-gray-200">
           {(Object.keys(COMMENT_CATEGORIES) as CommentCategory[]).map((category) => {
             const config = COMMENT_CATEGORIES[category]
-            const count = detailedComments[category].length
+            const count = (detailedComments as any)[category]?.length || 0
             const isActive = activeCategory === category
             const Icon = config.icon
             
@@ -303,7 +302,7 @@ export function DetailedCommentsSection({ className }: DetailedCommentsSectionPr
             {/* Add Comment Button */}
             <div className="flex justify-between items-center">
               <h4 className="text-md font-medium text-gray-900">
-                Comments ({detailedComments[activeCategory].length})
+                Comments ({(detailedComments as any)[activeCategory]?.length || 0})
               </h4>
               
               <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
@@ -361,7 +360,7 @@ export function DetailedCommentsSection({ className }: DetailedCommentsSectionPr
 
             {/* Comments List */}
             <div className="space-y-4">
-              {detailedComments[activeCategory].length === 0 ? (
+              {(detailedComments as any)[activeCategory]?.length || 0 === 0 ? (
                 <div className="text-center py-8 bg-gray-50 border border-gray-200 rounded-lg">
                   <MessageSquare className="w-8 h-8 text-gray-400 mx-auto mb-2" />
                   <p className="text-gray-600">
@@ -372,7 +371,7 @@ export function DetailedCommentsSection({ className }: DetailedCommentsSectionPr
                   </p>
                 </div>
               ) : (
-                detailedComments[activeCategory].map((comment, index) => (
+                (detailedComments as any)[activeCategory]?.map((comment: any, index: number) => (
                   <Card key={comment.id} className="p-4">
                     <div className="space-y-3">
                       {/* Comment Header */}
@@ -485,7 +484,7 @@ export function DetailedCommentsSection({ className }: DetailedCommentsSectionPr
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             {(Object.keys(COMMENT_CATEGORIES) as CommentCategory[]).map((category) => {
               const config = COMMENT_CATEGORIES[category]
-              const count = detailedComments[category].length
+              const count = (detailedComments as any)[category]?.length || 0
               const Icon = config.icon
               
               return (

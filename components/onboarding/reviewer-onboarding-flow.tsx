@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -476,6 +476,9 @@ function PreferencesStep({
   const updatePreferences = (key: string, value: any) => {
     onUpdate({
       review_preferences: {
+        notification_frequency: 'immediate',
+        review_types: ['original_research'],
+        time_commitment_hours: 4,
         ...profile.review_preferences,
         [key]: value
       }

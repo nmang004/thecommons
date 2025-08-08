@@ -15,16 +15,10 @@ import {
   BarChart3, 
   ImageIcon,
   CheckCircle,
-  XCircle,
   AlertCircle,
-  ExternalLink,
-  FileText,
-  GitBranch,
-  Microscope,
-  TrendingUp,
   Plus,
   Trash2,
-  Eye
+  Microscope,
 } from 'lucide-react'
 import {
   Select,
@@ -101,7 +95,7 @@ export function TechnicalReviewSection({ className }: TechnicalReviewSectionProp
       technicalReview.dataAvailability,
       technicalReview.codeReproducibility,
       technicalReview.methodology,
-      technicalReview.figuresAndTables?.length > 0
+      (technicalReview?.figuresAndTables?.length || 0) > 0
     ]
     
     const completedSections = sections.filter(Boolean).length

@@ -6,14 +6,12 @@ interface RouteContext {
 }
 
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   context: RouteContext
 ) {
   try {
     const params = await context.params
     const supabase = await createClient()
-    const { searchParams } = new URL(request.url)
-    const _assignmentId = searchParams.get('assignment')
 
     // Get the authenticated user
     const {
