@@ -119,7 +119,7 @@ class QualitySystemValidator {
     }
 
     // Test functions exist
-    const { data: functions, error: funcError } = await this.supabase
+    const { error: funcError } = await this.supabase
       .rpc('calculate_review_quality_score', { report_id: '00000000-0000-0000-0000-000000000000' });
 
     // It's OK if the function fails due to invalid ID, we just want to know it exists
@@ -380,8 +380,8 @@ class QualitySystemValidator {
    * Test 9: Data Consistency
    */
   async testDataConsistency(): Promise<void> {
-    // Test foreign key relationships
-    const { data: reportsWithoutReviews } = await this.supabase
+    // Test foreign key relationships exist (queries will succeed if relationships are valid)
+    await this.supabase
       .from('review_quality_reports')
       .select(`
         id,
@@ -391,7 +391,7 @@ class QualitySystemValidator {
       .limit(5);
 
     // Test reviewer profiles consistency
-    const { data: profilesWithoutUsers } = await this.supabase
+    await this.supabase
       .from('reviewer_quality_profiles')
       .select(`
         id,

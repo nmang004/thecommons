@@ -9,9 +9,11 @@ import {
 } from '@/lib/types/quality';
 import { QualityAnalysisService } from '@/lib/services/quality-analysis';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+function getOpenAI(): OpenAI {
+  return new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
+}
 
 /**
  * POST /api/reviews/assistance
@@ -183,7 +185,7 @@ async function analyzeTone(text: string): Promise<AssistanceSuggestion[]> {
       If the tone is already good, return an empty array.
     `;
 
-    const completion = await openai.chat.completions.create({
+    const completion = await getOpenAI().chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
         {

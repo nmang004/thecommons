@@ -1,10 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 
 export class ReviewerAnalyticsService {
-  private supabase
-
-  constructor() {
-    this.supabase = createClient()
+  private async getSupabase() {
+    return await createClient()
   }
 
   /**
@@ -12,7 +10,7 @@ export class ReviewerAnalyticsService {
    */
   async updateReviewerAnalytics(reviewerId: string): Promise<boolean> {
     try {
-      const supabase = await this.supabase
+      const supabase = await this.getSupabase()
 
       // Call the database function to update analytics
       const { error } = await supabase.rpc('update_reviewer_analytics', {
@@ -36,7 +34,7 @@ export class ReviewerAnalyticsService {
    */
   async updateAllReviewerAnalytics(): Promise<{ success: number; failed: number }> {
     try {
-      const supabase = await this.supabase
+      const supabase = await this.getSupabase()
       let success = 0
       let failed = 0
 
@@ -86,7 +84,7 @@ export class ReviewerAnalyticsService {
    */
   async checkAndAwardBadges(reviewerId: string): Promise<number> {
     try {
-      const supabase = await this.supabase
+      const supabase = await this.getSupabase()
 
       // Call the database function to check and award badges
       const { data, error } = await supabase.rpc('check_and_award_badges', {
@@ -110,7 +108,7 @@ export class ReviewerAnalyticsService {
    */
   async getReviewerAnalytics(reviewerId: string) {
     try {
-      const supabase = await this.supabase
+      const supabase = await this.getSupabase()
 
       // Fetch from pre-computed analytics table
       const { data: analytics, error } = await supabase
@@ -165,7 +163,7 @@ export class ReviewerAnalyticsService {
    */
   async getWorkloadTrends(reviewerId: string, days: number = 30) {
     try {
-      const supabase = await this.supabase
+      const supabase = await this.getSupabase()
 
       const { data: workloadHistory, error } = await supabase
         .from('reviewer_workload_history')
@@ -191,7 +189,7 @@ export class ReviewerAnalyticsService {
    */
   async getPerformanceComparison(reviewerId: string) {
     try {
-      const supabase = await this.supabase
+      const supabase = await this.getSupabase()
 
       // Get reviewer's analytics
       const reviewerAnalytics = await this.getReviewerAnalytics(reviewerId)
@@ -248,7 +246,7 @@ export class ReviewerAnalyticsService {
    */
   async getRecentAchievements(reviewerId: string, limit: number = 5) {
     try {
-      const supabase = await this.supabase
+      const supabase = await this.getSupabase()
 
       const { data: recentBadges, error } = await supabase
         .from('profile_badges')
@@ -277,7 +275,7 @@ export class ReviewerAnalyticsService {
    */
   async getReviewStreak(reviewerId: string): Promise<number> {
     try {
-      const supabase = await this.supabase
+      const supabase = await this.getSupabase()
 
       const { data: recentReviews, error } = await supabase
         .from('reviews')

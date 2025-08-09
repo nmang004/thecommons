@@ -9,12 +9,17 @@ import {
   BiasWarning
 } from '@/lib/types/quality';
 
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
 export class QualityAnalysisService {
+  private _openai: OpenAI | null = null;
+  
+  private getOpenAI(): OpenAI {
+    if (!this._openai) {
+      this._openai = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY,
+      });
+    }
+    return this._openai;
+  }
   private supabase: any;
 
   constructor() {
@@ -188,7 +193,7 @@ export class QualityAnalysisService {
         Return only valid JSON.
       `;
 
-      const completion = await openai.chat.completions.create({
+      const completion = await this.getOpenAI().chat.completions.create({
         model: "gpt-4o-mini",
         messages: [
           {
