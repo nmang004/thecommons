@@ -1,4 +1,4 @@
-import { createBrowserClient } from '@/lib/supabase/client'
+import { createClient } from '@/lib/supabase/client'
 
 // ===========================
 // Error Tracking Types
@@ -41,13 +41,11 @@ export interface SystemHealthMetric {
 // ===========================
 
 class ErrorTracker {
-  private getSupabase: () => ReturnType<typeof createClient> | ReturnType<typeof createBrowserClient>
+  private getSupabase: () => ReturnType<typeof createClient>
 
-  constructor(isServer = true) {
-    // Note: createClient() is async and returns a Promise, but for error tracking
-    // we'll handle the Promise resolution in each method
-    // @ts-expect-error - TypeScript incorrectly thinks createClient needs arguments
-    this.getSupabase = () => isServer ? createClient() : createBrowserClient()
+  constructor() {
+    // Use client for error tracking
+    this.getSupabase = () => createClient()
   }
 
   // Track JavaScript errors
@@ -300,7 +298,7 @@ class ClientErrorMonitor {
   private userId?: string
 
   constructor() {
-    this.errorTracker = new ErrorTracker(false)
+    this.errorTracker = new ErrorTracker()
     this.sessionId = this.generateSessionId()
     this.setupErrorHandlers()
   }
@@ -425,7 +423,7 @@ export class ServerMonitor {
   private errorTracker: ErrorTracker
 
   constructor() {
-    this.errorTracker = new ErrorTracker(true)
+    this.errorTracker = new ErrorTracker()
   }
 
   // Monitor API endpoint performance

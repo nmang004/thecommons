@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { ReviewerDashboard, ReviewAssignment, Badge, DateRange, AutoDeclineRule } from '@/types/database'
+import { ReviewerDashboard, DateRange } from '@/types/database'
 
 export async function GET(_request: NextRequest) {
   try {

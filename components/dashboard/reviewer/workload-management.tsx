@@ -3,17 +3,13 @@
 import { useState } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
-import { Textarea } from '@/components/ui/textarea'
 import {
   Calendar,
   Settings,
-  Clock,
   AlertCircle,
-  CheckCircle,
   Plus,
   X,
   Save,
@@ -528,10 +524,10 @@ export function WorkloadManagement({ workload, reviewerSettings, onSettingsUpdat
                 {!isEditing && rule.conditions && (
                   <div className="ml-6 space-y-1 text-sm text-gray-600">
                     {rule.conditions.maxWorkloadPercentage && (
-                      <div>Decline when workload > {rule.conditions.maxWorkloadPercentage}%</div>
+                      <div>Decline when workload &gt; {rule.conditions.maxWorkloadPercentage}%</div>
                     )}
                     {rule.conditions.minDaysToDeadline && (
-                      <div>Decline when deadline < {rule.conditions.minDaysToDeadline} days</div>
+                      <div>Decline when deadline &lt; {rule.conditions.minDaysToDeadline} days</div>
                     )}
                   </div>
                 )}

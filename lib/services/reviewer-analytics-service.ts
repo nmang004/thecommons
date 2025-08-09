@@ -297,7 +297,7 @@ export class ReviewerAnalyticsService {
       let streak = 0
       for (const review of recentReviews || []) {
         const submittedAt = new Date(review.submitted_at)
-        const dueDate = new Date(review.review_assignments.due_date)
+        const dueDate = new Date((review.review_assignments as any).due_date)
         
         if (submittedAt <= dueDate) {
           streak++

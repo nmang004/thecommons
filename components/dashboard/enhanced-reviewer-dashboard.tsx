@@ -6,23 +6,11 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { 
-  FileText, 
-  Clock, 
-  CheckCircle, 
   AlertCircle,
   Calendar,
-  Award,
   Star,
   Timer,
-  TrendingUp,
-  TrendingDown,
   Settings,
-  Target,
-  Users,
-  BookOpen,
-  BarChart3,
-  Zap,
-  Trophy,
   RefreshCw,
   Eye,
   MessageSquare
@@ -107,8 +95,6 @@ export function EnhancedReviewerDashboard({ profile }: EnhancedReviewerDashboard
 
   // Calculate key metrics for quick stats
   const totalAssignments = queue.pending.length + queue.inProgress.length
-  const completionRate = analytics.totalReviews > 0 ? 
-    (queue.completed.length / analytics.totalReviews) * 100 : 0
 
   // Determine reviewer level based on completed reviews
   const getReviewerLevel = (reviewCount: number) => {

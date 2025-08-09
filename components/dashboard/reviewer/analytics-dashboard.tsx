@@ -28,7 +28,6 @@ import {
   Clock,
   Star,
   Target,
-  Calendar,
   Award,
   Users,
   BarChart3,
@@ -48,7 +47,7 @@ interface AnalyticsDashboardProps {
   profileId: string
 }
 
-export function AnalyticsDashboard({ analytics, profileId }: AnalyticsDashboardProps) {
+export function AnalyticsDashboard({ analytics }: AnalyticsDashboardProps) {
   const [timeRange, setTimeRange] = useState<'3months' | '6months' | '1year' | '2years'>('6months')
   const [comparisonData, setComparisonData] = useState<any>(null)
   const [trendsData, setTrendsData] = useState<any[]>([])
@@ -401,12 +400,12 @@ export function AnalyticsDashboard({ analytics, profileId }: AnalyticsDashboardP
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
                     outerRadius={80}
                     fill="#8884d8"
                     dataKey="value"
                   >
-                    {COLORS.map((color, index) => (
+                    {COLORS.map((_, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index]} />
                     ))}
                   </Pie>
