@@ -6,6 +6,7 @@ import { ThemeProvider } from '@/components/ui/theme-provider'
 import { AnnouncementManager } from '@/components/ui/live-region'
 import SkipNav from '@/components/ui/skip-nav'
 import { generateOrganizationSchema, generateWebsiteSchema } from '@/lib/utils/schema-markup'
+import { Auth0Provider } from '@/lib/auth0/provider'
 
 const inter = Inter({
   variable: '--font-sans',
@@ -145,25 +146,27 @@ export default function RootLayout({
           min-h-screen bg-background font-sans antialiased
         `}
       >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          enableSystem
-          disableTransitionOnChange
-        >
-          {/* Skip navigation for accessibility */}
-          <SkipNav />
-          
-          {/* Live region for dynamic announcements */}
-          <AnnouncementManager />
-          
-          {/* Main content wrapper */}
-          <div className="relative flex min-h-screen flex-col">
-            <main id="main-content" className="flex-1">
-              {children}
-            </main>
-          </div>
-        </ThemeProvider>
+        <Auth0Provider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="light"
+            enableSystem
+            disableTransitionOnChange
+          >
+            {/* Skip navigation for accessibility */}
+            <SkipNav />
+            
+            {/* Live region for dynamic announcements */}
+            <AnnouncementManager />
+            
+            {/* Main content wrapper */}
+            <div className="relative flex min-h-screen flex-col">
+              <main id="main-content" className="flex-1">
+                {children}
+              </main>
+            </div>
+          </ThemeProvider>
+        </Auth0Provider>
       </body>
     </html>
   )
