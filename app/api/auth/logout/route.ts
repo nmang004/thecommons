@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-// Redirect to Auth0 logout
+// Handle GET requests by redirecting directly to Auth0 logout
 export async function GET(_request: NextRequest) {
-  // Redirect to Auth0 logout endpoint
-  return NextResponse.redirect(new URL('/api/auth/auth0/logout', process.env.AUTH0_BASE_URL!))
+  const logoutUrl = `${process.env.AUTH0_ISSUER_BASE_URL}/v2/logout?client_id=${process.env.AUTH0_CLIENT_ID}&returnTo=${encodeURIComponent(process.env.AUTH0_BASE_URL!)}`
+  return NextResponse.redirect(logoutUrl)
 }
 
-// Keep POST for backward compatibility
-export async function POST(_request: NextRequest) {
-  return NextResponse.redirect(new URL('/api/auth/auth0/logout', process.env.AUTH0_BASE_URL!))
+// Handle POST requests the same way
+export async function POST(request: NextRequest) {
+  return GET(request)
 }
