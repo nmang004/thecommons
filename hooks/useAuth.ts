@@ -1,5 +1,4 @@
 import { useUser } from '@auth0/nextjs-auth0'
-import { useRouter } from 'next/navigation'
 import { useCallback, useMemo } from 'react'
 
 interface User {
@@ -21,7 +20,6 @@ interface User {
 
 export function useAuth() {
   const { user: auth0User, error, isLoading } = useUser()
-  const router = useRouter()
   
   // Transform Auth0 user to app user format
   const user: User | null = useMemo(() => {

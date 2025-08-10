@@ -14,7 +14,7 @@ interface SyncUserRequest {
 export async function POST(request: NextRequest) {
   try {
     const body: SyncUserRequest = await request.json()
-    const { auth0Id, email, name, emailVerified, picture, metadata, appMetadata } = body
+    const { auth0Id, email, name, emailVerified: _emailVerified, picture, metadata, appMetadata } = body
 
     if (!auth0Id || !email) {
       return NextResponse.json(

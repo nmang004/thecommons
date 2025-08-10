@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl
+  const { pathname: _pathname } = request.nextUrl
   const response = NextResponse.next()
 
   // Add security headers to all responses

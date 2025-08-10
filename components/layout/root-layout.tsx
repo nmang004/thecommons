@@ -44,7 +44,7 @@ interface RootLayoutProps {
 
 export default function RootLayout({
   children,
-  user,
+  user: _user,
   showHeader = true,
   showFooter = true,
   className = '',
@@ -61,7 +61,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <div className="relative flex min-h-screen flex-col">
-            {showHeader && <Header user={user} />}
+            {showHeader && <Header />}
             <main className="flex-1">{children}</main>
             {showFooter && <Footer />}
           </div>
