@@ -1,42 +1,54 @@
-import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+'use client'
+
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
+import { useAuth } from '@/hooks/useAuth'
 import { EnhancedReviewerDashboard } from '@/components/dashboard/enhanced-reviewer-dashboard'
 import { ErrorBoundary } from '@/components/ui/error-boundary'
 
-export default async function ReviewerDashboardPage() {
-  const supabase = await createClient()
-  
-  // Get the authenticated user
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser()
+export default function ReviewerDashboardPage() {
+  const { user } = useAuth()
 
-  if (userError || !user) {
-    redirect('/login')
-  }
+  // Convert Auth0 user to profile format expected by the component
+  const profile = user ? {
+    id: user.id,
+    email: user.email,
+    full_name: user.name,
+    role: user.role,
+    affiliation: user.metadata.affiliation || null,
+    orcid: user.metadata.orcid || null,
+    bio: user.metadata.bio || null,
+    expertise: user.metadata.expertise || null,
+    avatar_url: user.metadata.avatar_url || null,
+    linkedin_url: null,
+    twitter_handle: null,
+    website_url: null,
+    h_index: user.metadata.h_index || null,
+    total_publications: 0,
+    current_review_load: null,
+    avg_review_quality_score: null,
+    response_rate: null,
+    specializations: null,
+    collaboration_history: null,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    notification_preferences: {},
+    is_active: true,
+    timezone: 'UTC'
+  } : null
 
-  // Get user profile
-  const { data: profile, error: profileError } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single()
-
-  if (profileError || !profile) {
-    redirect('/register?step=profile')
-  }
-
-  // Verify user has reviewer role
-  if (profile.role !== 'reviewer' && profile.role !== 'admin') {
-    redirect(`/${profile.role}`)
+  if (!user || !profile) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <ProtectedRoute requiredRole={['reviewer', 'admin']}>
       <ErrorBoundary>
         <EnhancedReviewerDashboard profile={profile} />
       </ErrorBoundary>
-    </div>
+    </ProtectedRoute>
   )
 }

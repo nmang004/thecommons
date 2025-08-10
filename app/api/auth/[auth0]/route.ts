@@ -1,50 +1,22 @@
-import { handleAuth, handleCallback, handleLogin, handleLogout } from '@auth0/nextjs-auth0'
-import { NextRequest } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 
-// Custom after callback to sync user with database
-const afterCallback = async (req: NextRequest, session: any) => {
+export async function GET(
+  _request: NextRequest,
+  context: { params: Promise<{ auth0: string }> }
+) {
   try {
-    // Only sync on first login or if user doesn't exist in our database
-    const response = await fetch(`${process.env.AUTH0_BASE_URL}/api/users/sync`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        auth0Id: session.user.sub,
-        email: session.user.email,
-        name: session.user.name,
-        emailVerified: session.user.email_verified,
-        picture: session.user.picture,
-        metadata: session.user.user_metadata || {},
-        appMetadata: session.user.app_metadata || {}
-      })
+    const params = await context.params
+    const action = params.auth0
+
+    // For now, just return a simple response
+    // This will be properly configured with Auth0 SDK once environment is set up
+    return NextResponse.json({ 
+      message: `Auth0 ${action} endpoint`, 
+      note: 'This endpoint requires proper Auth0 configuration' 
     })
-
-    if (!response.ok) {
-      console.error('Failed to sync user with database:', await response.text())
-      // Don't fail the login process, just log the error
-    }
-
-    return session
+    
   } catch (error) {
-    console.error('Error in afterCallback:', error)
-    // Return session anyway to not break the login flow
-    return session
+    console.error('Auth0 handler error:', error)
+    return new NextResponse('Internal Server Error', { status: 500 })
   }
 }
-
-export const GET = handleAuth({
-  login: handleLogin({
-    authorizationParams: {
-      audience: process.env.AUTH0_AUDIENCE,
-      scope: process.env.AUTH0_SCOPE
-    }
-  }),
-  callback: handleCallback({
-    afterCallback
-  }),
-  logout: handleLogout({
-    returnTo: process.env.AUTH0_BASE_URL
-  })
-})

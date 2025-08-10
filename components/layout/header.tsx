@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState, useEffect } from 'react'
-import { Menu, X, Search, User, Bell, Settings } from 'lucide-react'
+import { Menu, X, Search, User, Bell, Settings, LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -15,15 +15,10 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
+import { useAuth } from '@/hooks/useAuth'
+import { Skeleton } from '@/components/ui/skeleton'
 
 interface HeaderProps {
-  user?: {
-    id: string
-    name: string
-    email: string
-    avatar?: string
-    role: 'author' | 'editor' | 'reviewer' | 'admin'
-  } | null
   notificationCount?: number
 }
 
@@ -41,11 +36,12 @@ const roleColors = {
   admin: 'bg-red-100 text-red-800',
 }
 
-export default function Header({ user, notificationCount = 0 }: HeaderProps) {
+export default function Header({ notificationCount = 0 }: HeaderProps) {
   const pathname = usePathname()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [isScrolled, setIsScrolled] = useState(false)
+  const { user, isLoading, login, logout } = useAuth()
 
   useEffect(() => {
     const handleScroll = () => {
@@ -63,6 +59,11 @@ export default function Header({ user, notificationCount = 0 }: HeaderProps) {
       // Navigate to search page with query
       window.location.href = `/search?q=${encodeURIComponent(searchQuery)}`
     }
+  }
+
+  const getDashboardUrl = () => {
+    if (!user) return '/author'
+    return `/${user.role}`
   }
 
   return (
@@ -121,7 +122,12 @@ export default function Header({ user, notificationCount = 0 }: HeaderProps) {
 
           {/* User Actions */}
           <div className="flex items-center space-x-4">
-            {user ? (
+            {isLoading ? (
+              <div className="flex items-center space-x-2">
+                <Skeleton className="h-8 w-8 rounded-full" />
+                <Skeleton className="h-8 w-20" />
+              </div>
+            ) : user ? (
               <>
                 {/* Notifications */}
                 <Button variant="ghost" size="sm" className="relative">
@@ -141,7 +147,7 @@ export default function Header({ user, notificationCount = 0 }: HeaderProps) {
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src={user.avatar} alt={user.name} />
+                        <AvatarImage src={user.metadata.avatar_url} alt={user.name} />
                         <AvatarFallback className="bg-primary text-primary-foreground">
                           {user.name
                             .split(' ')
@@ -167,7 +173,7 @@ export default function Header({ user, notificationCount = 0 }: HeaderProps) {
                     </div>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
-                      <Link href={`/dashboard/${user.role}`}>
+                      <Link href={getDashboardUrl()}>
                         <User className="mr-2 h-4 w-4" />
                         Dashboard
                       </Link>
@@ -179,23 +185,29 @@ export default function Header({ user, notificationCount = 0 }: HeaderProps) {
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem>
-                      <form action="/auth/signout" method="post" className="w-full">
-                        <button type="submit" className="w-full text-left">
-                          Sign out
-                        </button>
-                      </form>
+                    <DropdownMenuItem onClick={() => logout()}>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Sign out
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </>
             ) : (
               <div className="flex items-center space-x-2">
-                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground" asChild>
-                  <Link href="/login">Sign In</Link>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-muted-foreground hover:text-foreground"
+                  onClick={() => login()}
+                >
+                  Sign In
                 </Button>
-                <Button size="sm" className="btn-primary" asChild>
-                  <Link href="/register">Get Started</Link>
+                <Button 
+                  size="sm" 
+                  className="btn-primary"
+                  onClick={() => window.location.href = `/api/auth/login?screen_hint=signup`}
+                >
+                  Get Started
                 </Button>
               </div>
             )}
@@ -251,13 +263,26 @@ export default function Header({ user, notificationCount = 0 }: HeaderProps) {
               ))}
 
               {/* Mobile User Actions */}
-              {!user && (
+              {!isLoading && !user && (
                 <div className="pt-4 space-y-2">
-                  <Button variant="ghost" className="w-full justify-start text-muted-foreground hover:text-foreground" asChild>
-                    <Link href="/login">Sign In</Link>
+                  <Button 
+                    variant="ghost" 
+                    className="w-full justify-start text-muted-foreground hover:text-foreground"
+                    onClick={() => {
+                      setIsMenuOpen(false)
+                      login()
+                    }}
+                  >
+                    Sign In
                   </Button>
-                  <Button className="w-full justify-start btn-primary" asChild>
-                    <Link href="/register">Get Started</Link>
+                  <Button 
+                    className="w-full justify-start btn-primary"
+                    onClick={() => {
+                      setIsMenuOpen(false)
+                      window.location.href = `/api/auth/login?screen_hint=signup`
+                    }}
+                  >
+                    Get Started
                   </Button>
                 </div>
               )}

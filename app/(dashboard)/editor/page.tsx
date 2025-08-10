@@ -1,5 +1,8 @@
-import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+'use client'
+
+import { useEffect, useState } from 'react'
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
+import { useAuth } from '@/hooks/useAuth'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -9,387 +12,346 @@ import {
   CheckCircle, 
   AlertCircle,
   Users,
-  Calendar,
   TrendingUp,
   Filter,
-  Search,
   Eye,
   UserPlus,
-  Mail,
-  ArrowRight
+  Mail
 } from 'lucide-react'
+import Link from 'next/link'
 
-export default async function EditorDashboard() {
-  const supabase = await createClient()
-  
-  // Get the authenticated user
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser()
-
-  if (userError || !user) {
-    redirect('/login')
+// Mock data - replace with actual API calls
+const mockSubmissions = [
+  {
+    id: '1',
+    title: 'Quantum Computing Applications in Climate Modeling',
+    author: 'Dr. Sarah Johnson',
+    submitted_at: '2024-01-15',
+    status: 'under_review',
+    reviewers: 2,
+    priority: 'high'
+  },
+  {
+    id: '2',
+    title: 'Machine Learning Approaches to Drug Discovery',
+    author: 'Prof. Michael Chen',
+    submitted_at: '2024-01-10',
+    status: 'revision_requested',
+    reviewers: 3,
+    priority: 'medium'
+  },
+  {
+    id: '3',
+    title: 'Sustainable Energy Solutions for Urban Areas',
+    author: 'Dr. Emily Rodriguez',
+    submitted_at: '2024-01-20',
+    status: 'awaiting_reviewers',
+    reviewers: 0,
+    priority: 'high'
   }
+]
 
-  // Get user profile
-  const { data: profile, error: profileError } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single()
+const statusColors = {
+  under_review: 'bg-yellow-100 text-yellow-800',
+  revision_requested: 'bg-blue-100 text-blue-800',
+  awaiting_reviewers: 'bg-red-100 text-red-800',
+  accepted: 'bg-green-100 text-green-800',
+  rejected: 'bg-gray-100 text-gray-800',
+}
 
-  if (profileError || !profile) {
-    redirect('/register?step=profile')
-  }
+const priorityColors = {
+  high: 'bg-red-100 text-red-800',
+  medium: 'bg-yellow-100 text-yellow-800',
+  low: 'bg-green-100 text-green-800',
+}
 
-  // Verify user has editor role
-  if (profile.role !== 'editor' && profile.role !== 'admin') {
-    redirect(`/${profile.role}`)
-  }
+function EditorDashboardContent() {
+  const { user } = useAuth()
+  const [submissions] = useState(mockSubmissions)
+  const [stats] = useState({
+    total_submissions: 12,
+    under_review: 5,
+    awaiting_reviewers: 3,
+    completed_this_month: 8,
+    active_reviewers: 24
+  })
 
-  // Get manuscripts assigned to this editor or pending assignment
-  const { data: manuscripts } = await supabase
-    .from('manuscripts')
-    .select(`
-      *,
-      profiles!author_id(full_name, affiliation),
-      manuscript_coauthors(name, email, is_corresponding)
-    `)
-    .or(`editor_id.eq.${user.id},editor_id.is.null`)
-    .neq('status', 'draft')
-    .order('submitted_at', { ascending: true })
-
-  // Get review assignments for manuscripts this editor manages
-  const { data: reviewAssignments } = await supabase
-    .from('review_assignments')
-    .select(`
-      *,
-      manuscripts!inner(title, editor_id),
-      profiles!reviewer_id(full_name)
-    `)
-    .eq('manuscripts.editor_id', user.id)
-
-  // Calculate statistics
-  const totalSubmissions = manuscripts?.length || 0
-  const pendingAssignment = manuscripts?.filter(m => !m.editor_id).length || 0
-  const underReview = manuscripts?.filter(m => m.status === 'under_review').length || 0
-  const pendingDecision = manuscripts?.filter(m => 
-    ['with_editor'].includes(m.status)
-  ).length || 0
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'submitted':
-        return 'bg-blue-100 text-blue-800'
-      case 'with_editor':
-        return 'bg-purple-100 text-purple-800'
-      case 'under_review':
-        return 'bg-yellow-100 text-yellow-800'
-      case 'revisions_requested':
-        return 'bg-orange-100 text-orange-800'
-      case 'accepted':
-        return 'bg-green-100 text-green-800'
-      case 'published':
-        return 'bg-emerald-100 text-emerald-800'
-      case 'rejected':
-        return 'bg-red-100 text-red-800'
-      default:
-        return 'bg-gray-100 text-gray-800'
+  // In a real app, you would fetch data using the user ID from Auth0
+  useEffect(() => {
+    if (user) {
+      // TODO: Replace with actual API calls
+      // fetchSubmissions()
+      // fetchStats()
+      // setSubmissions(newSubmissions)
+      // setStats(newStats)
     }
-  }
+  }, [user])
 
-  const formatStatus = (status: string) => {
-    return status.split('_').map(word => 
-      word.charAt(0).toUpperCase() + word.slice(1)
-    ).join(' ')
-  }
-
-  const getUrgencyLevel = (submittedAt: string) => {
-    const daysSinceSubmission = Math.floor(
-      (new Date().getTime() - new Date(submittedAt).getTime()) / (1000 * 60 * 60 * 24)
-    )
-    
-    if (daysSinceSubmission > 14) return 'high'
-    if (daysSinceSubmission > 7) return 'medium'
-    return 'low'
-  }
+  if (!user) return null
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-heading font-bold text-gray-900">
-                Editorial Dashboard
-              </h1>
-              <p className="text-gray-600 mt-1">
-                Manage submissions and coordinate peer review process
-              </p>
-            </div>
-            <div className="flex space-x-3">
-              <Button variant="outline">
-                <Filter className="w-4 h-4 mr-2" />
-                Filter
-              </Button>
-              <Button variant="outline">
-                <Search className="w-4 h-4 mr-2" />
-                Search
-              </Button>
-            </div>
-          </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+      <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-heading font-bold text-gray-900 mb-2">
+            Editorial Dashboard
+          </h1>
+          <p className="text-gray-600">
+            Manage manuscripts and oversee the peer review process
+          </p>
         </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <FileText className="w-5 h-5 text-blue-600" />
-                </div>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+          <Card className="card-academic p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 mb-1">Total Submissions</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.total_submissions}</p>
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Submissions</p>
-                <p className="text-2xl font-bold text-gray-900">{totalSubmissions}</p>
-              </div>
+              <FileText className="w-8 h-8 text-primary" />
             </div>
           </Card>
 
-          <Card className="p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                  <AlertCircle className="w-5 h-5 text-purple-600" />
-                </div>
+          <Card className="card-academic p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 mb-1">Under Review</p>
+                <p className="text-2xl font-bold text-yellow-600">{stats.under_review}</p>
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Pending Assignment</p>
-                <p className="text-2xl font-bold text-gray-900">{pendingAssignment}</p>
-              </div>
+              <Clock className="w-8 h-8 text-yellow-600" />
             </div>
           </Card>
 
-          <Card className="p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center">
-                  <Clock className="w-5 h-5 text-yellow-600" />
-                </div>
+          <Card className="card-academic p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 mb-1">Awaiting Reviewers</p>
+                <p className="text-2xl font-bold text-red-600">{stats.awaiting_reviewers}</p>
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Under Review</p>
-                <p className="text-2xl font-bold text-gray-900">{underReview}</p>
-              </div>
+              <UserPlus className="w-8 h-8 text-red-600" />
             </div>
           </Card>
 
-          <Card className="p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                </div>
+          <Card className="card-academic p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 mb-1">Completed This Month</p>
+                <p className="text-2xl font-bold text-green-600">{stats.completed_this_month}</p>
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Pending Decision</p>
-                <p className="text-2xl font-bold text-gray-900">{pendingDecision}</p>
+              <CheckCircle className="w-8 h-8 text-green-600" />
+            </div>
+          </Card>
+
+          <Card className="card-academic p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 mb-1">Active Reviewers</p>
+                <p className="text-2xl font-bold text-blue-600">{stats.active_reviewers}</p>
               </div>
+              <Users className="w-8 h-8 text-blue-600" />
             </div>
           </Card>
         </div>
 
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Manuscripts Queue */}
-          <div className="lg:col-span-2">
-            <Card className="p-6">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-heading font-semibold text-gray-900">
-                  Editorial Queue
-                </h2>
+        {/* Quick Actions */}
+        <div className="flex flex-wrap gap-4 mb-8">
+          <Button asChild className="btn-academic">
+            <Link href="/editor/manuscripts">
+              <FileText className="w-4 h-4 mr-2" />
+              View All Manuscripts
+            </Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link href="/editor/reviewers">
+              <Users className="w-4 h-4 mr-2" />
+              Manage Reviewers
+            </Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link href="/editor/analytics">
+              <TrendingUp className="w-4 h-4 mr-2" />
+              Analytics
+            </Link>
+          </Button>
+        </div>
+
+        {/* Recent Submissions */}
+        <Card className="card-academic mb-8">
+          <div className="p-6 border-b">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-heading font-semibold text-gray-900">
+                Recent Submissions
+              </h2>
+              <div className="flex space-x-2">
                 <Button variant="outline" size="sm">
-                  View All
+                  <Filter className="w-4 h-4 mr-2" />
+                  Filter
+                </Button>
+                <Button variant="outline" size="sm" asChild>
+                  <Link href="/editor/manuscripts">
+                    View All
+                  </Link>
                 </Button>
               </div>
-
-              {manuscripts && manuscripts.length > 0 ? (
-                <div className="space-y-4">
-                  {manuscripts.slice(0, 5).map((manuscript) => {
-                    const urgency = getUrgencyLevel(manuscript.submitted_at || manuscript.created_at)
-                    
-                    return (
-                      <div
-                        key={manuscript.id}
-                        className="border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors"
-                      >
-                        <div className="flex justify-between items-start mb-2">
-                          <h3 className="font-medium text-gray-900 line-clamp-2">
-                            {manuscript.title}
-                          </h3>
-                          <div className="flex items-center space-x-2">
-                            {urgency === 'high' && (
-                              <span className="w-2 h-2 bg-red-500 rounded-full" title="High priority" />
-                            )}
-                            {urgency === 'medium' && (
-                              <span className="w-2 h-2 bg-yellow-500 rounded-full" title="Medium priority" />
-                            )}
-                            <Badge className={getStatusColor(manuscript.status)}>
-                              {formatStatus(manuscript.status)}
-                            </Badge>
-                          </div>
-                        </div>
-                        
-                        <p className="text-sm text-gray-600 line-clamp-2 mb-3">
-                          {manuscript.abstract}
-                        </p>
-                        
-                        <div className="flex justify-between items-center text-sm text-gray-500">
-                          <span>
-                            Field: {manuscript.field_of_study}
-                          </span>
-                          <span>
-                            Submitted {new Date(manuscript.submitted_at || manuscript.created_at).toLocaleDateString()}
-                          </span>
-                        </div>
-                        
-                        <div className="flex justify-between items-center mt-3">
-                          <div className="text-xs text-gray-500">
-                            Author: {manuscript.profiles?.full_name || 'Unknown'}
-                            {manuscript.profiles?.affiliation && (
-                              <span className="ml-1">• {manuscript.profiles.affiliation}</span>
-                            )}
-                          </div>
-                          <div className="flex space-x-2">
-                            {!manuscript.editor_id && (
-                              <Button size="sm" variant="outline">
-                                <UserPlus className="w-3 h-3 mr-1" />
-                                Assign to Me
-                              </Button>
-                            )}
-                            <Button size="sm">
-                              <Eye className="w-3 h-3 mr-1" />
-                              View Details
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <FileText className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">
-                    No submissions in queue
-                  </h3>
-                  <p className="text-gray-600">
-                    All current submissions are being handled by other editors
-                  </p>
-                </div>
-              )}
-            </Card>
+            </div>
           </div>
 
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Quick Actions */}
-            <Card className="p-6">
-              <h3 className="text-lg font-heading font-semibold text-gray-900 mb-4">
-                Quick Actions
-              </h3>
-              <div className="space-y-3">
-                <Button variant="outline" className="w-full justify-start">
-                  <Users className="w-4 h-4 mr-2" />
-                  Find Reviewers
-                  <ArrowRight className="w-3 h-3 ml-auto" />
-                </Button>
-                <Button variant="outline" className="w-full justify-start">
-                  <Calendar className="w-4 h-4 mr-2" />
-                  Review Calendar
-                  <ArrowRight className="w-3 h-3 ml-auto" />
-                </Button>
-                <Button variant="outline" className="w-full justify-start">
-                  <Mail className="w-4 h-4 mr-2" />
-                  Send Reminders
-                  <ArrowRight className="w-3 h-3 ml-auto" />
-                </Button>
-                <Button variant="outline" className="w-full justify-start">
-                  <TrendingUp className="w-4 h-4 mr-2" />
-                  Editorial Reports
-                  <ArrowRight className="w-3 h-3 ml-auto" />
-                </Button>
-              </div>
-            </Card>
-
-            {/* Review Status */}
-            <Card className="p-6">
-              <h3 className="text-lg font-heading font-semibold text-gray-900 mb-4">
-                Review Status
-              </h3>
-              <div className="space-y-3">
-                {reviewAssignments && reviewAssignments.length > 0 ? (
-                  reviewAssignments.slice(0, 3).map((assignment: any) => (
-                    <div
-                      key={assignment.id}
-                      className="flex justify-between items-center text-sm"
-                    >
-                      <div>
-                        <p className="font-medium text-gray-900">
-                          {assignment.profiles.full_name}
-                        </p>
-                        <p className="text-gray-600">
-                          {assignment.manuscripts.title.substring(0, 30)}...
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="text-left py-3 px-6 font-medium text-gray-700">Manuscript</th>
+                  <th className="text-left py-3 px-6 font-medium text-gray-700">Author</th>
+                  <th className="text-left py-3 px-6 font-medium text-gray-700">Status</th>
+                  <th className="text-left py-3 px-6 font-medium text-gray-700">Reviewers</th>
+                  <th className="text-left py-3 px-6 font-medium text-gray-700">Priority</th>
+                  <th className="text-left py-3 px-6 font-medium text-gray-700">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {submissions.map((submission) => (
+                  <tr key={submission.id} className="border-t hover:bg-gray-50">
+                    <td className="py-4 px-6">
+                      <div className="max-w-xs">
+                        <h3 className="font-medium text-gray-900 mb-1">
+                          {submission.title}
+                        </h3>
+                        <p className="text-sm text-gray-500">
+                          Submitted {new Date(submission.submitted_at).toLocaleDateString()}
                         </p>
                       </div>
-                      <Badge
-                        className={
-                          assignment.status === 'completed'
-                            ? 'bg-green-100 text-green-800'
-                            : assignment.status === 'accepted'
-                            ? 'bg-blue-100 text-blue-800'
-                            : 'bg-gray-100 text-gray-800'
-                        }
+                    </td>
+                    <td className="py-4 px-6 text-gray-600">
+                      {submission.author}
+                    </td>
+                    <td className="py-4 px-6">
+                      <Badge 
+                        className={statusColors[submission.status as keyof typeof statusColors]}
+                        variant="secondary"
                       >
-                        {assignment.status}
+                        {submission.status.replace('_', ' ')}
                       </Badge>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-sm text-gray-600">
-                    No active review assignments
-                  </p>
-                )}
-              </div>
-            </Card>
-
-            {/* Editorial Guidelines */}
-            <Card className="p-6">
-              <h3 className="text-lg font-heading font-semibold text-gray-900 mb-4">
-                Editorial Guidelines
-              </h3>
-              <div className="space-y-3 text-sm text-gray-600">
-                <p>
-                  • Assign reviewers within 3 days of receiving a submission
-                </p>
-                <p>
-                  • Ensure diverse reviewer expertise and backgrounds
-                </p>
-                <p>
-                  • Make decisions within 2 weeks of receiving reviews
-                </p>
-                <p>
-                  • Provide constructive feedback to authors
-                </p>
-              </div>
-            </Card>
+                    </td>
+                    <td className="py-4 px-6">
+                      <div className="flex items-center">
+                        <Users className="w-4 h-4 mr-1 text-gray-400" />
+                        {submission.reviewers} assigned
+                      </div>
+                    </td>
+                    <td className="py-4 px-6">
+                      <Badge 
+                        className={priorityColors[submission.priority as keyof typeof priorityColors]}
+                        variant="secondary"
+                      >
+                        {submission.priority}
+                      </Badge>
+                    </td>
+                    <td className="py-4 px-6">
+                      <div className="flex space-x-2">
+                        <Button variant="outline" size="sm" asChild>
+                          <Link href={`/editor/manuscripts/${submission.id}`}>
+                            <Eye className="w-4 h-4 mr-1" />
+                            Review
+                          </Link>
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
+        </Card>
+
+        {/* Action Items */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <Card className="card-academic">
+            <div className="p-6 border-b">
+              <h2 className="text-xl font-heading font-semibold text-gray-900">
+                Action Items
+              </h2>
+            </div>
+            <div className="p-6">
+              <div className="space-y-4">
+                <div className="flex items-start space-x-3">
+                  <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                    <AlertCircle className="w-4 h-4 text-red-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-900">3 manuscripts awaiting reviewers</p>
+                    <p className="text-sm text-gray-600">Assign reviewers to continue the review process</p>
+                    <Button variant="outline" size="sm" className="mt-2">
+                      <UserPlus className="w-4 h-4 mr-1" />
+                      Assign Reviewers
+                    </Button>
+                  </div>
+                </div>
+                
+                <div className="flex items-start space-x-3">
+                  <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
+                    <Clock className="w-4 h-4 text-yellow-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-900">2 reviews overdue</p>
+                    <p className="text-sm text-gray-600">Follow up with reviewers about pending reviews</p>
+                    <Button variant="outline" size="sm" className="mt-2">
+                      <Mail className="w-4 h-4 mr-1" />
+                      Send Reminders
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="card-academic">
+            <div className="p-6 border-b">
+              <h2 className="text-xl font-heading font-semibold text-gray-900">
+                Recent Activity
+              </h2>
+            </div>
+            <div className="p-6">
+              <div className="space-y-4">
+                <div className="flex items-start space-x-3">
+                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">Review Completed</p>
+                    <p className="text-sm text-gray-600">
+                      Dr. Smith completed review for "AI in Healthcare"
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">2 hours ago</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start space-x-3">
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                    <FileText className="w-4 h-4 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">New Submission</p>
+                    <p className="text-sm text-gray-600">
+                      "Blockchain Applications in Supply Chain" submitted
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">1 day ago</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Card>
         </div>
       </div>
     </div>
+  )
+}
+
+export default function EditorDashboard() {
+  return (
+    <ProtectedRoute requiredRole={['editor', 'admin']}>
+      <EditorDashboardContent />
+    </ProtectedRoute>
   )
 }
