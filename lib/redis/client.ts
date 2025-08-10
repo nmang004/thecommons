@@ -10,16 +10,17 @@ export function getRedisClient(): Redis {
       throw new Error('Redis client should not be used in the browser')
     }
     
-    const redisUrl = process.env.REDIS_URL
+    // Use REDIS_PUBLIC_URL for external connections, REDIS_URL for internal Railway
+    const redisUrl = process.env.REDIS_PUBLIC_URL || process.env.REDIS_URL
     
-    if (!redisUrl || redisUrl === 'your_redis_url_here') {
+    if (!redisUrl || redisUrl === 'your_redis_url_here' || redisUrl === 'your_redis_host_here') {
       // During build time, return a mock Redis client
-      if (process.env.NODE_ENV === 'production' && !process.env.VERCEL_ENV) {
-        throw new Error('REDIS_URL environment variable is not set')
+      if (process.env.NODE_ENV === 'production' && !process.env.VERCEL_ENV && !process.env.RAILWAY_ENVIRONMENT) {
+        console.warn('REDIS_URL environment variable is not properly set')
       }
       
       // Return a mock client for build time
-      console.warn('Redis URL not set, using mock client for build')
+      console.warn('Redis URL not set, using mock client')
       return {} as Redis
     }
     

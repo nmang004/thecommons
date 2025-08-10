@@ -3,26 +3,62 @@ import { QualityAnalysisService } from './quality-analysis';
 import { QualityAnalysisJob } from '@/lib/types/quality';
 import Redis from 'ioredis';
 
-// Initialize Redis for job queue
-const redis = new Redis({
-  host: process.env.REDIS_HOST || 'localhost',
-  port: parseInt(process.env.REDIS_PORT || '6379'),
-  password: process.env.REDIS_PASSWORD
-});
+// Lazy initialize Redis for job queue
+let redis: Redis | null = null;
+
+function getRedis(): Redis {
+  if (!redis) {
+    // Use REDIS_PUBLIC_URL for external connections, REDIS_URL for internal Railway
+    const REDIS_URL = process.env.REDIS_PUBLIC_URL || process.env.REDIS_URL;
+    
+    // Don't create Redis connection if URL is not set properly
+    if (!REDIS_URL || REDIS_URL === 'your_redis_url_here') {
+      // Return a mock for build time
+      return {
+        lpush: async () => 1,
+        del: async () => 1,
+        on: () => {},
+        disconnect: async () => {},
+      } as any;
+    }
+    
+    redis = new Redis(REDIS_URL, {
+      maxRetriesPerRequest: 3,
+      retryStrategy: (times: number) => {
+        if (times > 3) {
+          console.error('Redis connection failed after 3 retries');
+          return null;
+        }
+        return Math.min(times * 100, 3000);
+      },
+      enableOfflineQueue: false
+    });
+  }
+  return redis;
+}
 
 export class QualityJobProcessor {
   private supabase: any;
-  private qualityService: QualityAnalysisService;
+  private qualityService: QualityAnalysisService | null = null;
   private isProcessing: boolean = false;
   private processingInterval: NodeJS.Timeout | null = null;
 
   constructor() {
-    this.qualityService = new QualityAnalysisService();
-    this.initializeSupabase();
+    // Don't initialize anything in constructor - do it lazily when needed
+  }
+
+  private getQualityService(): QualityAnalysisService {
+    if (!this.qualityService) {
+      this.qualityService = new QualityAnalysisService();
+    }
+    return this.qualityService;
   }
 
   private async initializeSupabase() {
-    this.supabase = await createClient();
+    if (!this.supabase) {
+      this.supabase = await createClient();
+    }
+    return this.supabase;
   }
 
   /**
@@ -97,7 +133,8 @@ export class QualityJobProcessor {
    * Get the next job from the queue
    */
   private async getNextJob(): Promise<QualityAnalysisJob | null> {
-    const { data, error } = await this.supabase
+    const supabase = await this.initializeSupabase();
+    const { data, error } = await supabase
       .from('quality_analysis_jobs')
       .select('*')
       .eq('status', 'queued')
@@ -125,7 +162,7 @@ export class QualityJobProcessor {
 
       switch (job.job_type) {
         case 'full_analysis':
-          result = await this.qualityService.analyzeReview({
+          result = await this.getQualityService().analyzeReview({
             review_id: job.review_id,
             analysis_type: 'full',
             include_ai_analysis: true,
@@ -134,7 +171,7 @@ export class QualityJobProcessor {
           break;
 
         case 'quick_check':
-          result = await this.qualityService.analyzeReview({
+          result = await this.getQualityService().analyzeReview({
             review_id: job.review_id,
             analysis_type: 'quick',
             include_ai_analysis: false,
@@ -153,7 +190,8 @@ export class QualityJobProcessor {
       const processingTime = Date.now() - startTime;
 
       // Update job with processing time
-      await this.supabase
+      const supabase = await this.initializeSupabase();
+      await supabase
         .from('quality_analysis_jobs')
         .update({
           processing_time_ms: processingTime
@@ -173,7 +211,8 @@ export class QualityJobProcessor {
    */
   private async performConsistencyAnalysis(reviewId: string): Promise<any> {
     // Get the review and its manuscript
-    const { data: review } = await this.supabase
+    const supabase = await this.initializeSupabase();
+    const { data: review } = await supabase
       .from('reviews')
       .select('*, manuscripts(*)')
       .eq('id', reviewId)
@@ -184,7 +223,7 @@ export class QualityJobProcessor {
     }
 
     // Get all reviews for the same manuscript
-    const { data: allReviews } = await this.supabase
+    const { data: allReviews } = await supabase
       .from('reviews')
       .select('*')
       .eq('manuscript_id', review.manuscript_id)
@@ -238,7 +277,7 @@ export class QualityJobProcessor {
       cohens_kappa: this.calculateCohensKappa(allReviews)
     };
 
-    const { data, error } = await this.supabase
+    const { data, error } = await supabase
       .from('review_consistency_scores')
       .upsert(consistencyData, {
         onConflict: 'manuscript_id'
@@ -394,6 +433,7 @@ export class QualityJobProcessor {
    * Update job status
    */
   private async updateJobStatus(jobId: string, status: string, result?: any) {
+    const supabase = await this.initializeSupabase();
     const updates: any = {
       status,
       updated_at: new Date().toISOString()
@@ -408,7 +448,7 @@ export class QualityJobProcessor {
       }
     }
 
-    await this.supabase
+    await supabase
       .from('quality_analysis_jobs')
       .update(updates)
       .eq('id', jobId);
@@ -421,9 +461,10 @@ export class QualityJobProcessor {
     const errorMessage = error.message || 'Unknown error';
     const retryCount = (job.retry_count || 0) + 1;
 
+    const supabase = await this.initializeSupabase();
     if (retryCount < (job.max_retries || 3)) {
       // Retry the job
-      await this.supabase
+      await supabase
         .from('quality_analysis_jobs')
         .update({
           status: 'queued',
@@ -434,7 +475,7 @@ export class QualityJobProcessor {
         .eq('id', job.id);
     } else {
       // Mark as failed
-      await this.supabase
+      await supabase
         .from('quality_analysis_jobs')
         .update({
           status: 'failed',
@@ -450,7 +491,8 @@ export class QualityJobProcessor {
    */
   private async sendNotifications(job: QualityAnalysisJob, result: any) {
     // Get the review and manuscript details
-    const { data: review } = await this.supabase
+    const supabase = await this.initializeSupabase();
+    const { data: review } = await supabase
       .from('reviews')
       .select(`
         *,
@@ -519,7 +561,8 @@ export class QualityJobProcessor {
    * Create a notification
    */
   private async createNotification(notification: any) {
-    await this.supabase
+    const supabase = await this.initializeSupabase();
+    await supabase
       .from('notifications')
       .insert(notification);
   }
@@ -550,7 +593,7 @@ export class QualityJobProcessor {
     }
 
     // Also add to Redis queue for real-time processing
-    await redis.lpush('quality_jobs', JSON.stringify({
+    await getRedis().lpush('quality_jobs', JSON.stringify({
       job_id: data.id,
       review_id: reviewId,
       job_type: jobType,

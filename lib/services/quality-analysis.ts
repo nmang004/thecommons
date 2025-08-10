@@ -23,21 +23,24 @@ export class QualityAnalysisService {
   private supabase: any;
 
   constructor() {
-    this.initializeSupabase();
+    // Don't initialize Supabase in constructor - do it lazily when needed
   }
 
   private async initializeSupabase() {
-    this.supabase = await createClient();
+    if (!this.supabase) {
+      this.supabase = await createClient();
+    }
+    return this.supabase;
   }
 
   /**
    * Perform complete quality analysis on a review
    */
   async analyzeReview(request: QualityAnalysisRequest): Promise<QualityAnalysisResponse> {
-    await this.initializeSupabase();
+    const supabase = await this.initializeSupabase();
     
     // Get the review data
-    const { data: review, error: reviewError } = await this.supabase
+    const { data: review, error: reviewError } = await supabase
       .from('reviews')
       .select(`
         *,
@@ -294,7 +297,8 @@ export class QualityAnalysisService {
     metrics.internal_consistency = balance;
     
     // Get cross-reviewer variance if multiple reviews exist
-    const { data: otherReviews } = await this.supabase
+    const supabase = await this.initializeSupabase();
+    const { data: otherReviews } = await supabase
       .from('reviews')
       .select('recommendation, overall_score')
       .eq('manuscript_id', review.manuscript_id)
@@ -314,10 +318,10 @@ export class QualityAnalysisService {
    * Calculate overall quality score
    */
   private async calculateQualityScore(report: ReviewQualityReport): Promise<number> {
-    await this.initializeSupabase();
+    const supabase = await this.initializeSupabase();
     
     // Get metric configurations
-    const { data: configs } = await this.supabase
+    const { data: configs } = await supabase
       .from('quality_metrics_config')
       .select('*')
       .eq('enabled', true);
@@ -444,7 +448,8 @@ export class QualityAnalysisService {
    * Get or create quality report for a review
    */
   private async getOrCreateQualityReport(reviewId: string): Promise<ReviewQualityReport> {
-    const { data: existing } = await this.supabase
+    const supabase = await this.initializeSupabase();
+    const { data: existing } = await supabase
       .from('review_quality_reports')
       .select('*')
       .eq('review_id', reviewId)
@@ -455,7 +460,7 @@ export class QualityAnalysisService {
     }
     
     // Create new report
-    const { data: newReport, error } = await this.supabase
+    const { data: newReport, error } = await supabase
       .from('review_quality_reports')
       .insert({
         review_id: reviewId,
@@ -482,7 +487,8 @@ export class QualityAnalysisService {
     reportId: string, 
     updates: Partial<ReviewQualityReport>
   ): Promise<ReviewQualityReport> {
-    const { data, error } = await this.supabase
+    const supabase = await this.initializeSupabase();
+    const { data, error } = await supabase
       .from('review_quality_reports')
       .update(updates)
       .eq('id', reportId)
@@ -500,7 +506,8 @@ export class QualityAnalysisService {
    * Log AI feedback for auditing
    */
   private async logAIFeedback(log: Omit<AIFeedbackLog, 'id' | 'created_at'>): Promise<void> {
-    await this.supabase
+    const supabase = await this.initializeSupabase();
+    await supabase
       .from('ai_feedback_logs')
       .insert(log);
   }

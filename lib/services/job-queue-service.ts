@@ -51,9 +51,20 @@ export class JobQueueService {
   private workerInterval: NodeJS.Timeout | null = null
 
   constructor() {
-    const redisUrl = process.env.REDIS_URL || process.env.KV_URL
-    if (!redisUrl) {
-      throw new Error('REDIS_URL or KV_URL environment variable is required')
+    // Use REDIS_PUBLIC_URL for external connections, REDIS_URL for internal Railway
+    const redisUrl = process.env.REDIS_PUBLIC_URL || process.env.REDIS_URL || process.env.KV_URL
+    if (!redisUrl || redisUrl === 'your_redis_url_here') {
+      console.warn('Redis URL not properly configured, job queue service disabled')
+      // Create a mock Redis instance for build time
+      this.redis = {
+        lpush: async () => 1,
+        rpop: async () => null,
+        del: async () => 1,
+        on: () => {},
+        disconnect: async () => {},
+        quit: async () => {},
+      } as any
+      return
     }
 
     this.redis = new Redis(redisUrl, {
