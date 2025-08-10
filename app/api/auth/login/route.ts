@@ -1,73 +1,28 @@
+// This file is no longer needed as Auth0 handles login automatically
+// Keeping it for backward compatibility with any direct POST requests
+
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
 
-export async function POST(request: NextRequest) {
-  try {
-    const { email, password, type = 'password' } = await request.json()
-
-    if (!email) {
-      return NextResponse.json(
-        { error: 'Email is required' },
-        { status: 400 }
-      )
-    }
-
-    const supabase = await createClient()
-
-    if (type === 'magic-link') {
-      // Send magic link
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`,
-        },
-      })
-
-      if (error) {
-        return NextResponse.json({ error: error.message }, { status: 400 })
-      }
-
-      return NextResponse.json({ 
-        message: 'Magic link sent successfully',
-        type: 'magic-link' 
-      })
-    } else {
-      // Password login
-      if (!password) {
-        return NextResponse.json(
-          { error: 'Password is required for password login' },
-          { status: 400 }
-        )
-      }
-
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-
-      if (error) {
-        return NextResponse.json({ error: error.message }, { status: 400 })
-      }
-
-      // Get user profile
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', data.user.id)
-        .single()
-
-      return NextResponse.json({
-        user: data.user,
-        session: data.session,
-        profile: profile,
-        redirectTo: `/${profile?.role || 'author'}`
-      })
-    }
-  } catch (error) {
-    console.error('Login API error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+// Redirect GET requests to Auth0 login
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url)
+  const returnTo = searchParams.get('returnTo') || '/'
+  const screenHint = searchParams.get('screen_hint')
+  
+  // Build Auth0 login URL with proper parameters
+  const params = new URLSearchParams()
+  if (returnTo) {
+    params.append('returnTo', returnTo)
   }
+  if (screenHint) {
+    params.append('screen_hint', screenHint)
+  }
+  
+  const auth0LoginUrl = `/api/auth/auth0/login${params.toString() ? '?' + params.toString() : ''}`
+  return NextResponse.redirect(new URL(auth0LoginUrl, request.url))
+}
+
+// POST handler is deprecated - Auth0 handles authentication
+export async function POST(_request: NextRequest) {
+  return NextResponse.redirect(new URL('/api/auth/auth0/login', process.env.AUTH0_BASE_URL!))
 }
