@@ -228,14 +228,19 @@ export default function MobileNav({ user, isOpen, onToggle: _onToggle, onClose }
               {!user && (
                 <div className="p-4 border-t border-border">
                   <div className="space-y-2">
-                    <Button variant="outline" className="w-full justify-start" asChild>
-                      <Link href="/login">
-                        <LogIn className="mr-2 h-4 w-4" />
-                        Sign In
-                      </Link>
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-start"
+                      onClick={() => window.location.href = `/api/auth/auth0/login?returnTo=${encodeURIComponent(window.location.pathname)}`}
+                    >
+                      <LogIn className="mr-2 h-4 w-4" />
+                      Sign In
                     </Button>
-                    <Button className="w-full justify-start" asChild>
-                      <Link href="/register">Get Started</Link>
+                    <Button 
+                      className="w-full justify-start"
+                      onClick={() => window.location.href = `/api/auth/auth0/login?screen_hint=signup&returnTo=${encodeURIComponent('/author')}`}
+                    >
+                      Get Started
                     </Button>
                   </div>
                 </div>

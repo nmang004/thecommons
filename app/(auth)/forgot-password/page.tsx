@@ -13,7 +13,7 @@ export default function ForgotPasswordPage() {
     const timer = setTimeout(() => {
       // Auth0 handles password reset through their Universal Login
       // We'll redirect to login with a password reset hint
-      window.location.href = `/api/auth/login?screen_hint=reset-password`
+      window.location.href = `/api/auth/auth0/login?screen_hint=reset-password`
     }, 1000)
     return () => clearTimeout(timer)
   }, [])
@@ -38,7 +38,7 @@ export default function ForgotPasswordPage() {
             </p>
             
             <Button
-              onClick={() => window.location.href = `/api/auth/login?screen_hint=reset-password`}
+              onClick={() => window.location.href = `/api/auth/auth0/login?screen_hint=reset-password`}
               variant="outline"
               className="w-full"
             >
@@ -49,7 +49,8 @@ export default function ForgotPasswordPage() {
           
           <div className="mt-8">
             <Link
-              href="/login"
+              onClick={() => window.location.href = `/api/auth/auth0/login`}
+              href="#"
               className="inline-flex items-center text-sm text-primary hover:text-primary/80"
             >
               <ArrowLeft className="w-4 h-4 mr-1" />

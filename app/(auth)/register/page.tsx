@@ -6,7 +6,6 @@ import { useAuth } from '@/hooks/useAuth'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Loader2, UserPlus } from 'lucide-react'
-import Link from 'next/link'
 
 export default function RegisterPage() {
   const { user, isLoading } = useAuth()
@@ -25,7 +24,7 @@ export default function RegisterPage() {
       // Small delay to show the loading state
       const timer = setTimeout(() => {
         // Redirect to Auth0 with signup hint
-        window.location.href = `/api/auth/login?screen_hint=signup&returnTo=${encodeURIComponent('/author')}`
+        window.location.href = `/api/auth/auth0/login?screen_hint=signup&returnTo=${encodeURIComponent('/author')}`
       }, 500)
       return () => clearTimeout(timer)
     }
@@ -52,7 +51,7 @@ export default function RegisterPage() {
             </p>
             
             <Button
-              onClick={() => window.location.href = `/api/auth/login?screen_hint=signup&returnTo=${encodeURIComponent('/author')}`}
+              onClick={() => window.location.href = `/api/auth/auth0/login?screen_hint=signup&returnTo=${encodeURIComponent('/author')}`}
               variant="outline"
               className="w-full"
             >
@@ -64,12 +63,12 @@ export default function RegisterPage() {
           <div className="mt-8">
             <p className="text-sm text-gray-600">
               Already have an account?{' '}
-              <Link
-                href="/login"
-                className="text-primary hover:text-primary/80 font-medium"
+              <button
+                onClick={() => window.location.href = `/api/auth/auth0/login`}
+                className="text-primary hover:text-primary/80 font-medium underline cursor-pointer"
               >
                 Sign in
-              </Link>
+              </button>
             </p>
           </div>
         </div>
