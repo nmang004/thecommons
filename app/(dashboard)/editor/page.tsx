@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
+import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { useAuth } from '@/hooks/useAuth'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -90,20 +90,19 @@ function EditorDashboardContent() {
   if (!user) return null
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-heading font-bold text-gray-900 mb-2">
-            Editorial Dashboard
-          </h1>
-          <p className="text-gray-600">
-            Manage manuscripts and oversee the peer review process
-          </p>
-        </div>
+    <div className="space-y-8">
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-heading font-bold text-foreground mb-2">
+          Editorial Dashboard
+        </h1>
+        <p className="text-muted-foreground">
+          Manage manuscripts and oversee the peer review process
+        </p>
+      </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
           <Card className="card-academic p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -155,30 +154,32 @@ function EditorDashboardContent() {
           </Card>
         </div>
 
-        {/* Quick Actions */}
-        <div className="flex flex-wrap gap-4 mb-8">
-          <Button asChild className="btn-academic">
-            <Link href="/editor/manuscripts">
-              <FileText className="w-4 h-4 mr-2" />
-              View All Manuscripts
-            </Link>
-          </Button>
-          <Button variant="outline" asChild>
-            <Link href="/editor/reviewers">
-              <Users className="w-4 h-4 mr-2" />
-              Manage Reviewers
-            </Link>
-          </Button>
-          <Button variant="outline" asChild>
-            <Link href="/editor/analytics">
-              <TrendingUp className="w-4 h-4 mr-2" />
-              Analytics
-            </Link>
-          </Button>
-        </div>
+      </div>
 
-        {/* Recent Submissions */}
-        <Card className="card-academic mb-8">
+      {/* Quick Actions */}
+      <div className="flex flex-wrap gap-4">
+        <Button asChild className="btn-academic">
+          <Link href="/editor/manuscripts">
+            <FileText className="w-4 h-4 mr-2" />
+            View All Manuscripts
+          </Link>
+        </Button>
+        <Button variant="outline" asChild>
+          <Link href="/editor/reviewers">
+            <Users className="w-4 h-4 mr-2" />
+            Manage Reviewers
+          </Link>
+        </Button>
+        <Button variant="outline" asChild>
+          <Link href="/editor/analytics">
+            <TrendingUp className="w-4 h-4 mr-2" />
+            Analytics
+          </Link>
+        </Button>
+      </div>
+
+      {/* Recent Submissions */}
+      <Card className="card-academic">
           <div className="p-6 border-b">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-heading font-semibold text-gray-900">
@@ -265,8 +266,10 @@ function EditorDashboardContent() {
           </div>
         </Card>
 
-        {/* Action Items */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      </Card>
+
+      {/* Action Items */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <Card className="card-academic">
             <div className="p-6 border-b">
               <h2 className="text-xl font-heading font-semibold text-gray-900">
@@ -342,7 +345,6 @@ function EditorDashboardContent() {
               </div>
             </div>
           </Card>
-        </div>
       </div>
     </div>
   )
@@ -350,8 +352,8 @@ function EditorDashboardContent() {
 
 export default function EditorDashboard() {
   return (
-    <ProtectedRoute requiredRole={['editor', 'admin']}>
+    <DashboardLayout>
       <EditorDashboardContent />
-    </ProtectedRoute>
+    </DashboardLayout>
   )
 }

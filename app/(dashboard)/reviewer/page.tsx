@@ -1,6 +1,6 @@
 'use client'
 
-import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
+import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { useAuth } from '@/hooks/useAuth'
 import { EnhancedReviewerDashboard } from '@/components/dashboard/enhanced-reviewer-dashboard'
 import { ErrorBoundary } from '@/components/ui/error-boundary'
@@ -45,10 +45,10 @@ export default function ReviewerDashboardPage() {
   }
 
   return (
-    <ProtectedRoute requiredRole={['reviewer', 'admin']}>
+    <DashboardLayout>
       <ErrorBoundary>
         <EnhancedReviewerDashboard profile={profile} />
       </ErrorBoundary>
-    </ProtectedRoute>
+    </DashboardLayout>
   )
 }

@@ -1,6 +1,4 @@
-// TODO: Fix Auth0 imports for v4.x compatibility
-// import { withApiAuthRequired } from '@auth0/nextjs-auth0'  
-// import { getSession } from '@auth0/nextjs-auth0/edge'
+import { withApiAuthRequired, getSession } from '@auth0/nextjs-auth0'
 import { NextRequest, NextResponse } from 'next/server'
 
 interface AuthorizedRequest extends NextRequest {
@@ -21,18 +19,9 @@ interface WithAuthOptions {
 }
 
 export function withAuth(
-  _handler: (req: AuthorizedRequest) => Promise<NextResponse>,
-  _options: WithAuthOptions = {}
+  handler: (req: AuthorizedRequest) => Promise<NextResponse>,
+  options: WithAuthOptions = {}
 ) {
-  // TODO: Restore Auth0 implementation once imports are fixed
-  return async (_req: NextRequest) => {
-    return NextResponse.json(
-      { error: 'Auth0 integration temporarily disabled - imports need to be fixed' },
-      { status: 501 }
-    )
-  }
-  
-  /* Original implementation - restore after fixing imports:
   return withApiAuthRequired(async (req: NextRequest) => {
     try {
       const session = await getSession(req)
@@ -56,8 +45,8 @@ export function withAuth(
       }
 
       // Extract user role and permissions from token
-      const userRole = session.user['https://thecommons.org/role'] || 'author'
-      const userPermissions = session.user['https://thecommons.org/permissions'] || []
+      const userRole = session.user['https://thecommons.institute/role'] || 'author'
+      const userPermissions = session.user['https://thecommons.institute/permissions'] || []
 
       // Check role requirement
       if (options.requiredRole) {
@@ -106,7 +95,6 @@ export function withAuth(
       )
     }
   })
-  */
 }
 
 // Convenience wrappers for common role checks

@@ -29,8 +29,8 @@ export function useAuth() {
       id: auth0User.sub!,
       email: auth0User.email!,
       name: auth0User.name!,
-      role: (auth0User['https://thecommons.org/role'] as User['role']) || 'author',
-      permissions: auth0User['https://thecommons.org/permissions'] || [],
+      role: (auth0User['https://thecommons.institute/role'] as User['role']) || 'author',
+      permissions: auth0User['https://thecommons.institute/permissions'] || [],
       emailVerified: auth0User.email_verified || false,
       metadata: {
         affiliation: auth0User.user_metadata?.affiliation,

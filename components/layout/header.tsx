@@ -22,12 +22,42 @@ interface HeaderProps {
   notificationCount?: number
 }
 
-const navItems = [
+const publicNavItems = [
   { href: '/', label: 'Home' },
   { href: '/articles', label: 'Articles' },
   { href: '/about', label: 'About' },
   { href: '/guidelines', label: 'Guidelines' },
 ]
+
+const getRoleSpecificNavItems = (role?: string) => {
+  switch (role) {
+    case 'author':
+      return [
+        { href: '/author', label: 'My Dashboard' },
+        { href: '/author/submit', label: 'Submit' },
+        { href: '/author/submissions', label: 'My Papers' },
+      ]
+    case 'editor':
+      return [
+        { href: '/editor', label: 'Editorial Dashboard' },
+        { href: '/editor/manuscripts', label: 'Manuscripts' },
+        { href: '/editor/reviewers', label: 'Reviewers' },
+      ]
+    case 'reviewer':
+      return [
+        { href: '/reviewer', label: 'Review Dashboard' },
+        { href: '/reviewer/reviews/pending', label: 'Pending Reviews' },
+      ]
+    case 'admin':
+      return [
+        { href: '/admin', label: 'Admin Dashboard' },
+        { href: '/admin/users', label: 'Users' },
+        { href: '/admin/analytics', label: 'Analytics' },
+      ]
+    default:
+      return []
+  }
+}
 
 const roleColors = {
   author: 'bg-blue-100 text-blue-800',
@@ -66,6 +96,12 @@ export default function Header({ notificationCount = 0 }: HeaderProps) {
     return `/${user.role}`
   }
 
+  // Combine public nav items with role-specific items
+  const allNavItems = [
+    ...publicNavItems,
+    ...getRoleSpecificNavItems(user?.role)
+  ]
+
   return (
     <header id="navigation" className={`nav-academic sticky top-0 z-50 w-full transition-all duration-300 ${
       isScrolled 
@@ -93,7 +129,7 @@ export default function Header({ notificationCount = 0 }: HeaderProps) {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
-            {navItems.map((item) => (
+            {allNavItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
@@ -249,7 +285,7 @@ export default function Header({ notificationCount = 0 }: HeaderProps) {
               </div>
 
               {/* Mobile Nav Items */}
-              {navItems.map((item) => (
+              {allNavItems.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}

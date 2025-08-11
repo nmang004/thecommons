@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
+import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { useAuth } from '@/hooks/useAuth'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -42,20 +42,19 @@ function AdminDashboardContent() {
   if (!user) return null
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-heading font-bold text-gray-900 mb-2">
-            Admin Dashboard
-          </h1>
-          <p className="text-gray-600">
-            System overview and platform management
-          </p>
-        </div>
+    <div className="space-y-8">
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-heading font-bold text-foreground mb-2">
+          Admin Dashboard
+        </h1>
+        <p className="text-muted-foreground">
+          System overview and platform management
+        </p>
+      </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <Card className="card-academic p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -123,30 +122,30 @@ function AdminDashboardContent() {
           </Card>
         </div>
 
-        {/* Quick Actions */}
-        <div className="flex flex-wrap gap-4 mb-8">
-          <Button asChild className="btn-academic">
-            <Link href="/admin/users">
-              <Users className="w-4 h-4 mr-2" />
-              Manage Users
-            </Link>
-          </Button>
-          <Button variant="outline" asChild>
-            <Link href="/admin/analytics">
-              <TrendingUp className="w-4 h-4 mr-2" />
-              Analytics
-            </Link>
-          </Button>
-          <Button variant="outline" asChild>
-            <Link href="/admin/settings">
-              <Settings className="w-4 h-4 mr-2" />
-              System Settings
-            </Link>
-          </Button>
-        </div>
+      {/* Quick Actions */}
+      <div className="flex flex-wrap gap-4">
+        <Button asChild className="btn-academic">
+          <Link href="/admin/users">
+            <Users className="w-4 h-4 mr-2" />
+            Manage Users
+          </Link>
+        </Button>
+        <Button variant="outline" asChild>
+          <Link href="/admin/analytics">
+            <TrendingUp className="w-4 h-4 mr-2" />
+            Analytics
+          </Link>
+        </Button>
+        <Button variant="outline" asChild>
+          <Link href="/admin/settings">
+            <Settings className="w-4 h-4 mr-2" />
+            System Settings
+          </Link>
+        </Button>
+      </div>
 
-        {/* System Status & Recent Activity */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+      {/* System Status & Recent Activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <Card className="card-academic">
             <div className="p-6 border-b">
               <h2 className="text-xl font-heading font-semibold text-gray-900">
@@ -249,8 +248,10 @@ function AdminDashboardContent() {
           </Card>
         </div>
 
-        {/* User Management Quick View */}
-        <Card className="card-academic">
+      </div>
+
+      {/* User Management Quick View */}
+      <Card className="card-academic">
           <div className="p-6 border-b">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-heading font-semibold text-gray-900">
@@ -283,16 +284,15 @@ function AdminDashboardContent() {
               </div>
             </div>
           </div>
-        </Card>
-      </div>
+      </Card>
     </div>
   )
 }
 
 export default function AdminDashboard() {
   return (
-    <ProtectedRoute requiredRole="admin">
+    <DashboardLayout>
       <AdminDashboardContent />
-    </ProtectedRoute>
+    </DashboardLayout>
   )
 }
