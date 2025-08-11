@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
           client_id: process.env.AUTH0_CLIENT_ID!,
           client_secret: process.env.AUTH0_CLIENT_SECRET!,
           code,
-          redirect_uri: `${process.env.AUTH0_BASE_URL}/api/auth/callback`,
+          redirect_uri: `${origin}/api/auth/callback`,
         }),
       })
       
