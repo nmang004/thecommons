@@ -78,22 +78,22 @@ export async function GET(request: NextRequest) {
       
       // Check if user exists in profiles
       const { data: profile } = await supabase
-        .from('profiles')
+        .from('user_profiles')
         .select('*')
-        .eq('id', user.sub)
+        .eq('auth0_id', user.sub)
         .single()
       
       if (profile) {
         // Update existing profile with latest Auth0 data
         const { error: updateError } = await supabase
-          .from('profiles')
+          .from('user_profiles')
           .update({
             email: user.email,
-            full_name: user.name,
+            name: user.name,
             role: role, // Always sync role from Auth0
             updated_at: new Date().toISOString()
           })
-          .eq('id', user.sub)
+          .eq('auth0_id', user.sub)
         
         if (updateError) {
           console.error('Failed to update user profile:', updateError)
@@ -101,11 +101,11 @@ export async function GET(request: NextRequest) {
       } else {
         // Create user profile if doesn't exist
         const { error: insertError } = await supabase
-          .from('profiles')
+          .from('user_profiles')
           .insert({
-            id: user.sub,
+            auth0_id: user.sub,
             email: user.email,
-            full_name: user.name,
+            name: user.name,
             role: role, // Use Auth0 role
             created_at: new Date().toISOString()
           })
@@ -131,13 +131,24 @@ export async function GET(request: NextRequest) {
       const redirectUrl = state && state !== 'undefined' ? decodeURIComponent(state) : `/${role}`
       const response = NextResponse.redirect(`${origin}${redirectUrl}`)
       
-      // Set session cookie
-      response.cookies.set('auth-session', JSON.stringify(sessionData), {
+      // Set session cookie with proper domain handling
+      const cookieOptions: any = {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
-        maxAge: 24 * 60 * 60 // 24 hours
-      })
+        maxAge: 24 * 60 * 60, // 24 hours
+        path: '/'
+      }
+      
+      // Set domain for production
+      if (process.env.NODE_ENV === 'production') {
+        const hostname = new URL(origin).hostname
+        if (hostname === 'thecommons.institute' || hostname === 'www.thecommons.institute') {
+          cookieOptions.domain = '.thecommons.institute'
+        }
+      }
+      
+      response.cookies.set('auth-session', JSON.stringify(sessionData), cookieOptions)
       
       return response
       

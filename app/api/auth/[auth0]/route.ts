@@ -130,13 +130,24 @@ export async function GET(
           const redirectUrl = state && state !== 'undefined' ? decodeURIComponent(state) : `/${role}`
           const response = NextResponse.redirect(`${origin}${redirectUrl}`)
           
-          // Set session cookie
-          response.cookies.set('auth-session', JSON.stringify(sessionData), {
+          // Set session cookie with proper domain handling
+          const cookieOptions: any = {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'lax',
-            maxAge: 24 * 60 * 60 // 24 hours
-          })
+            maxAge: 24 * 60 * 60, // 24 hours
+            path: '/'
+          }
+          
+          // Set domain for production
+          if (process.env.NODE_ENV === 'production') {
+            const hostname = new URL(origin).hostname
+            if (hostname === 'thecommons.institute' || hostname === 'www.thecommons.institute') {
+              cookieOptions.domain = '.thecommons.institute'
+            }
+          }
+          
+          response.cookies.set('auth-session', JSON.stringify(sessionData), cookieOptions)
           
           return response
           

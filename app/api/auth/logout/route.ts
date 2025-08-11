@@ -8,14 +8,26 @@ export async function GET(_request: NextRequest) {
     const logoutUrl = `${process.env.AUTH0_ISSUER_BASE_URL}/v2/logout?client_id=${process.env.AUTH0_CLIENT_ID}&returnTo=${returnTo}&federated`
     const response = NextResponse.redirect(logoutUrl)
     
-    // Clear the session cookie
-    response.cookies.set('auth-session', '', {
+    // Clear the session cookie with proper domain handling
+    const cookieOptions: any = {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: 0, // Immediately expire
-      expires: new Date(0) // Set to epoch
-    })
+      expires: new Date(0), // Set to epoch
+      path: '/'
+    }
+    
+    // Set domain for production
+    if (process.env.NODE_ENV === 'production') {
+      const baseUrl = process.env.AUTH0_BASE_URL || 'http://localhost:3000'
+      const hostname = new URL(baseUrl).hostname
+      if (hostname === 'thecommons.institute' || hostname === 'www.thecommons.institute') {
+        cookieOptions.domain = '.thecommons.institute'
+      }
+    }
+    
+    response.cookies.set('auth-session', '', cookieOptions)
     
     return response
   } catch (error) {
@@ -25,25 +37,49 @@ export async function GET(_request: NextRequest) {
       const returnTo = encodeURIComponent(process.env.AUTH0_BASE_URL || 'http://localhost:3000')
       const fallbackLogoutUrl = `${process.env.AUTH0_ISSUER_BASE_URL}/v2/logout?client_id=${process.env.AUTH0_CLIENT_ID}&returnTo=${returnTo}`
       const response = NextResponse.redirect(fallbackLogoutUrl)
-      response.cookies.set('auth-session', '', {
+      
+      const cookieOptions: any = {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
         maxAge: 0,
-        expires: new Date(0)
-      })
+        expires: new Date(0),
+        path: '/'
+      }
+      
+      if (process.env.NODE_ENV === 'production') {
+        const baseUrl = process.env.AUTH0_BASE_URL || 'http://localhost:3000'
+        const hostname = new URL(baseUrl).hostname
+        if (hostname === 'thecommons.institute' || hostname === 'www.thecommons.institute') {
+          cookieOptions.domain = '.thecommons.institute'
+        }
+      }
+      
+      response.cookies.set('auth-session', '', cookieOptions)
       return response
     } catch (fallbackError) {
       console.error('Fallback logout error:', fallbackError)
       // Last resort: just redirect to home with cleared cookie
       const response = NextResponse.redirect(process.env.AUTH0_BASE_URL || 'http://localhost:3000')
-      response.cookies.set('auth-session', '', {
+      
+      const cookieOptions: any = {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
         maxAge: 0,
-        expires: new Date(0)
-      })
+        expires: new Date(0),
+        path: '/'
+      }
+      
+      if (process.env.NODE_ENV === 'production') {
+        const baseUrl = process.env.AUTH0_BASE_URL || 'http://localhost:3000'
+        const hostname = new URL(baseUrl).hostname
+        if (hostname === 'thecommons.institute' || hostname === 'www.thecommons.institute') {
+          cookieOptions.domain = '.thecommons.institute'
+        }
+      }
+      
+      response.cookies.set('auth-session', '', cookieOptions)
       return response
     }
   }
