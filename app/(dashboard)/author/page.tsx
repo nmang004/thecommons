@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { useAuth } from '@/hooks/useAuth'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -268,9 +267,5 @@ function AuthorDashboardContent() {
 }
 
 export default function AuthorDashboard() {
-  return (
-    <DashboardLayout>
-      <AuthorDashboardContent />
-    </DashboardLayout>
-  )
+  return <AuthorDashboardContent />
 }
