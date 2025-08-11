@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createClient } from '@/lib/supabase/client'
 import { format } from 'date-fns'
 import Link from 'next/link'
 import type { Manuscript, Profile } from '@/types/database'
@@ -45,7 +45,7 @@ const SORT_OPTIONS = [
 
 export default function ArticleArchive({ searchParams }: ArticleArchiveProps) {
   const router = useRouter()
-  const supabase = createClientComponentClient()
+  const supabase = createClient()
 
   const [articles, setArticles] = useState<ArticleWithAuthor[]>([])
   const [loading, setLoading] = useState(true)

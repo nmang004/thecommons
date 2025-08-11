@@ -17,7 +17,7 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { format } from 'date-fns'
 
@@ -113,7 +113,7 @@ const SORT_OPTIONS = [
 
 export default function FieldsBrowser({ searchParams: _searchParams }: FieldsBrowserProps) {
   const router = useRouter()
-  const supabase = createClientComponentClient()
+  const supabase = createClient()
 
   const [fields, setFields] = useState<FieldData[]>([])
   const [loading, setLoading] = useState(true)

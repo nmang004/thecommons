@@ -16,7 +16,7 @@ import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
 import ArticleCard from '@/components/ui/article-card'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createClient } from '@/lib/supabase/client'
 import type { Manuscript, Profile } from '@/types/database'
 
 interface SearchFilters {
@@ -71,7 +71,7 @@ export default function AdvancedSearch({
 }: { 
   searchParams: { [key: string]: string | string[] | undefined } 
 }) {
-  const supabase = createClientComponentClient()
+  const supabase = createClient()
 
   const [filters, setFilters] = useState<SearchFilters>({
     query: (searchParams.q as string) || '',
