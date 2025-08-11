@@ -1,6 +1,5 @@
 'use client'
 
-import { usePathname } from 'next/navigation'
 import { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
@@ -14,7 +13,6 @@ interface DashboardLayoutProps {
 }
 
 export function DashboardLayout({ children, className }: DashboardLayoutProps) {
-  const pathname = usePathname()
   const { user, isLoading } = useAuth()
 
   if (isLoading) {
@@ -39,7 +37,7 @@ export function DashboardLayout({ children, className }: DashboardLayoutProps) {
   return (
     <div className="flex h-screen bg-background">
       {/* Sidebar */}
-      <Sidebar userRole={user.role} currentPath={pathname} />
+      <Sidebar userRole={user.role} />
       
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">

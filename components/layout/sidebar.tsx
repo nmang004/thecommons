@@ -12,10 +12,9 @@ import {
 
 interface SidebarProps {
   userRole: 'author' | 'editor' | 'reviewer' | 'admin'
-  currentPath: string
 }
 
-export function Sidebar({ userRole, currentPath }: SidebarProps) {
+export function Sidebar({ userRole }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false)
 
   return (

@@ -137,8 +137,6 @@ function AuthorDashboardContent() {
           </Card>
         </div>
 
-      </div>
-
       {/* Quick Actions */}
       <div className="flex flex-wrap gap-4">
         <Button asChild className="btn-academic">

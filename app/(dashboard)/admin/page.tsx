@@ -248,8 +248,6 @@ function AdminDashboardContent() {
           </Card>
         </div>
 
-      </div>
-
       {/* User Management Quick View */}
       <Card className="card-academic">
           <div className="p-6 border-b">

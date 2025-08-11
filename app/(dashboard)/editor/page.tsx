@@ -154,8 +154,6 @@ function EditorDashboardContent() {
           </Card>
         </div>
 
-      </div>
-
       {/* Quick Actions */}
       <div className="flex flex-wrap gap-4">
         <Button asChild className="btn-academic">
@@ -265,8 +263,6 @@ function EditorDashboardContent() {
             </table>
           </div>
         </Card>
-
-      </Card>
 
       {/* Action Items */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

@@ -1,4 +1,5 @@
-import { withApiAuthRequired, getSession } from '@auth0/nextjs-auth0'
+// NOTE: This file is not currently used and has import issues with @auth0/nextjs-auth0
+// import { withPageAuthRequired, getSession } from '@auth0/nextjs-auth0'
 import { NextRequest, NextResponse } from 'next/server'
 
 interface AuthorizedRequest extends NextRequest {
@@ -22,9 +23,11 @@ export function withAuth(
   handler: (req: AuthorizedRequest) => Promise<NextResponse>,
   options: WithAuthOptions = {}
 ) {
-  return withApiAuthRequired(async (req: NextRequest) => {
+  // return withPageAuthRequired(async (req: NextRequest) => {
+  return async (req: NextRequest) => {
     try {
-      const session = await getSession(req)
+      // const session = await getSession(req)
+      const session: any = null // Placeholder - disabled auth file
       
       if (!session?.user) {
         return NextResponse.json(
@@ -94,7 +97,7 @@ export function withAuth(
         { status: 401 }
       )
     }
-  })
+  }
 }
 
 // Convenience wrappers for common role checks

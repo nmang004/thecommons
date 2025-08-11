@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
-import { Home, Users, FileText, Database, BarChart3, Settings, Shield } from 'lucide-react'
+import { Home, Users, FileText, Database, BarChart3, Settings } from 'lucide-react'
 
 interface AdminNavProps {
   isCollapsed?: boolean

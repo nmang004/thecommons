@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
-import { Home, FileText, Users, BarChart3, Settings, CheckCircle, Clock } from 'lucide-react'
+import { Home, FileText, Users, BarChart3, Settings } from 'lucide-react'
 
 interface EditorNavProps {
   isCollapsed?: boolean

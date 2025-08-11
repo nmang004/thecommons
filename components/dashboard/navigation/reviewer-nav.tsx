@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
-import { Home, Clock, CheckCircle, Settings, Eye } from 'lucide-react'
+import { Home, Clock, CheckCircle, Settings } from 'lucide-react'
 
 interface ReviewerNavProps {
   isCollapsed?: boolean
