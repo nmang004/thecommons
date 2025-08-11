@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
-import { Home, FileText, Upload, Settings } from 'lucide-react'
+import { Home, FileText, Upload, Settings, Search, BarChart3, Book, Bell, CreditCard, HelpCircle } from 'lucide-react'
 
 interface AuthorNavProps {
   isCollapsed?: boolean
@@ -27,6 +27,43 @@ const navItems = [
     icon: FileText,
     description: 'View and manage submissions',
     badge: 'Active'
+  },
+  {
+    label: 'Browse Articles',
+    href: '/articles',
+    icon: Search,
+    description: 'Explore published articles'
+  },
+  {
+    label: 'Analytics',
+    href: '/author/analytics',
+    icon: BarChart3,
+    description: 'View publication metrics'
+  },
+  {
+    label: 'Guidelines',
+    href: '/guidelines',
+    icon: Book,
+    description: 'Submission guidelines and resources'
+  },
+  {
+    label: 'Notifications',
+    href: '/author/notifications',
+    icon: Bell,
+    description: 'Messages and updates',
+    badge: '3'
+  },
+  {
+    label: 'Payment History',
+    href: '/author/payments',
+    icon: CreditCard,
+    description: 'View payment records'
+  },
+  {
+    label: 'Help & Support',
+    href: '/help',
+    icon: HelpCircle,
+    description: 'FAQs and support'
   },
   {
     label: 'Profile Settings',
