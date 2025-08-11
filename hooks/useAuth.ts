@@ -72,14 +72,21 @@ export function useAuth() {
   
   const logout = useCallback(async () => {
     try {
-      // Clear session cookie
-      document.cookie = 'auth-session=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;'
+      // Clear local state immediately
+      setUser(null)
+      setError(null)
+      setIsLoading(false)
       
-      // Redirect to Auth0 logout
+      // Clear session cookie on client side (belt and suspenders)
+      document.cookie = 'auth-session=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=Lax'
+      
+      // Redirect to logout endpoint (which will clear server cookie and redirect to Auth0)
       window.location.href = '/api/auth/logout'
     } catch (error) {
       console.error('Logout error:', error)
-      // Fallback - just redirect to home
+      // Fallback - clear state and redirect to home
+      setUser(null)
+      document.cookie = 'auth-session=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=Lax'
       window.location.href = '/'
     }
   }, [])
