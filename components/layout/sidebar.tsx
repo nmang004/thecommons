@@ -11,8 +11,7 @@ import { useAuth } from '@/hooks/useAuth'
 import {
   ChevronLeft,
   ChevronRight,
-  LogOut,
-  User
+  LogOut
 } from 'lucide-react'
 
 interface SidebarProps {
