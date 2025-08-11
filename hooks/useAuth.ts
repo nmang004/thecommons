@@ -67,7 +67,7 @@ export function useAuth() {
   
   const login = useCallback((redirectTo?: string) => {
     const returnTo = redirectTo || window.location.pathname
-    window.location.href = `/api/auth/auth0/login?returnTo=${encodeURIComponent(returnTo)}`
+    window.location.href = `/api/auth/login?returnTo=${encodeURIComponent(returnTo)}`
   }, [])
   
   const logout = useCallback(async () => {
@@ -76,7 +76,7 @@ export function useAuth() {
       document.cookie = 'auth-session=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;'
       
       // Redirect to Auth0 logout
-      window.location.href = '/api/auth/auth0/logout'
+      window.location.href = '/api/auth/logout'
     } catch (error) {
       console.error('Logout error:', error)
       // Fallback - just redirect to home

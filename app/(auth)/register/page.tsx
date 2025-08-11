@@ -24,7 +24,7 @@ export default function RegisterPage() {
       // Small delay to show the loading state
       const timer = setTimeout(() => {
         // Redirect to Auth0 with signup hint
-        window.location.href = `/api/auth/auth0/login?screen_hint=signup&returnTo=${encodeURIComponent('/author')}`
+        window.location.href = `/api/auth/login?screen_hint=signup&returnTo=${encodeURIComponent('/author')}`
       }, 500)
       return () => clearTimeout(timer)
     }
@@ -51,7 +51,7 @@ export default function RegisterPage() {
             </p>
             
             <Button
-              onClick={() => window.location.href = `/api/auth/auth0/login?screen_hint=signup&returnTo=${encodeURIComponent('/author')}`}
+              onClick={() => window.location.href = `/api/auth/login?screen_hint=signup&returnTo=${encodeURIComponent('/author')}`}
               variant="outline"
               className="w-full"
             >
@@ -64,7 +64,7 @@ export default function RegisterPage() {
             <p className="text-sm text-gray-600">
               Already have an account?{' '}
               <button
-                onClick={() => window.location.href = `/api/auth/auth0/login`}
+                onClick={() => window.location.href = `/api/auth/login`}
                 className="text-primary hover:text-primary/80 font-medium underline cursor-pointer"
               >
                 Sign in

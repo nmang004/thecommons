@@ -241,7 +241,7 @@ export default function Header({ notificationCount = 0 }: HeaderProps) {
                 <Button 
                   size="sm" 
                   className="btn-primary"
-                  onClick={() => window.location.href = `/api/auth/auth0/login?screen_hint=signup&returnTo=${encodeURIComponent('/author')}`}
+                  onClick={() => window.location.href = `/api/auth/login?screen_hint=signup&returnTo=${encodeURIComponent('/author')}`}
                 >
                   Get Started
                 </Button>
@@ -315,7 +315,7 @@ export default function Header({ notificationCount = 0 }: HeaderProps) {
                     className="w-full justify-start btn-primary"
                     onClick={() => {
                       setIsMenuOpen(false)
-                      window.location.href = `/api/auth/auth0/login?screen_hint=signup&returnTo=${encodeURIComponent('/author')}`
+                      window.location.href = `/api/auth/login?screen_hint=signup&returnTo=${encodeURIComponent('/author')}`
                     }}
                   >
                     Get Started

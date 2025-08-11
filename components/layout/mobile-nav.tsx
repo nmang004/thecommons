@@ -231,14 +231,14 @@ export default function MobileNav({ user, isOpen, onToggle: _onToggle, onClose }
                     <Button 
                       variant="outline" 
                       className="w-full justify-start"
-                      onClick={() => window.location.href = `/api/auth/auth0/login?returnTo=${encodeURIComponent(window.location.pathname)}`}
+                      onClick={() => window.location.href = `/api/auth/login?returnTo=${encodeURIComponent(window.location.pathname)}`}
                     >
                       <LogIn className="mr-2 h-4 w-4" />
                       Sign In
                     </Button>
                     <Button 
                       className="w-full justify-start"
-                      onClick={() => window.location.href = `/api/auth/auth0/login?screen_hint=signup&returnTo=${encodeURIComponent('/author')}`}
+                      onClick={() => window.location.href = `/api/auth/login?screen_hint=signup&returnTo=${encodeURIComponent('/author')}`}
                     >
                       Get Started
                     </Button>
