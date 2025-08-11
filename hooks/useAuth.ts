@@ -1,5 +1,4 @@
-import { useUser } from '@auth0/nextjs-auth0'
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useEffect, useState } from 'react'
 
 interface User {
   id: string
@@ -19,37 +18,70 @@ interface User {
 }
 
 export function useAuth() {
-  const { user: auth0User, error, isLoading } = useUser()
-  
-  // Transform Auth0 user to app user format
-  const user: User | null = useMemo(() => {
-    if (!auth0User) return null
-    
-    return {
-      id: auth0User.sub!,
-      email: auth0User.email!,
-      name: auth0User.name!,
-      role: (auth0User['https://thecommons.institute/role'] as User['role']) || 'author',
-      permissions: auth0User['https://thecommons.institute/permissions'] || [],
-      emailVerified: auth0User.email_verified || false,
-      metadata: {
-        affiliation: auth0User.user_metadata?.affiliation,
-        orcid: auth0User.user_metadata?.orcid,
-        expertise: auth0User.user_metadata?.expertise,
-        bio: auth0User.user_metadata?.bio,
-        h_index: auth0User.user_metadata?.h_index,
-        avatar_url: auth0User.picture
+  const [user, setUser] = useState<User | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
+
+  // Check authentication status
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        setIsLoading(true)
+        const response = await fetch('/api/auth/profile')
+        
+        if (response.ok) {
+          const { user: userData } = await response.json()
+          
+          setUser({
+            id: userData.id,
+            email: userData.email,
+            name: userData.name || userData.email,
+            role: userData.role || 'author',
+            permissions: userData.permissions || [],
+            emailVerified: userData.email_verified || true,
+            metadata: {
+              affiliation: userData.affiliation,
+              orcid: userData.orcid,
+              expertise: userData.expertise,
+              bio: userData.bio,
+              h_index: userData.h_index,
+              avatar_url: userData.avatar_url
+            }
+          })
+        } else if (response.status === 401) {
+          // Not authenticated
+          setUser(null)
+        } else {
+          throw new Error('Failed to check authentication')
+        }
+      } catch (err) {
+        setError(err as Error)
+        setUser(null)
+      } finally {
+        setIsLoading(false)
       }
     }
-  }, [auth0User])
+
+    checkAuth()
+  }, [])
   
   const login = useCallback((redirectTo?: string) => {
     const returnTo = redirectTo || window.location.pathname
-    window.location.href = `/api/auth/login?returnTo=${encodeURIComponent(returnTo)}`
+    window.location.href = `/api/auth/auth0/login?returnTo=${encodeURIComponent(returnTo)}`
   }, [])
   
-  const logout = useCallback(() => {
-    window.location.href = '/api/auth/logout'
+  const logout = useCallback(async () => {
+    try {
+      // Clear session cookie
+      document.cookie = 'auth-session=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;'
+      
+      // Redirect to Auth0 logout
+      window.location.href = '/api/auth/auth0/logout'
+    } catch (error) {
+      console.error('Logout error:', error)
+      // Fallback - just redirect to home
+      window.location.href = '/'
+    }
   }, [])
   
   const hasPermission = useCallback((permission: string) => {
