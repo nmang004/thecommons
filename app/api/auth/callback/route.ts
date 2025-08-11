@@ -50,20 +50,54 @@ export async function GET(request: NextRequest) {
       
       const user = await userResponse.json()
       
-      // Sync user with Supabase and get role
+      // Get role from Auth0 user metadata or app_metadata
+      // Auth0 roles can be stored in app_metadata.roles, user_metadata.role, or custom claims
+      let auth0Role = 'author' // Default role
+      
+      // Check various locations where Auth0 might store role information
+      if (user['https://thecommons.institute/role']) {
+        // Custom claim (from Auth0 Actions/Rules)
+        auth0Role = user['https://thecommons.institute/role']
+      } else if (user.app_metadata?.role) {
+        // App metadata
+        auth0Role = user.app_metadata.role
+      } else if (user.app_metadata?.roles?.length > 0) {
+        // App metadata roles array
+        auth0Role = user.app_metadata.roles[0]
+      } else if (user.user_metadata?.role) {
+        // User metadata
+        auth0Role = user.user_metadata.role
+      }
+      
+      // Ensure role is valid
+      const validRoles = ['author', 'editor', 'reviewer', 'admin']
+      const role = validRoles.includes(auth0Role) ? auth0Role : 'author'
+      
+      // Sync user with Supabase and update role from Auth0
       const supabase = await createClient()
       
       // Check if user exists in profiles
       const { data: profile } = await supabase
         .from('user_profiles')
-        .select('role')
+        .select('*')
         .eq('auth0_id', user.sub)
         .single()
       
-      let role = 'author'
-      
       if (profile) {
-        role = profile.role
+        // Update existing profile with latest Auth0 data
+        const { error: updateError } = await supabase
+          .from('user_profiles')
+          .update({
+            email: user.email,
+            name: user.name,
+            role: role, // Always sync role from Auth0
+            updated_at: new Date().toISOString()
+          })
+          .eq('auth0_id', user.sub)
+        
+        if (updateError) {
+          console.error('Failed to update user profile:', updateError)
+        }
       } else {
         // Create user profile if doesn't exist
         const { error: insertError } = await supabase
@@ -72,7 +106,7 @@ export async function GET(request: NextRequest) {
             auth0_id: user.sub,
             email: user.email,
             name: user.name,
-            role: 'author',
+            role: role, // Use Auth0 role
             created_at: new Date().toISOString()
           })
         
