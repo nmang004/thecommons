@@ -78,22 +78,22 @@ export async function GET(request: NextRequest) {
       
       // Check if user exists in profiles
       const { data: profile } = await supabase
-        .from('user_profiles')
+        .from('profiles')
         .select('*')
-        .eq('auth0_id', user.sub)
+        .eq('id', user.sub)
         .single()
       
       if (profile) {
         // Update existing profile with latest Auth0 data
         const { error: updateError } = await supabase
-          .from('user_profiles')
+          .from('profiles')
           .update({
             email: user.email,
-            name: user.name,
+            full_name: user.name,
             role: role, // Always sync role from Auth0
             updated_at: new Date().toISOString()
           })
-          .eq('auth0_id', user.sub)
+          .eq('id', user.sub)
         
         if (updateError) {
           console.error('Failed to update user profile:', updateError)
@@ -101,11 +101,11 @@ export async function GET(request: NextRequest) {
       } else {
         // Create user profile if doesn't exist
         const { error: insertError } = await supabase
-          .from('user_profiles')
+          .from('profiles')
           .insert({
-            auth0_id: user.sub,
+            id: user.sub,
             email: user.email,
-            name: user.name,
+            full_name: user.name,
             role: role, // Use Auth0 role
             created_at: new Date().toISOString()
           })
