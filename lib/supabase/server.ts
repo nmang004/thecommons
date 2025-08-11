@@ -1,13 +1,14 @@
 import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
 import type { Database } from '@/types/database'
 
 // Re-export createServerClient for compatibility
 export { createServerClient }
 
+/**
+ * Creates a Supabase server client for data access only (no authentication)
+ * Authentication is handled by Auth0
+ */
 export async function createClient() {
-  const cookieStore = await cookies()
-  
   // Use placeholder values if environment variables are not set
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsYWNlaG9sZGVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NDYyMzkwMjIsImV4cCI6MTk2MTgxNTAyMn0.placeholder'
@@ -15,28 +16,38 @@ export async function createClient() {
   // Check if we have valid environment variables
   if (supabaseUrl === 'https://placeholder.supabase.co' || 
       supabaseUrl === 'your_supabase_project_url_here' ||
+      !supabaseUrl ||
       !supabaseUrl.includes('supabase.co')) {
-    console.warn('Supabase environment variables are not properly configured')
+    console.warn('Supabase environment variables are not properly configured. Using placeholder values.')
+    // Use valid placeholder values to prevent build errors
+    return createServerClient<Database>(
+      'https://placeholder.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsYWNlaG9sZGVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NDYyMzkwMjIsImV4cCI6MTk2MTgxNTAyMn0.placeholder',
+      {
+        cookies: {
+          getAll() {
+            return []
+          },
+          setAll() {
+            // No-op since we don't use Supabase auth cookies
+          },
+        },
+      }
+    )
   }
 
+  // Create a simple server client without cookie handling for auth
+  // since Auth0 handles authentication
   return createServerClient<Database>(
     supabaseUrl,
     supabaseAnonKey,
     {
       cookies: {
         getAll() {
-          return cookieStore.getAll()
+          return []
         },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            )
-          } catch {
-            // The `setAll` method was called from a Server Component.
-            // This can be ignored if you have middleware refreshing
-            // user sessions.
-          }
+        setAll() {
+          // No-op since we don't use Supabase auth cookies
         },
       },
     }
