@@ -2,13 +2,19 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 
-export async function GET(_request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
     // Get session from cookie
     const cookieStore = await cookies()
     const sessionCookie = cookieStore.get('auth-session')
     
+    // Debug logging
+    console.log('Profile route - Looking for auth-session cookie')
+    console.log('All cookies:', cookieStore.getAll())
+    console.log('Session cookie found:', !!sessionCookie)
+    
     if (!sessionCookie) {
+      console.log('No auth-session cookie found')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

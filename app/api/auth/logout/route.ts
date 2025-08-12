@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 // Handle GET requests by clearing session and redirecting to Auth0 logout
-export async function GET(_request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
     // Create response to redirect to Auth0 logout with federated logout
     const returnTo = encodeURIComponent(process.env.AUTH0_BASE_URL!)
@@ -18,13 +18,12 @@ export async function GET(_request: NextRequest) {
       path: '/'
     }
     
-    // Set domain for production
-    if (process.env.NODE_ENV === 'production') {
-      const baseUrl = process.env.AUTH0_BASE_URL || 'http://localhost:3000'
-      const hostname = new URL(baseUrl).hostname
-      if (hostname === 'thecommons.institute' || hostname === 'www.thecommons.institute') {
-        cookieOptions.domain = '.thecommons.institute'
-      }
+    // Set domain based on request origin
+    const origin = request.headers.get('origin') || request.url
+    const hostname = new URL(origin).hostname
+    if (hostname === 'thecommons.institute' || hostname === 'www.thecommons.institute') {
+      cookieOptions.domain = '.thecommons.institute'
+      cookieOptions.secure = true // Force secure for production domain
     }
     
     response.cookies.set('auth-session', '', cookieOptions)
@@ -47,12 +46,11 @@ export async function GET(_request: NextRequest) {
         path: '/'
       }
       
-      if (process.env.NODE_ENV === 'production') {
-        const baseUrl = process.env.AUTH0_BASE_URL || 'http://localhost:3000'
-        const hostname = new URL(baseUrl).hostname
-        if (hostname === 'thecommons.institute' || hostname === 'www.thecommons.institute') {
-          cookieOptions.domain = '.thecommons.institute'
-        }
+      const origin = request.headers.get('origin') || request.url
+      const hostname = new URL(origin).hostname
+      if (hostname === 'thecommons.institute' || hostname === 'www.thecommons.institute') {
+        cookieOptions.domain = '.thecommons.institute'
+        cookieOptions.secure = true
       }
       
       response.cookies.set('auth-session', '', cookieOptions)
@@ -71,12 +69,11 @@ export async function GET(_request: NextRequest) {
         path: '/'
       }
       
-      if (process.env.NODE_ENV === 'production') {
-        const baseUrl = process.env.AUTH0_BASE_URL || 'http://localhost:3000'
-        const hostname = new URL(baseUrl).hostname
-        if (hostname === 'thecommons.institute' || hostname === 'www.thecommons.institute') {
-          cookieOptions.domain = '.thecommons.institute'
-        }
+      const origin = request.headers.get('origin') || request.url
+      const hostname = new URL(origin).hostname
+      if (hostname === 'thecommons.institute' || hostname === 'www.thecommons.institute') {
+        cookieOptions.domain = '.thecommons.institute'
+        cookieOptions.secure = true
       }
       
       response.cookies.set('auth-session', '', cookieOptions)

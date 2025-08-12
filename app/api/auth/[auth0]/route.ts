@@ -139,12 +139,11 @@ export async function GET(
             path: '/'
           }
           
-          // Set domain for production
-          if (process.env.NODE_ENV === 'production') {
-            const hostname = new URL(origin).hostname
-            if (hostname === 'thecommons.institute' || hostname === 'www.thecommons.institute') {
-              cookieOptions.domain = '.thecommons.institute'
-            }
+          // Set domain based on hostname (more reliable than NODE_ENV)
+          const hostname = new URL(origin).hostname
+          if (hostname === 'thecommons.institute' || hostname === 'www.thecommons.institute') {
+            cookieOptions.domain = '.thecommons.institute'
+            cookieOptions.secure = true // Force secure for production domain
           }
           
           response.cookies.set('auth-session', JSON.stringify(sessionData), cookieOptions)

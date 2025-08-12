@@ -140,13 +140,16 @@ export async function GET(request: NextRequest) {
         path: '/'
       }
       
-      // Set domain for production
-      if (process.env.NODE_ENV === 'production') {
-        const hostname = new URL(origin).hostname
-        if (hostname === 'thecommons.institute' || hostname === 'www.thecommons.institute') {
-          cookieOptions.domain = '.thecommons.institute'
-        }
+      // Set domain based on hostname (more reliable than NODE_ENV)
+      const hostname = new URL(origin).hostname
+      if (hostname === 'thecommons.institute' || hostname === 'www.thecommons.institute') {
+        cookieOptions.domain = '.thecommons.institute'
+        cookieOptions.secure = true // Force secure for production domain
       }
+      
+      console.log('Setting auth-session cookie with options:', cookieOptions)
+      console.log('Cookie domain:', cookieOptions.domain)
+      console.log('Origin:', origin)
       
       response.cookies.set('auth-session', JSON.stringify(sessionData), cookieOptions)
       
