@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { useAuth } from '@/hooks/useAuth'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -288,9 +287,5 @@ function AdminDashboardContent() {
 }
 
 export default function AdminDashboard() {
-  return (
-    <DashboardLayout>
-      <AdminDashboardContent />
-    </DashboardLayout>
-  )
+  return <AdminDashboardContent />
 }

@@ -1,6 +1,5 @@
 'use client'
 
-import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { useAuth } from '@/hooks/useAuth'
 import { EnhancedReviewerDashboard } from '@/components/dashboard/enhanced-reviewer-dashboard'
 import { ErrorBoundary } from '@/components/ui/error-boundary'
@@ -45,10 +44,8 @@ export default function ReviewerDashboardPage() {
   }
 
   return (
-    <DashboardLayout>
-      <ErrorBoundary>
-        <EnhancedReviewerDashboard profile={profile} />
-      </ErrorBoundary>
-    </DashboardLayout>
+    <ErrorBoundary>
+      <EnhancedReviewerDashboard profile={profile} />
+    </ErrorBoundary>
   )
 }

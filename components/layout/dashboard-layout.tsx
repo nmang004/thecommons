@@ -14,8 +14,6 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children, className }: DashboardLayoutProps) {
   const { user, isLoading } = useAuth()
-  
-  console.log('DashboardLayout rendered - User role:', user?.role, 'Loading:', isLoading)
 
   if (isLoading) {
     return (
