@@ -4,7 +4,10 @@ import { NextRequest, NextResponse } from 'next/server'
 export async function GET(request: NextRequest) {
   try {
     // Create response to redirect to Auth0 logout with federated logout
-    const returnTo = encodeURIComponent(process.env.AUTH0_BASE_URL!)
+    // Add logout completion parameter so frontend knows to refresh state
+    const baseUrl = process.env.AUTH0_BASE_URL!
+    const returnToUrl = `${baseUrl}?logout=success&t=${Date.now()}`
+    const returnTo = encodeURIComponent(returnToUrl)
     const logoutUrl = `${process.env.AUTH0_ISSUER_BASE_URL}/v2/logout?client_id=${process.env.AUTH0_CLIENT_ID}&returnTo=${returnTo}&federated`
     const response = NextResponse.redirect(logoutUrl)
     
@@ -33,7 +36,9 @@ export async function GET(request: NextRequest) {
     console.error('Logout error:', error)
     // Fallback: try Auth0 logout without federated, or redirect to home
     try {
-      const returnTo = encodeURIComponent(process.env.AUTH0_BASE_URL || 'http://localhost:3000')
+      const baseUrl = process.env.AUTH0_BASE_URL || 'http://localhost:3000'
+      const returnToUrl = `${baseUrl}?logout=success&t=${Date.now()}`
+      const returnTo = encodeURIComponent(returnToUrl)
       const fallbackLogoutUrl = `${process.env.AUTH0_ISSUER_BASE_URL}/v2/logout?client_id=${process.env.AUTH0_CLIENT_ID}&returnTo=${returnTo}`
       const response = NextResponse.redirect(fallbackLogoutUrl)
       
@@ -58,7 +63,9 @@ export async function GET(request: NextRequest) {
     } catch (fallbackError) {
       console.error('Fallback logout error:', fallbackError)
       // Last resort: just redirect to home with cleared cookie
-      const response = NextResponse.redirect(process.env.AUTH0_BASE_URL || 'http://localhost:3000')
+      const baseUrl = process.env.AUTH0_BASE_URL || 'http://localhost:3000'
+      const returnToUrl = `${baseUrl}?logout=success&t=${Date.now()}`
+      const response = NextResponse.redirect(returnToUrl)
       
       const cookieOptions: any = {
         httpOnly: true,

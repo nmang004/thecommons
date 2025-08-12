@@ -21,16 +21,41 @@ export function useAuth() {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
+  const [forceRefresh, setForceRefresh] = useState(0)
 
   // Check authentication status
   useEffect(() => {
     const checkAuth = async () => {
       try {
         setIsLoading(true)
-        const response = await fetch('/api/auth/profile')
+        console.log('[useAuth] Checking authentication status...')
+        
+        // Check for logout completion in URL
+        const urlParams = new URLSearchParams(window.location.search)
+        const logoutParam = urlParams.get('logout')
+        if (logoutParam === 'success') {
+          console.log('[useAuth] Logout completion detected, clearing state')
+          setUser(null)
+          setError(null)
+          setIsLoading(false)
+          // Clean up URL without reload
+          window.history.replaceState({}, document.title, window.location.pathname)
+          return
+        }
+        
+        const response = await fetch('/api/auth/profile', {
+          cache: 'no-cache',
+          headers: {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          }
+        })
+        
+        console.log('[useAuth] Profile API response status:', response.status)
         
         if (response.ok) {
           const { user: userData } = await response.json()
+          console.log('[useAuth] User authenticated:', userData.email)
           
           setUser({
             id: userData.id,
@@ -49,12 +74,14 @@ export function useAuth() {
             }
           })
         } else if (response.status === 401) {
-          // Not authenticated
+          console.log('[useAuth] User not authenticated')
           setUser(null)
         } else {
+          console.error('[useAuth] Unexpected response status:', response.status)
           throw new Error('Failed to check authentication')
         }
       } catch (err) {
+        console.error('[useAuth] Authentication check failed:', err)
         setError(err as Error)
         setUser(null)
       } finally {
@@ -63,15 +90,7 @@ export function useAuth() {
     }
 
     checkAuth()
-
-    // Re-check auth when window regains focus (user returns from Auth0 logout)
-    const handleFocus = () => {
-      checkAuth()
-    }
-
-    window.addEventListener('focus', handleFocus)
-    return () => window.removeEventListener('focus', handleFocus)
-  }, [])
+  }, [forceRefresh])
   
   const login = useCallback((redirectTo?: string) => {
     const returnTo = redirectTo || window.location.pathname
@@ -80,27 +99,23 @@ export function useAuth() {
   
   const logout = useCallback(async () => {
     try {
-      // Clear session cookies on client side with all possible domain configurations
-      const clearCookie = (domain?: string) => {
-        const domainStr = domain ? `; domain=${domain}` : ''
-        document.cookie = `auth-session=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=Lax${domainStr}`
-      }
+      console.log('[useAuth] Initiating logout...')
       
-      // Clear cookies for all possible domains
-      clearCookie() // No domain
-      clearCookie('.thecommons.institute') // Production domain
-      clearCookie('thecommons.institute') // Production domain without dot
-      clearCookie('www.thecommons.institute') // www subdomain
-      clearCookie('.localhost') // Local development
-      
-      // Redirect to logout endpoint (which will clear server cookie and redirect to Auth0)
+      // Don't clear client state immediately - let the server and Auth0 handle it
+      // Just redirect to logout endpoint which will handle everything
       window.location.href = '/api/auth/logout'
     } catch (error) {
-      console.error('Logout error:', error)
-      // Fallback - clear state and redirect to home
+      console.error('[useAuth] Logout error:', error)
+      // Fallback - force state refresh and redirect to home
       setUser(null)
-      window.location.href = '/'
+      window.location.href = '/?logout=success'
     }
+  }, [])
+  
+  // Add method to force refresh authentication state
+  const refreshAuth = useCallback(() => {
+    console.log('[useAuth] Forcing authentication refresh')
+    setForceRefresh(prev => prev + 1)
   }, [])
   
   const hasPermission = useCallback((permission: string) => {
@@ -131,6 +146,7 @@ export function useAuth() {
     error,
     login,
     logout,
+    refreshAuth,
     hasPermission,
     hasRole,
     hasAnyRole,
