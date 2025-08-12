@@ -13,6 +13,8 @@ interface EditorLayoutProps {
 
 export function EditorLayout({ children, className }: EditorLayoutProps) {
   const { user, isLoading } = useAuth()
+  
+  console.log('EditorLayout rendering for user:', user?.role)
 
   if (isLoading) {
     return (
