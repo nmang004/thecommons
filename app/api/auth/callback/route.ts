@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
       
       // Ensure role is valid
       const validRoles = ['author', 'editor', 'reviewer', 'admin']
-      const role = validRoles.includes(auth0Role) ? auth0Role : 'author'
+      let role = validRoles.includes(auth0Role) ? auth0Role : 'author'
       
       // Sync user with Supabase and update role from Auth0
       const supabase = await createClient()
@@ -84,13 +84,14 @@ export async function GET(request: NextRequest) {
         .single()
       
       if (profile) {
-        // Update existing profile with latest Auth0 data
+        // Update existing profile with latest Auth0 data (BUT preserve Supabase role)
+        console.log('Updating existing profile, preserving Supabase role:', profile.role)
         const { error: updateError } = await supabase
           .from('user_profiles')
           .update({
             email: user.email,
             name: user.name,
-            role: role, // Always sync role from Auth0
+            // Don't overwrite role - Supabase is source of truth for existing users
             updated_at: new Date().toISOString()
           })
           .eq('auth0_id', user.sub)
@@ -98,6 +99,9 @@ export async function GET(request: NextRequest) {
         if (updateError) {
           console.error('Failed to update user profile:', updateError)
         }
+        
+        // Use the existing role from Supabase, not Auth0
+        role = profile.role || role
       } else {
         // Create user profile if doesn't exist
         const { error: insertError } = await supabase

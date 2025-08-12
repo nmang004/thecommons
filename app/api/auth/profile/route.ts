@@ -96,14 +96,78 @@ export async function GET(request: NextRequest) {
     }
 
     console.log(`[${timestamp}] Successfully fetched profile for:`, sessionData.user.email)
+    console.log(`[${timestamp}] Session role:`, sessionData.user.role)
+    console.log(`[${timestamp}] Supabase role:`, profile.role)
     
+    // Use Supabase as source of truth for role (not session data)
+    const currentRole = profile.role || sessionData.user.role || 'author'
+    
+    // If role in Supabase differs from session, update the session cookie
+    const needsSessionUpdate = currentRole !== sessionData.user.role
+    
+    if (needsSessionUpdate) {
+      console.log(`[${timestamp}] Role mismatch detected. Updating session from ${sessionData.user.role} to ${currentRole}`)
+      
+      // Update session data with new role
+      const updatedSessionData = {
+        ...sessionData,
+        user: {
+          ...sessionData.user,
+          role: currentRole
+        }
+      }
+      
+      // Create response with updated session cookie
+      const response = NextResponse.json(
+        {
+          user: {
+            id: sessionData.user.id,
+            email: sessionData.user.email,
+            name: sessionData.user.name,
+            role: currentRole, // Use Supabase role
+            ...profile
+          }
+        },
+        {
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
+        }
+      )
+      
+      // Update session cookie with new role
+      const cookieOptions: any = {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 24 * 60 * 60, // 24 hours
+        path: '/'
+      }
+      
+      // Set domain based on request origin
+      const origin = request.headers.get('origin') || request.url
+      const hostname = new URL(origin).hostname
+      if (hostname === 'thecommons.institute' || hostname === 'www.thecommons.institute') {
+        cookieOptions.domain = '.thecommons.institute'
+        cookieOptions.secure = true
+      }
+      
+      response.cookies.set('auth-session', JSON.stringify(updatedSessionData), cookieOptions)
+      console.log(`[${timestamp}] Updated session cookie with new role: ${currentRole}`)
+      
+      return response
+    }
+    
+    // No role update needed, return as normal
     return NextResponse.json(
       {
         user: {
           id: sessionData.user.id,
           email: sessionData.user.email,
           name: sessionData.user.name,
-          role: sessionData.user.role,
+          role: currentRole, // Use Supabase role
           ...profile
         }
       },
