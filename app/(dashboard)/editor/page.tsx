@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { useAuth } from '@/hooks/useAuth'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -347,9 +346,5 @@ function EditorDashboardContent() {
 }
 
 export default function EditorDashboard() {
-  return (
-    <DashboardLayout>
-      <EditorDashboardContent />
-    </DashboardLayout>
-  )
+  return <EditorDashboardContent />
 }

@@ -165,34 +165,30 @@ export default async function ReviewerFinderPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div>
       {/* Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-heading font-bold text-gray-900">
-                Reviewer Finder
-              </h1>
-              <p className="text-gray-600 mt-1">
-                Find and invite qualified reviewers based on expertise and availability
-              </p>
-            </div>
-            <div className="flex space-x-3">
-              <Button variant="outline">
-                <Filter className="w-4 h-4 mr-2" />
-                Filter by Expertise
-              </Button>
-              <Button variant="outline">
-                <Search className="w-4 h-4 mr-2" />
-                Search Reviewers
-              </Button>
-            </div>
+      <div className="mb-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-heading font-bold text-gray-900">
+              Reviewer Finder
+            </h1>
+            <p className="text-gray-600 mt-1">
+              Find and invite qualified reviewers based on expertise and availability
+            </p>
+          </div>
+          <div className="flex space-x-3">
+            <Button variant="outline">
+              <Filter className="w-4 h-4 mr-2" />
+              Filter by Expertise
+            </Button>
+            <Button variant="outline">
+              <Search className="w-4 h-4 mr-2" />
+              Search Reviewers
+            </Button>
           </div>
         </div>
       </div>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card className="p-6">
@@ -384,7 +380,6 @@ export default async function ReviewerFinderPage() {
             </p>
           </Card>
         )}
-      </div>
     </div>
   )
 }
