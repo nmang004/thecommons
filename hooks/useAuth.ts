@@ -63,6 +63,14 @@ export function useAuth() {
     }
 
     checkAuth()
+
+    // Re-check auth when window regains focus (user returns from Auth0 logout)
+    const handleFocus = () => {
+      checkAuth()
+    }
+
+    window.addEventListener('focus', handleFocus)
+    return () => window.removeEventListener('focus', handleFocus)
   }, [])
   
   const login = useCallback((redirectTo?: string) => {
@@ -72,13 +80,18 @@ export function useAuth() {
   
   const logout = useCallback(async () => {
     try {
-      // Clear local state immediately
-      setUser(null)
-      setError(null)
-      setIsLoading(false)
+      // Clear session cookies on client side with all possible domain configurations
+      const clearCookie = (domain?: string) => {
+        const domainStr = domain ? `; domain=${domain}` : ''
+        document.cookie = `auth-session=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=Lax${domainStr}`
+      }
       
-      // Clear session cookie on client side (belt and suspenders)
-      document.cookie = 'auth-session=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=Lax'
+      // Clear cookies for all possible domains
+      clearCookie() // No domain
+      clearCookie('.thecommons.institute') // Production domain
+      clearCookie('thecommons.institute') // Production domain without dot
+      clearCookie('www.thecommons.institute') // www subdomain
+      clearCookie('.localhost') // Local development
       
       // Redirect to logout endpoint (which will clear server cookie and redirect to Auth0)
       window.location.href = '/api/auth/logout'
@@ -86,7 +99,6 @@ export function useAuth() {
       console.error('Logout error:', error)
       // Fallback - clear state and redirect to home
       setUser(null)
-      document.cookie = 'auth-session=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=Lax'
       window.location.href = '/'
     }
   }, [])
