@@ -5,6 +5,7 @@ import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { AuthorLayout } from '@/components/layout/author-layout'
 import { EditorLayout } from '@/components/layout/editor-layout'
 import { ReviewerLayout } from '@/components/layout/reviewer-layout'
+import { AdminLayout } from '@/components/layout/admin-layout'
 
 export default function DashboardGroupLayout({
   children,
@@ -28,6 +29,11 @@ export default function DashboardGroupLayout({
     return <ReviewerLayout>{children}</ReviewerLayout>
   }
   
-  // Use regular DashboardLayout for other role routes (admin)
+  // Use AdminLayout for all admin routes (no top navigation)
+  if (pathname.startsWith('/admin')) {
+    return <AdminLayout>{children}</AdminLayout>
+  }
+  
+  // Use regular DashboardLayout for any other routes
   return <DashboardLayout>{children}</DashboardLayout>
 }
