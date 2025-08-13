@@ -21,8 +21,6 @@ interface SidebarProps {
 export function Sidebar({ userRole }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const { user, logout } = useAuth()
-  
-  console.log('Sidebar rendering for userRole:', userRole)
 
   return (
     <div className={cn(
