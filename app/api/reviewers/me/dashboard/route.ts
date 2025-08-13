@@ -4,26 +4,44 @@ import { ReviewerDashboard, DateRange } from '@/types/database'
 
 export async function GET(_request: NextRequest) {
   try {
-    const supabase = await createClient()
+    // Use the same authentication method as the profile API
+    const cookieStore = await import('next/headers').then(m => m.cookies())
+    const sessionCookie = (await cookieStore).get('auth-session')
     
-    // Get the authenticated user
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser()
-
-    if (userError || !user) {
+    if (!sessionCookie || !sessionCookie.value) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       )
     }
 
-    // Verify user has reviewer role
+    let sessionData
+    try {
+      sessionData = JSON.parse(sessionCookie.value)
+    } catch (err) {
+      return NextResponse.json(
+        { error: 'Invalid session' },
+        { status: 401 }
+      )
+    }
+
+    // Check if session is expired
+    const now = new Date()
+    const expiresAt = new Date(sessionData.expires)
+    if (expiresAt < now) {
+      return NextResponse.json(
+        { error: 'Session expired' },
+        { status: 401 }
+      )
+    }
+
+    const supabase = await createClient()
+
+    // Get user profile from Supabase using Auth0 ID
     const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('id, role, reviewer_settings')
-      .eq('id', user.id)
+      .from('user_profiles')
+      .select('*')
+      .eq('auth0_id', sessionData.user.id)
       .single()
 
     if (profileError || !profile) {
@@ -33,6 +51,7 @@ export async function GET(_request: NextRequest) {
       )
     }
 
+    // Verify user has reviewer role
     if (profile.role !== 'reviewer' && profile.role !== 'admin') {
       return NextResponse.json(
         { error: 'Access denied. Reviewer role required.' },
@@ -55,7 +74,7 @@ export async function GET(_request: NextRequest) {
           manuscripts(id, title, abstract, field_of_study, submitted_at),
           profiles!assigned_by(full_name)
         `)
-        .eq('reviewer_id', user.id)
+        .eq('reviewer_id', profile.id)
         .order('invited_at', { ascending: false })
         .limit(50),
 
@@ -63,7 +82,7 @@ export async function GET(_request: NextRequest) {
       supabase
         .from('reviewer_analytics')
         .select('*')
-        .eq('reviewer_id', user.id)
+        .eq('reviewer_id', profile.id)
         .single(),
 
       // Get profile badges with badge details
@@ -73,14 +92,14 @@ export async function GET(_request: NextRequest) {
           *,
           badges(*)
         `)
-        .eq('profile_id', user.id)
+        .eq('profile_id', profile.id)
         .order('awarded_at', { ascending: false }),
 
       // Get recent workload history
       supabase
         .from('reviewer_workload_history')
         .select('*')
-        .eq('reviewer_id', user.id)
+        .eq('reviewer_id', profile.id)
         .order('date', { ascending: false })
         .limit(30)
     ])
@@ -109,8 +128,8 @@ export async function GET(_request: NextRequest) {
                (rarityOrder[a.rarity as keyof typeof rarityOrder] || 0)
       })
 
-    // Process reviewer settings
-    const reviewerSettings = profile.reviewer_settings || {
+    // Process reviewer settings - profile is from user_profiles table
+    const reviewerSettings = (profile as any).reviewer_settings || {
       monthlyCapacity: 3,
       preferredDeadlines: 21,
       blackoutDates: [],

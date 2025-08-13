@@ -67,10 +67,8 @@ export function EnhancedReviewerDashboard({ profile }: EnhancedReviewerDashboard
       setError(errorMessage)
       console.error('Dashboard loading error:', err)
       
-      // If unauthorized, redirect to login
-      if (errorMessage === 'Unauthorized') {
-        window.location.href = '/api/auth/login?returnTo=' + encodeURIComponent(window.location.pathname)
-      }
+      // Don't redirect on auth errors - let the parent page handle authentication
+      // The reviewer page component already handles authentication properly
     } finally {
       setLoading(false)
     }
