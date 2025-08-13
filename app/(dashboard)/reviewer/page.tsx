@@ -3,9 +3,11 @@
 import { useAuth } from '@/hooks/useAuth'
 import { EnhancedReviewerDashboard } from '@/components/dashboard/enhanced-reviewer-dashboard'
 import { ErrorBoundary } from '@/components/ui/error-boundary'
+import { Button } from '@/components/ui/button'
+import { AlertCircle, RefreshCw } from 'lucide-react'
 
 export default function ReviewerDashboardPage() {
-  const { user } = useAuth()
+  const { user, isLoading, error, login, refreshAuth } = useAuth()
 
   // Convert Auth0 user to profile format expected by the component
   const profile = user ? {
@@ -35,17 +37,75 @@ export default function ReviewerDashboardPage() {
     timezone: 'UTC'
   } : null
 
-  if (!user || !profile) {
+  // Loading state
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading reviewer dashboard...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Authentication error - show login option
+  if (error || !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-sm p-8 text-center">
+          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            Authentication Required
+          </h2>
+          <p className="text-gray-600 mb-6">
+            {error ? 'There was an authentication error. Please sign in to access the reviewer dashboard.' : 'You must be signed in to access the reviewer dashboard.'}
+          </p>
+          <div className="space-y-3">
+            <Button onClick={() => login()} className="w-full">
+              Sign In
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={refreshAuth}
+              className="w-full"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Try Again
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Check if user has reviewer role
+  if (user.role !== 'reviewer' && user.role !== 'admin') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-sm p-8 text-center">
+          <AlertCircle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            Access Denied
+          </h2>
+          <p className="text-gray-600 mb-6">
+            You need reviewer permissions to access this dashboard. Your current role is: {user.role}.
+          </p>
+          <Button 
+            variant="outline" 
+            onClick={() => window.location.href = `/${user.role}`}
+            className="w-full"
+          >
+            Go to Your Dashboard
+          </Button>
+        </div>
       </div>
     )
   }
 
   return (
     <ErrorBoundary>
-      <EnhancedReviewerDashboard profile={profile} />
+      <EnhancedReviewerDashboard profile={profile!} />
     </ErrorBoundary>
   )
 }

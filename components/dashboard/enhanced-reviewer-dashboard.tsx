@@ -39,18 +39,38 @@ export function EnhancedReviewerDashboard({ profile }: EnhancedReviewerDashboard
   const loadDashboardData = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/reviewers/me/dashboard')
+      const response = await fetch('/api/reviewers/me/dashboard', {
+        cache: 'no-cache',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      })
       const result = await response.json()
 
       if (!response.ok) {
+        // Handle specific status codes
+        if (response.status === 401) {
+          throw new Error('Unauthorized')
+        } else if (response.status === 403) {
+          throw new Error('Access denied. Reviewer role required.')
+        } else if (response.status === 404) {
+          throw new Error('Reviewer profile not found')
+        }
         throw new Error(result.error || 'Failed to load dashboard')
       }
 
       setDashboardData(result.data)
       setError(null)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred')
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred'
+      setError(errorMessage)
       console.error('Dashboard loading error:', err)
+      
+      // If unauthorized, redirect to login
+      if (errorMessage === 'Unauthorized') {
+        window.location.href = '/api/auth/login?returnTo=' + encodeURIComponent(window.location.pathname)
+      }
     } finally {
       setLoading(false)
     }
