@@ -32,7 +32,7 @@ interface EditorialDecision {
   sent_at?: string
   manuscripts: {
     title: string
-    field: string
+    field_of_study: string
     profiles: {
       full_name: string
       email: string
@@ -52,17 +52,19 @@ interface DecisionStats {
 }
 
 const DECISION_ICONS = {
-  accept: CheckCircle,
-  reject: XCircle,
-  major_revision: RotateCcw,
-  minor_revision: RotateCcw,
+  accepted: CheckCircle,
+  rejected: XCircle,
+  revisions_requested: RotateCcw,
+  with_editor: Clock,
+  under_review: Clock,
 }
 
 const DECISION_COLORS = {
-  accept: 'text-green-600 bg-green-50 border-green-200',
-  reject: 'text-red-600 bg-red-50 border-red-200',
-  major_revision: 'text-yellow-600 bg-yellow-50 border-yellow-200',
-  minor_revision: 'text-blue-600 bg-blue-50 border-blue-200',
+  accepted: 'text-green-600 bg-green-50 border-green-200',
+  rejected: 'text-red-600 bg-red-50 border-red-200',
+  revisions_requested: 'text-yellow-600 bg-yellow-50 border-yellow-200',
+  with_editor: 'text-blue-600 bg-blue-50 border-blue-200',
+  under_review: 'text-purple-600 bg-purple-50 border-purple-200',
 }
 
 export default function EditorialDecisionsPage() {
@@ -85,16 +87,17 @@ export default function EditorialDecisionsPage() {
     const fetchDecisions = async () => {
       try {
         setIsLoading(true)
+        setError(null)
         const supabase = createClient()
 
-        // Fetch editorial decisions
-        const { data: decisionsData, error: decisionsError } = await supabase
+        // Try to fetch editorial decisions with relationships
+        let { data: decisionsData, error: decisionsError } = await supabase
           .from('editorial_decisions')
           .select(`
             *,
             manuscripts!inner(
               title,
-              field,
+              field_of_study,
               profiles!author_id(full_name, email)
             ),
             profiles!editor_id(full_name)
@@ -102,7 +105,36 @@ export default function EditorialDecisionsPage() {
           .order('created_at', { ascending: false })
           .limit(50)
 
-        if (decisionsError) throw decisionsError
+        // If the complex query fails, try a simpler one
+        if (decisionsError) {
+          console.warn('Complex query failed, trying simpler query:', decisionsError)
+          const { data: simpleData, error: simpleError } = await supabase
+            .from('editorial_decisions')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(50)
+          
+          if (simpleError) {
+            console.error('Simple query also failed:', simpleError)
+            throw new Error(`Database error: ${simpleError.message}`)
+          }
+          
+          // Set decisions with limited data
+          decisionsData = simpleData?.map(decision => ({
+            ...decision,
+            manuscripts: {
+              title: 'Unknown Title',
+              field_of_study: 'Unknown Field',
+              profiles: {
+                full_name: 'Unknown Author',
+                email: 'unknown@email.com'
+              }
+            },
+            profiles: {
+              full_name: 'Unknown Editor'
+            }
+          })) || []
+        }
 
         setDecisions(decisionsData || [])
 
@@ -255,10 +287,9 @@ export default function EditorialDecisionsPage() {
                     { key: 'all', label: 'All Decisions' },
                     { key: 'pending', label: 'Pending' },
                     { key: 'sent', label: 'Sent' },
-                    { key: 'accept', label: 'Accept' },
-                    { key: 'reject', label: 'Reject' },
-                    { key: 'major_revision', label: 'Major Revision' },
-                    { key: 'minor_revision', label: 'Minor Revision' }
+                    { key: 'accepted', label: 'Accepted' },
+                    { key: 'rejected', label: 'Rejected' },
+                    { key: 'revisions_requested', label: 'Revisions Requested' }
                   ].map((filterOption) => (
                     <Button
                       key={filterOption.key}
@@ -313,7 +344,7 @@ export default function EditorialDecisionsPage() {
                                   {decision.manuscripts.title}
                                 </h4>
                                 <p className="text-sm text-gray-600">
-                                  by {decision.manuscripts.profiles.full_name} • {decision.manuscripts.field}
+                                  by {decision.manuscripts.profiles.full_name} • {decision.manuscripts.field_of_study}
                                 </p>
                               </div>
                             </div>
