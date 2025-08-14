@@ -2,8 +2,10 @@
 
 import { useState } from 'react'
 import { EditorialDashboard } from '@/components/dashboard/analytics/editorial-dashboard'
+import { ManuscriptAnalytics } from '@/components/dashboard/analytics/manuscript-analytics'
+import { ReviewerPerformanceAnalytics } from '@/components/dashboard/analytics/reviewer-performance-analytics'
+import { ScheduleAnalytics } from '@/components/dashboard/analytics/schedule-analytics'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Card } from '@/components/ui/card'
 import { Calendar, FileText, Users, TrendingUp } from 'lucide-react'
 
 export default function EditorAnalyticsPage() {
@@ -43,30 +45,15 @@ export default function EditorAnalyticsPage() {
         </TabsContent>
 
         <TabsContent value="manuscripts" className="space-y-6">
-          <Card className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Manuscript Analytics</h3>
-            <p className="text-muted-foreground">
-              Detailed manuscript tracking and status analytics coming soon...
-            </p>
-          </Card>
+          <ManuscriptAnalytics />
         </TabsContent>
 
         <TabsContent value="reviewers" className="space-y-6">
-          <Card className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Reviewer Performance</h3>
-            <p className="text-muted-foreground">
-              Individual reviewer metrics and performance tracking coming soon...
-            </p>
-          </Card>
+          <ReviewerPerformanceAnalytics />
         </TabsContent>
 
         <TabsContent value="schedule" className="space-y-6">
-          <Card className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Editorial Schedule</h3>
-            <p className="text-muted-foreground">
-              Publication schedule and deadline tracking coming soon...
-            </p>
-          </Card>
+          <ScheduleAnalytics />
         </TabsContent>
       </Tabs>
     </div>
