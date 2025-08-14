@@ -36,21 +36,6 @@ interface ReviewerWithStats {
 
 export default async function ReviewerFinderPage() {
   const supabase = await createClient()
-  
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    return (
-      <div className="flex items-center justify-center min-h-96">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Authentication Required</h2>
-          <p className="text-gray-600">Please log in to access the reviewer finder.</p>
-        </div>
-      </div>
-    )
-  }
 
   // Get all potential reviewers
   const { data: reviewers } = await supabase
