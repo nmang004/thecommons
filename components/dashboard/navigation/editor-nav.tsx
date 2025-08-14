@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
-import { Home, FileText, Users, BarChart3, Settings } from 'lucide-react'
+import { Home, FileText, Users, BarChart3, Settings, Gavel, FileEdit } from 'lucide-react'
 
 interface EditorNavProps {
   isCollapsed?: boolean
@@ -23,10 +23,23 @@ const navItems = [
     badge: 12
   },
   {
+    label: 'Editorial Decisions',
+    href: '/editor/decisions',
+    icon: Gavel,
+    description: 'Review and manage decisions',
+    badge: 5
+  },
+  {
     label: 'Reviewers',
     href: '/editor/reviewers',
     icon: Users,
     description: 'Manage reviewer pool'
+  },
+  {
+    label: 'Templates',
+    href: '/editor/templates',
+    icon: FileEdit,
+    description: 'Decision letter templates'
   },
   {
     label: 'Analytics',

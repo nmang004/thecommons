@@ -67,6 +67,106 @@ const DECISION_COLORS = {
   under_review: 'text-purple-600 bg-purple-50 border-purple-200',
 }
 
+function generateSampleDecisions(): EditorialDecision[] {
+  return [
+    {
+      id: 'sample-1',
+      manuscript_id: 'ms-1',
+      decision: 'accepted',
+      decision_letter: 'Dear Dr. Smith, I am pleased to inform you that your manuscript "Quantum Computing Applications in Climate Modeling" has been ACCEPTED for publication...',
+      created_at: '2024-01-20T10:15:00Z',
+      sent_at: '2024-01-20T14:30:00Z',
+      manuscripts: {
+        title: 'Quantum Computing Applications in Climate Modeling',
+        field_of_study: 'Computer Science',
+        profiles: {
+          full_name: 'Dr. Emily Smith',
+          email: 'emily.smith@university.edu'
+        }
+      },
+      profiles: {
+        full_name: 'Dr. Sarah Johnson'
+      }
+    },
+    {
+      id: 'sample-2',
+      manuscript_id: 'ms-2',
+      decision: 'revisions_requested',
+      decision_letter: 'Dear Dr. Chen, After careful peer review, I am writing to request MAJOR REVISIONS to your manuscript "Machine Learning Approaches to Drug Discovery"...',
+      created_at: '2024-01-18T11:20:00Z',
+      sent_at: '2024-01-18T16:45:00Z',
+      manuscripts: {
+        title: 'Machine Learning Approaches to Drug Discovery',
+        field_of_study: 'Biomedical Engineering',
+        profiles: {
+          full_name: 'Dr. Michael Chen',
+          email: 'michael.chen@pharma.org'
+        }
+      },
+      profiles: {
+        full_name: 'Dr. Sarah Johnson'
+      }
+    },
+    {
+      id: 'sample-3',
+      manuscript_id: 'ms-3',
+      decision: 'rejected',
+      decision_letter: 'Dear Dr. Rodriguez, After careful consideration and peer review, I regret to inform you that we cannot accept your manuscript "Sustainable Energy Solutions for Urban Areas"...',
+      created_at: '2024-01-15T09:30:00Z',
+      sent_at: '2024-01-15T13:15:00Z',
+      manuscripts: {
+        title: 'Sustainable Energy Solutions for Urban Areas',
+        field_of_study: 'Environmental Science',
+        profiles: {
+          full_name: 'Dr. Maria Rodriguez',
+          email: 'maria.rodriguez@greentech.com'
+        }
+      },
+      profiles: {
+        full_name: 'Dr. Sarah Johnson'
+      }
+    },
+    {
+      id: 'sample-4',
+      manuscript_id: 'ms-4',
+      decision: 'accepted',
+      decision_letter: 'Dear Dr. Williams, I am delighted to inform you that your manuscript "Blockchain Applications in Supply Chain Management" has been ACCEPTED for publication following minor revisions...',
+      created_at: '2024-01-22T08:45:00Z',
+      sent_at: '2024-01-22T11:00:00Z',
+      manuscripts: {
+        title: 'Blockchain Applications in Supply Chain Management',
+        field_of_study: 'Business Technology',
+        profiles: {
+          full_name: 'Dr. James Williams',
+          email: 'james.williams@logistics.edu'
+        }
+      },
+      profiles: {
+        full_name: 'Dr. Sarah Johnson'
+      }
+    },
+    {
+      id: 'sample-5',
+      manuscript_id: 'ms-5',
+      decision: 'revisions_requested',
+      decision_letter: 'Dear Dr. Anderson, After thorough peer review, I am requesting MINOR REVISIONS to your manuscript "AI Ethics in Healthcare Decision Making"...',
+      created_at: '2024-01-25T12:10:00Z',
+      sent_at: '2024-01-25T15:20:00Z',
+      manuscripts: {
+        title: 'AI Ethics in Healthcare Decision Making',
+        field_of_study: 'Medical Ethics',
+        profiles: {
+          full_name: 'Dr. Lisa Anderson',
+          email: 'lisa.anderson@medethics.org'
+        }
+      },
+      profiles: {
+        full_name: 'Dr. Sarah Johnson'
+      }
+    }
+  ]
+}
+
 export default function EditorialDecisionsPage() {
   const { user, isLoading: authLoading } = useAuth()
   const [decisions, setDecisions] = useState<EditorialDecision[]>([])
@@ -80,6 +180,7 @@ export default function EditorialDecisionsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [filter, setFilter] = useState<string>('all')
+  const [isUsingSampleData, setIsUsingSampleData] = useState(false)
 
   useEffect(() => {
     if (!user || authLoading) return
@@ -136,13 +237,22 @@ export default function EditorialDecisionsPage() {
           })) || []
         }
 
-        setDecisions(decisionsData || [])
+        // If no real data exists, show sample data for demonstration
+        let finalDecisions = decisionsData
+        if (!decisionsData || decisionsData.length === 0) {
+          finalDecisions = generateSampleDecisions()
+          setIsUsingSampleData(true)
+        } else {
+          setIsUsingSampleData(false)
+        }
+        
+        setDecisions(finalDecisions || [])
 
-        // Calculate stats
-        const total = decisionsData?.length || 0
-        const pending = decisionsData?.filter(d => !d.sent_at).length || 0
-        const sent = decisionsData?.filter(d => d.sent_at).length || 0
-        const thisMonth = decisionsData?.filter(d => {
+        // Calculate stats using final decisions data
+        const total = finalDecisions?.length || 0
+        const pending = finalDecisions?.filter(d => !d.sent_at).length || 0
+        const sent = finalDecisions?.filter(d => d.sent_at).length || 0
+        const thisMonth = finalDecisions?.filter(d => {
           const decisionDate = new Date(d.created_at)
           const now = new Date()
           return decisionDate.getMonth() === now.getMonth() && 
@@ -205,11 +315,19 @@ export default function EditorialDecisionsPage() {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-heading font-bold text-foreground mb-2">
-          Editorial Decisions
-        </h1>
+        <div className="flex items-center gap-3 mb-2">
+          <h1 className="text-3xl font-heading font-bold text-foreground">
+            Editorial Decisions
+          </h1>
+          {isUsingSampleData && (
+            <Badge variant="outline" className="text-blue-600 border-blue-200">
+              Demo Data
+            </Badge>
+          )}
+        </div>
         <p className="text-muted-foreground">
           Manage and track editorial decisions across all manuscripts
+          {isUsingSampleData && ' (showing sample data for demonstration)'}
         </p>
       </div>
 
