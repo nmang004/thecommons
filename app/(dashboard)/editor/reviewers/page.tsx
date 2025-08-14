@@ -1,4 +1,3 @@
-import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -40,21 +39,17 @@ export default async function ReviewerFinderPage() {
   
   const {
     data: { user },
-    error: userError,
   } = await supabase.auth.getUser()
 
-  if (userError || !user) {
-    redirect('/login')
-  }
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile || (profile.role !== 'editor' && profile.role !== 'admin')) {
-    redirect(`/${profile?.role || 'author'}`)
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center min-h-96">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Authentication Required</h2>
+          <p className="text-gray-600">Please log in to access the reviewer finder.</p>
+        </div>
+      </div>
+    )
   }
 
   // Get all potential reviewers
