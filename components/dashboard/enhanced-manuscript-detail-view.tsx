@@ -8,6 +8,8 @@ import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { StatusTimeline } from './status-timeline'
 import { CommunicationPanel } from './communication-panel'
+import { ReviewerAssignmentModal } from './reviewer-assignment-modal'
+import { EditorialDecisionModal } from './editorial-decision-modal'
 import { 
   ArrowLeft,
   FileText,
@@ -24,7 +26,9 @@ import {
   History,
   Flag,
   AlertTriangle,
-  ExternalLink
+  ExternalLink,
+  CreditCard,
+  StickyNote
 } from 'lucide-react'
 
 interface ManuscriptDetailViewProps {
@@ -35,6 +39,7 @@ interface ManuscriptDetailViewProps {
 
 export function EnhancedManuscriptDetailView({ 
   manuscript, 
+  potentialReviewers,
   currentEditor 
 }: ManuscriptDetailViewProps) {
   const router = useRouter()
@@ -94,6 +99,30 @@ export function EnhancedManuscriptDetailView({
   const allReviewsComplete = manuscript.review_assignments?.every((assignment: any) => 
     assignment.status === 'completed'
   ) && manuscript.review_assignments?.length > 0
+
+  const handleAssignReviewers = async (reviewerIds: string[], customMessage?: string) => {
+    try {
+      // Here you would make an API call to assign reviewers
+      console.log('Assigning reviewers:', reviewerIds, 'with message:', customMessage)
+      // await assignReviewers(manuscript.id, reviewerIds, customMessage)
+      setShowReviewerSelector(false)
+      // You might want to refresh the manuscript data here
+    } catch (error) {
+      console.error('Failed to assign reviewers:', error)
+    }
+  }
+
+  const handleSubmitDecision = async (decisionData: any) => {
+    try {
+      // Here you would make an API call to submit the editorial decision
+      console.log('Submitting decision:', decisionData)
+      // await submitEditorialDecision(manuscript.id, decisionData)
+      setShowDecisionForm(false)
+      // You might want to refresh the manuscript data here
+    } catch (error) {
+      console.error('Failed to submit decision:', error)
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -166,13 +195,15 @@ export function EnhancedManuscriptDetailView({
         {/* Tabbed Content Area */}
         <div className="lg:col-span-3">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-7">
+            <TabsList className="grid w-full grid-cols-9">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="content">Content</TabsTrigger>
               <TabsTrigger value="authors">Authors</TabsTrigger>
               <TabsTrigger value="reviews">Reviews</TabsTrigger>
               <TabsTrigger value="communications">Messages</TabsTrigger>
               <TabsTrigger value="files">Files</TabsTrigger>
+              <TabsTrigger value="payment">Payment</TabsTrigger>
+              <TabsTrigger value="notes">Notes</TabsTrigger>
               <TabsTrigger value="history">History</TabsTrigger>
             </TabsList>
 
@@ -464,6 +495,141 @@ export function EnhancedManuscriptDetailView({
               </Card>
             </TabsContent>
 
+            {/* Payment Status Tab */}
+            <TabsContent value="payment" className="space-y-6 mt-6">
+              <Card className="p-6">
+                <h3 className="text-lg font-heading font-semibold text-gray-900 mb-4">
+                  Payment Status
+                </h3>
+
+                <div className="space-y-4">
+                  {/* Payment Summary */}
+                  <div className="border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                          <CreditCard className="w-5 h-5 text-green-600" />
+                        </div>
+                        <div>
+                          <h4 className="font-medium text-gray-900">Processing Fee</h4>
+                          <p className="text-sm text-gray-600">Article Processing Charge</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-semibold text-gray-900">$1,200</p>
+                        <Badge className="bg-green-100 text-green-800 border-green-200">
+                          Paid
+                        </Badge>
+                      </div>
+                    </div>
+                    <div className="text-sm text-gray-600 space-y-1">
+                      <p>Payment Method: Credit Card ****1234</p>
+                      <p>Transaction ID: txn_1234567890</p>
+                      <p>Payment Date: {new Date().toLocaleDateString()}</p>
+                    </div>
+                  </div>
+
+                  {/* Waiver Status (if applicable) */}
+                  <div className="border border-gray-200 rounded-lg p-4">
+                    <h4 className="font-medium text-gray-900 mb-2">Fee Waiver Status</h4>
+                    <div className="text-sm text-gray-600">
+                      <p>No fee waiver requested</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Authors from developing countries may be eligible for fee waivers
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Invoice */}
+                  <div className="border border-gray-200 rounded-lg p-4">
+                    <h4 className="font-medium text-gray-900 mb-2">Invoice</h4>
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm text-gray-600">
+                        <p>Invoice #: INV-2024-001234</p>
+                        <p>Issued: {new Date().toLocaleDateString()}</p>
+                      </div>
+                      <Button variant="outline" size="sm">
+                        <Download className="w-4 h-4 mr-2" />
+                        Download PDF
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            </TabsContent>
+
+            {/* Internal Notes Tab */}
+            <TabsContent value="notes" className="space-y-6 mt-6">
+              <Card className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-heading font-semibold text-gray-900">
+                    Internal Notes
+                  </h3>
+                  <Button size="sm">
+                    <StickyNote className="w-4 h-4 mr-2" />
+                    Add Note
+                  </Button>
+                </div>
+
+                <div className="space-y-4">
+                  {/* Example notes */}
+                  <div className="border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                          <User className="w-4 h-4 text-blue-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900">{currentEditor.full_name}</p>
+                          <p className="text-xs text-gray-600">
+                            {new Date().toLocaleDateString()} at {new Date().toLocaleTimeString()}
+                          </p>
+                        </div>
+                      </div>
+                      <Badge variant="outline" className="text-xs">Editor Note</Badge>
+                    </div>
+                    <p className="text-sm text-gray-700">
+                      Initial review - manuscript quality is good, will expedite reviewer assignments.
+                      Potential conflict of interest with Dr. Smith needs verification.
+                    </p>
+                  </div>
+
+                  <div className="border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                          <User className="w-4 h-4 text-purple-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900">Dr. Jane Smith</p>
+                          <p className="text-xs text-gray-600">
+                            {new Date(Date.now() - 86400000).toLocaleDateString()} at 2:30 PM
+                          </p>
+                        </div>
+                      </div>
+                      <Badge variant="outline" className="text-xs">Admin Note</Badge>
+                    </div>
+                    <p className="text-sm text-gray-700">
+                      Payment confirmed. Author submitted copyright form. Ready for editorial processing.
+                    </p>
+                  </div>
+
+                  {/* Empty state for no notes */}
+                  <div className="text-center py-8 border border-gray-200 rounded-lg border-dashed">
+                    <StickyNote className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                    <h4 className="text-lg font-medium text-gray-900 mb-2">No additional notes</h4>
+                    <p className="text-gray-600 mb-4">
+                      Add internal notes to track important information about this manuscript.
+                    </p>
+                    <Button size="sm">
+                      <StickyNote className="w-4 h-4 mr-2" />
+                      Add First Note
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            </TabsContent>
+
             {/* History Tab */}
             <TabsContent value="history" className="space-y-6 mt-6">
               <Card className="p-6">
@@ -591,36 +757,23 @@ export function EnhancedManuscriptDetailView({
         </div>
       </div>
 
-      {/* Modals - keeping the existing ones */}
-      {showReviewerSelector && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto">
-            <h3 className="text-lg font-heading font-semibold mb-4">Assign Reviewers</h3>
-            {/* Reviewer selection content */}
-            <div className="flex justify-end space-x-3 mt-6">
-              <Button variant="outline" onClick={() => setShowReviewerSelector(false)}>
-                Cancel
-              </Button>
-              <Button>Assign Reviewers</Button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Reviewer Assignment Modal */}
+      <ReviewerAssignmentModal
+        isOpen={showReviewerSelector}
+        onClose={() => setShowReviewerSelector(false)}
+        manuscript={manuscript}
+        potentialReviewers={potentialReviewers}
+        onAssignReviewers={handleAssignReviewers}
+      />
 
-      {showDecisionForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto">
-            <h3 className="text-lg font-heading font-semibold mb-4">Editorial Decision</h3>
-            {/* Decision form content */}
-            <div className="flex justify-end space-x-3 mt-6">
-              <Button variant="outline" onClick={() => setShowDecisionForm(false)}>
-                Cancel
-              </Button>
-              <Button>Submit Decision</Button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Editorial Decision Modal */}
+      <EditorialDecisionModal
+        isOpen={showDecisionForm}
+        onClose={() => setShowDecisionForm(false)}
+        manuscript={manuscript}
+        reviews={manuscript.reviews || []}
+        onSubmitDecision={handleSubmitDecision}
+      />
     </div>
   )
 }

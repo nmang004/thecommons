@@ -18,7 +18,8 @@ import {
   AlertTriangle,
   Clock,
   CheckCircle,
-  X
+  X,
+  Download
 } from 'lucide-react'
 import { ManuscriptFilters } from './manuscript-filters'
 import { BulkActions } from './bulk-actions'
@@ -260,6 +261,34 @@ export function EditorQueueView({ manuscripts, currentEditor, onRefresh }: Edito
     return value !== undefined && value !== ''
   })
 
+  const exportToCSV = () => {
+    const headers = ['ID', 'Title', 'Author', 'Status', 'Field', 'Submitted', 'Days in System', 'Reviewers']
+    const csvData = filteredManuscripts.map(manuscript => [
+      (manuscript as any).submission_number || manuscript.id.slice(-8),
+      manuscript.title.replace(/,/g, ';'),
+      manuscript.profiles?.full_name || 'Unknown',
+      formatStatus(manuscript.status),
+      manuscript.field_of_study,
+      new Date(manuscript.submitted_at || manuscript.created_at).toLocaleDateString(),
+      Math.floor((new Date().getTime() - new Date(manuscript.submitted_at || manuscript.created_at).getTime()) / (1000 * 60 * 60 * 24)),
+      manuscript.review_assignments?.length || 0
+    ])
+
+    const csvContent = [headers, ...csvData]
+      .map(row => row.map(cell => `"${cell}"`).join(','))
+      .join('\n')
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+    link.setAttribute('href', url)
+    link.setAttribute('download', `manuscripts-${activeView}-${new Date().toISOString().split('T')[0]}.csv`)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -288,6 +317,10 @@ export function EditorQueueView({ manuscripts, currentEditor, onRefresh }: Edito
           <Button variant="outline" onClick={() => setSortBy(sortBy === 'submitted_at' ? 'title' : 'submitted_at')}>
             <ArrowUpDown className="w-4 h-4 mr-2" />
             Sort
+          </Button>
+          <Button variant="outline" onClick={exportToCSV}>
+            <Download className="w-4 h-4 mr-2" />
+            Export CSV
           </Button>
           {onRefresh && (
             <Button variant="outline" onClick={onRefresh}>
