@@ -15,7 +15,9 @@ import {
   Filter,
   Eye,
   UserPlus,
-  Mail
+  Mail,
+  Gavel,
+  Settings
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -162,6 +164,12 @@ function EditorDashboardContent() {
           </Link>
         </Button>
         <Button variant="outline" asChild>
+          <Link href="/editor/decisions">
+            <Gavel className="w-4 h-4 mr-2" />
+            Editorial Decisions
+          </Link>
+        </Button>
+        <Button variant="outline" asChild>
           <Link href="/editor/reviewers">
             <Users className="w-4 h-4 mr-2" />
             Manage Reviewers
@@ -171,6 +179,12 @@ function EditorDashboardContent() {
           <Link href="/editor/analytics">
             <TrendingUp className="w-4 h-4 mr-2" />
             Analytics
+          </Link>
+        </Button>
+        <Button variant="outline" asChild>
+          <Link href="/editor/templates">
+            <Settings className="w-4 h-4 mr-2" />
+            Templates
           </Link>
         </Button>
       </div>
@@ -254,6 +268,14 @@ function EditorDashboardContent() {
                             Review
                           </Link>
                         </Button>
+                        {(submission.status === 'under_review' || submission.status === 'revision_requested') && (
+                          <Button variant="outline" size="sm" asChild>
+                            <Link href={`/editor/manuscripts/${submission.id}/decision`}>
+                              <Gavel className="w-4 h-4 mr-1" />
+                              Decide
+                            </Link>
+                          </Button>
+                        )}
                       </div>
                     </td>
                   </tr>

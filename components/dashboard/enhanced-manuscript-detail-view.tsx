@@ -28,7 +28,8 @@ import {
   AlertTriangle,
   ExternalLink,
   CreditCard,
-  StickyNote
+  StickyNote,
+  Gavel
 } from 'lucide-react'
 
 interface ManuscriptDetailViewProps {
@@ -676,13 +677,23 @@ export function EnhancedManuscriptDetailView({
               )}
 
               {allReviewsComplete && (
-                <Button 
-                  className="w-full justify-start"
-                  onClick={() => setShowDecisionForm(true)}
-                >
-                  <Send className="w-4 h-4 mr-2" />
-                  Make Decision
-                </Button>
+                <div className="space-y-2">
+                  <Button 
+                    className="w-full justify-start"
+                    onClick={() => router.push(`/editor/manuscripts/${manuscript.id}/decision`)}
+                  >
+                    <Gavel className="w-4 h-4 mr-2" />
+                    Editorial Decision Workflow
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={() => setShowDecisionForm(true)}
+                  >
+                    <Send className="w-4 h-4 mr-2" />
+                    Quick Decision
+                  </Button>
+                </div>
               )}
 
               <Button variant="outline" className="w-full justify-start">
