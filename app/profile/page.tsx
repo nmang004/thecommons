@@ -65,14 +65,14 @@ export default function ProfilePage() {
   const fetchProfile = async () => {
     try {
       setIsLoading(true)
-      const response = await fetch('/api/profile')
+      const response = await fetch('/api/auth/profile')
       
       if (!response.ok) {
         throw new Error('Failed to fetch profile')
       }
       
       const data = await response.json()
-      setProfile(data)
+      setProfile(data.user)
     } catch (error) {
       console.error('Error fetching profile:', error)
     } finally {

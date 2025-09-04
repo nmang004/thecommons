@@ -199,32 +199,60 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
+    const timestamp = new Date().toISOString()
+    console.log(`[${timestamp}] Profile update route called`)
+    
+    // Get session from cookie
+    const cookieStore = await cookies()
+    const sessionCookie = cookieStore.get('auth-session')
+    
+    if (!sessionCookie || !sessionCookie.value) {
+      console.log(`[${timestamp}] No valid auth-session cookie found for update`)
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    let sessionData
+    try {
+      sessionData = JSON.parse(sessionCookie.value)
+    } catch (err) {
+      console.error(`[${timestamp}] Failed to parse session cookie:`, err)
+      return NextResponse.json({ error: 'Invalid session' }, { status: 401 })
+    }
+
+    // Check if session is expired
+    const now = new Date()
+    const expiresAt = new Date(sessionData.expires)
+    if (expiresAt < now) {
+      console.log(`[${timestamp}] Session expired during update`)
+      return NextResponse.json({ error: 'Session expired' }, { status: 401 })
+    }
+
     const body = await request.json()
+    const supabase = await createClient()
     
-    // Update user profile
+    // Update user profile in Supabase
+    console.log(`[${timestamp}] Updating profile for Auth0 ID:`, sessionData.user.id)
     const { data: profile, error } = await supabase
       .from('user_profiles')
-      .update(body)
-      .eq('id', user.id)
+      .update({
+        ...body,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('auth0_id', sessionData.user.id)
       .select()
       .single()
 
     if (error) {
-      console.error('Profile update error:', error)
+      console.error(`[${timestamp}] Profile update error:`, error)
       return NextResponse.json({ error: 'Failed to update profile' }, { status: 500 })
     }
 
-    return NextResponse.json({ profile })
+    console.log(`[${timestamp}] Profile updated successfully`)
+    return NextResponse.json(profile)
 
   } catch (error) {
-    console.error('Profile update endpoint error:', error)
+    const timestamp = new Date().toISOString()
+    console.error(`[${timestamp}] Profile update endpoint error:`, error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

@@ -134,7 +134,7 @@ export function ProfileForm({ profile, onUpdate }: ProfileFormProps) {
         updated_at: new Date().toISOString(),
       }
 
-      const response = await fetch('/api/profile', {
+      const response = await fetch('/api/auth/profile', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
