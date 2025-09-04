@@ -1,151 +1,178 @@
-import { Metadata } from 'next'
-import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useAuth } from '@/hooks/useAuth'
 import { ContentManagement } from '@/components/admin/content-management'
+import { Card } from '@/components/ui/card'
+import { LoadingSpinner } from '@/components/ui/loading-spinner'
 
-export const metadata: Metadata = {
-  title: 'Content Management - Admin Dashboard',
-  description: 'Manage manuscripts, reviews, and editorial workflow.',
+interface Author {
+  full_name: string
+  email: string
+  affiliation?: string
 }
 
-async function getAuthenticatedUser() {
-  const supabase = await createClient()
-  const { data: { user }, error } = await supabase.auth.getUser()
-  
-  if (error || !user) {
-    redirect('/login')
-  }
-  
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role, full_name')
-    .eq('id', user.id)
-    .single()
-  
-  if (!profile || profile.role !== 'admin') {
-    redirect('/dashboard')
-  }
-  
-  return { user, profile }
+interface Editor {
+  full_name: string
+  email: string
+  affiliation?: string
 }
 
-async function getAllManuscripts() {
-  const supabase = await createClient()
-  
-  // Get manuscripts
-  const { data: manuscripts, error } = await supabase
-    .from('manuscripts')
-    .select(`
-      id,
-      title,
-      abstract,
-      keywords,
-      field_of_study,
-      subfield,
-      author_id,
-      corresponding_author_id,
-      editor_id,
-      status,
-      submission_number,
-      submitted_at,
-      accepted_at,
-      published_at,
-      doi,
-      view_count,
-      download_count,
-      citation_count,
-      created_at,
-      updated_at
-    `)
-    .order('submitted_at', { ascending: false, nullsFirst: false })
-    .order('created_at', { ascending: false })
-  
-  if (error || !manuscripts) {
-    console.error('Error fetching manuscripts:', error)
-    return []
-  }
+type ManuscriptStatus = 'draft' | 'submitted' | 'with_editor' | 'under_review' | 'revisions_requested' | 'accepted' | 'rejected' | 'published'
 
-  // Get all unique user IDs
-  const userIds = new Set([
-    ...manuscripts.map(m => m.author_id),
-    ...manuscripts.map(m => m.editor_id).filter(Boolean),
-    ...manuscripts.map(m => m.corresponding_author_id).filter(Boolean)
-  ])
-
-  // Fetch user profiles
-  const { data: profiles } = await supabase
-    .from('profiles')
-    .select('id, full_name, email, affiliation')
-    .in('id', Array.from(userIds))
-
-  const profilesMap = new Map(profiles?.map(p => [p.id, p]) || [])
-
-  // Combine manuscripts with profile data
-  const manuscriptsWithProfiles = manuscripts.map(manuscript => ({
-    ...manuscript,
-    author: profilesMap.get(manuscript.author_id) || { full_name: 'Unknown', email: 'unknown@example.com' },
-    editor: manuscript.editor_id ? (profilesMap.get(manuscript.editor_id) || undefined) : undefined,
-    corresponding_author: manuscript.corresponding_author_id ? (profilesMap.get(manuscript.corresponding_author_id) || undefined) : undefined
-  }))
-  
-  return manuscriptsWithProfiles as any
+interface Manuscript {
+  id: string
+  title: string
+  abstract: string
+  keywords?: string[]
+  field_of_study: string
+  subfield?: string
+  author_id: string
+  corresponding_author_id?: string
+  editor_id?: string
+  status: ManuscriptStatus
+  submission_number?: string
+  submitted_at?: string
+  accepted_at?: string
+  published_at?: string
+  doi?: string
+  view_count: number
+  download_count: number
+  citation_count: number
+  created_at: string
+  updated_at: string
+  author: Author
+  editor?: Editor
+  corresponding_author?: Author
 }
 
-async function getContentStats() {
-  const supabase = await createClient()
-  
-  const [
-    { count: totalManuscripts },
-    { count: published },
-    { count: underReview },
-    { count: pendingReview },
-    { count: drafts },
-    { count: rejected }
-  ] = await Promise.all([
-    supabase.from('manuscripts').select('*', { count: 'exact', head: true }),
-    supabase.from('manuscripts').select('*', { count: 'exact', head: true }).eq('status', 'published'),
-    supabase.from('manuscripts').select('*', { count: 'exact', head: true }).eq('status', 'under_review'),
-    supabase.from('manuscripts').select('*', { count: 'exact', head: true }).eq('status', 'submitted'),
-    supabase.from('manuscripts').select('*', { count: 'exact', head: true }).eq('status', 'draft'),
-    supabase.from('manuscripts').select('*', { count: 'exact', head: true }).eq('status', 'rejected')
-  ])
-  
-  return {
-    total: totalManuscripts || 0,
-    published: published || 0,
-    underReview: underReview || 0,
-    pending: pendingReview || 0,
-    drafts: drafts || 0,
-    rejected: rejected || 0
-  }
+interface ContentStats {
+  total: number
+  published: number
+  underReview: number
+  pending: number
+  drafts: number
+  rejected: number
 }
 
-async function getReviewStats() {
-  const supabase = await createClient()
-  
-  const { count: totalReviews } = await supabase
-    .from('reviews')
-    .select('*', { count: 'exact', head: true })
-  
-  const { count: pendingAssignments } = await supabase
-    .from('review_assignments')
-    .select('*', { count: 'exact', head: true })
-    .eq('status', 'invited')
-  
-  return {
-    totalReviews: totalReviews || 0,
-    pendingAssignments: pendingAssignments || 0
-  }
+interface ReviewStats {
+  totalReviews: number
+  pendingAssignments: number
 }
 
-export default async function AdminContentPage() {
-  await getAuthenticatedUser()
-  
-  const [manuscripts, contentStats, reviewStats] = await Promise.all([
-    getAllManuscripts(),
-    getContentStats(),
-    getReviewStats()
-  ])
+export default function AdminContentPage() {
+  const { user, isLoading, isAdmin } = useAuth()
+  const [manuscripts, setManuscripts] = useState<Manuscript[]>([])
+  const [contentStats, setContentStats] = useState<ContentStats>({
+    total: 0,
+    published: 0,
+    underReview: 0,
+    pending: 0,
+    drafts: 0,
+    rejected: 0
+  })
+  const [reviewStats, setReviewStats] = useState<ReviewStats>({
+    totalReviews: 0,
+    pendingAssignments: 0
+  })
+  const [dataLoading, setDataLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!isLoading && user && isAdmin) {
+      fetchContentData()
+    }
+  }, [user, isLoading, isAdmin])
+
+  const fetchContentData = async () => {
+    try {
+      setDataLoading(true)
+      setError(null)
+
+      // Fetch content data in parallel
+      const [manuscriptsResponse, contentStatsResponse, reviewStatsResponse] = await Promise.all([
+        fetch('/api/admin/content/manuscripts'),
+        fetch('/api/admin/content/stats'),
+        fetch('/api/admin/content/reviews/stats')
+      ])
+
+      if (!manuscriptsResponse.ok || !contentStatsResponse.ok || !reviewStatsResponse.ok) {
+        throw new Error('Failed to fetch content data')
+      }
+
+      const manuscriptsData = await manuscriptsResponse.json()
+      const contentStatsData = await contentStatsResponse.json()
+      const reviewStatsData = await reviewStatsResponse.json()
+
+      setManuscripts(manuscriptsData.manuscripts || [])
+      setContentStats(contentStatsData.stats || {
+        total: 0,
+        published: 0,
+        underReview: 0,
+        pending: 0,
+        drafts: 0,
+        rejected: 0
+      })
+      setReviewStats(reviewStatsData.stats || {
+        totalReviews: 0,
+        pendingAssignments: 0
+      })
+    } catch (err) {
+      console.error('Error fetching content data:', err)
+      setError('Failed to load content data')
+    } finally {
+      setDataLoading(false)
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto py-8">
+        <div className="flex items-center justify-center h-64">
+          <LoadingSpinner size="lg" />
+        </div>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return (
+      <div className="container mx-auto py-8">
+        <Card className="card-academic p-8 text-center">
+          <h2 className="text-xl font-heading font-semibold mb-2">Authentication Required</h2>
+          <p className="text-muted-foreground">Please log in to access the admin panel.</p>
+        </Card>
+      </div>
+    )
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="container mx-auto py-8">
+        <Card className="card-academic p-8 text-center">
+          <h2 className="text-xl font-heading font-semibold mb-2">Access Denied</h2>
+          <p className="text-muted-foreground">You need admin privileges to access this page.</p>
+        </Card>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto py-8">
+        <Card className="card-academic p-8 text-center">
+          <h2 className="text-xl font-heading font-semibold mb-2 text-red-600">Error</h2>
+          <p className="text-muted-foreground mb-4">{error}</p>
+          <button 
+            onClick={fetchContentData}
+            className="btn-academic"
+          >
+            Try Again
+          </button>
+        </Card>
+      </div>
+    )
+  }
 
   return (
     <div className="container mx-auto py-8 space-y-8">
@@ -159,78 +186,86 @@ export default async function AdminContentPage() {
         </p>
       </div>
 
-      {/* Content Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
-        <div className="card-academic p-6 text-center">
-          <div className="text-3xl font-heading font-bold text-primary mb-2">
-            {contentStats.total.toLocaleString()}
-          </div>
-          <div className="text-sm text-muted-foreground">Total Manuscripts</div>
+      {dataLoading ? (
+        <div className="flex items-center justify-center h-64">
+          <LoadingSpinner size="lg" />
         </div>
-        <div className="card-academic p-6 text-center">
-          <div className="text-3xl font-heading font-bold text-green-600 mb-2">
-            {contentStats.published.toLocaleString()}
-          </div>
-          <div className="text-sm text-muted-foreground">Published</div>
-        </div>
-        <div className="card-academic p-6 text-center">
-          <div className="text-3xl font-heading font-bold text-blue-600 mb-2">
-            {contentStats.underReview.toLocaleString()}
-          </div>
-          <div className="text-sm text-muted-foreground">Under Review</div>
-        </div>
-        <div className="card-academic p-6 text-center">
-          <div className="text-3xl font-heading font-bold text-yellow-600 mb-2">
-            {contentStats.pending.toLocaleString()}
-          </div>
-          <div className="text-sm text-muted-foreground">Pending Review</div>
-        </div>
-        <div className="card-academic p-6 text-center">
-          <div className="text-3xl font-heading font-bold text-gray-600 mb-2">
-            {contentStats.drafts.toLocaleString()}
-          </div>
-          <div className="text-sm text-muted-foreground">Drafts</div>
-        </div>
-        <div className="card-academic p-6 text-center">
-          <div className="text-3xl font-heading font-bold text-red-600 mb-2">
-            {contentStats.rejected.toLocaleString()}
-          </div>
-          <div className="text-sm text-muted-foreground">Rejected</div>
-        </div>
-      </div>
-
-      {/* Review Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="card-academic p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-2xl font-heading font-bold text-foreground mb-1">
-                {reviewStats.totalReviews.toLocaleString()}
+      ) : (
+        <>
+          {/* Content Statistics */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
+            <div className="card-academic p-6 text-center">
+              <div className="text-3xl font-heading font-bold text-primary mb-2">
+                {contentStats.total.toLocaleString()}
               </div>
-              <div className="text-sm text-muted-foreground">Total Reviews Completed</div>
+              <div className="text-sm text-muted-foreground">Total Manuscripts</div>
             </div>
-            <div className="text-green-600 text-sm font-medium">
-              Review Quality Score: 4.2/5
-            </div>
-          </div>
-        </div>
-        <div className="card-academic p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-2xl font-heading font-bold text-foreground mb-1">
-                {reviewStats.pendingAssignments.toLocaleString()}
+            <div className="card-academic p-6 text-center">
+              <div className="text-3xl font-heading font-bold text-green-600 mb-2">
+                {contentStats.published.toLocaleString()}
               </div>
-              <div className="text-sm text-muted-foreground">Pending Review Assignments</div>
+              <div className="text-sm text-muted-foreground">Published</div>
             </div>
-            <div className="text-yellow-600 text-sm font-medium">
-              Avg Response Time: 3.5 days
+            <div className="card-academic p-6 text-center">
+              <div className="text-3xl font-heading font-bold text-blue-600 mb-2">
+                {contentStats.underReview.toLocaleString()}
+              </div>
+              <div className="text-sm text-muted-foreground">Under Review</div>
+            </div>
+            <div className="card-academic p-6 text-center">
+              <div className="text-3xl font-heading font-bold text-yellow-600 mb-2">
+                {contentStats.pending.toLocaleString()}
+              </div>
+              <div className="text-sm text-muted-foreground">Pending Review</div>
+            </div>
+            <div className="card-academic p-6 text-center">
+              <div className="text-3xl font-heading font-bold text-gray-600 mb-2">
+                {contentStats.drafts.toLocaleString()}
+              </div>
+              <div className="text-sm text-muted-foreground">Drafts</div>
+            </div>
+            <div className="card-academic p-6 text-center">
+              <div className="text-3xl font-heading font-bold text-red-600 mb-2">
+                {contentStats.rejected.toLocaleString()}
+              </div>
+              <div className="text-sm text-muted-foreground">Rejected</div>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* Content Management Component */}
-      <ContentManagement initialManuscripts={manuscripts} />
+          {/* Review Statistics */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="card-academic p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-2xl font-heading font-bold text-foreground mb-1">
+                    {reviewStats.totalReviews.toLocaleString()}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Total Reviews Completed</div>
+                </div>
+                <div className="text-green-600 text-sm font-medium">
+                  Review Quality Score: 4.2/5
+                </div>
+              </div>
+            </div>
+            <div className="card-academic p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-2xl font-heading font-bold text-foreground mb-1">
+                    {reviewStats.pendingAssignments.toLocaleString()}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Pending Review Assignments</div>
+                </div>
+                <div className="text-yellow-600 text-sm font-medium">
+                  Avg Response Time: 3.5 days
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Content Management Component */}
+          <ContentManagement initialManuscripts={manuscripts} />
+        </>
+      )}
     </div>
   )
 }

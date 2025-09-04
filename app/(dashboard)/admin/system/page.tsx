@@ -1,158 +1,152 @@
-import { Metadata } from 'next'
-import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useAuth } from '@/hooks/useAuth'
 import { SystemMonitoring } from '@/components/admin/system-monitoring'
+import { Card } from '@/components/ui/card'
+import { LoadingSpinner } from '@/components/ui/loading-spinner'
 
-export const metadata: Metadata = {
-  title: 'System Management - Admin Dashboard',
-  description: 'Monitor system health, logs, and configuration settings.',
+interface ServiceHealth {
+  status: 'operational' | 'degraded' | 'outage'
+  responseTime: number
+  lastChecked: string
+  uptime: number
+  usage?: number
+  queueSize?: number
 }
 
-async function getAuthenticatedUser() {
-  const supabase = await createClient()
-  const { data: { user }, error } = await supabase.auth.getUser()
-  
-  if (error || !user) {
-    redirect('/login')
-  }
-  
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role, full_name')
-    .eq('id', user.id)
-    .single()
-  
-  if (!profile || profile.role !== 'admin') {
-    redirect('/dashboard')
-  }
-  
-  return { user, profile }
+interface SystemHealth {
+  database: ServiceHealth
+  api: ServiceHealth
+  storage: ServiceHealth
+  email: ServiceHealth
+  search: ServiceHealth
+  cdn: ServiceHealth
 }
 
-// Mock function to simulate system health checks
-async function getSystemHealth() {
-  // In a real application, these would be actual health checks
-  return {
-    database: {
-      status: 'operational' as const,
-      responseTime: 45,
-      lastChecked: new Date().toISOString(),
-      uptime: 99.9
-    },
-    api: {
-      status: 'operational' as const,
-      responseTime: 120,
-      lastChecked: new Date().toISOString(),
-      uptime: 99.8
-    },
-    storage: {
-      status: 'operational' as const,
-      responseTime: 75,
-      lastChecked: new Date().toISOString(),
-      uptime: 99.95,
-      usage: 67
-    },
-    email: {
-      status: 'degraded' as const,
-      responseTime: 1200,
-      lastChecked: new Date().toISOString(),
-      uptime: 98.5,
-      queueSize: 142
-    },
-    search: {
-      status: 'operational' as const,
-      responseTime: 200,
-      lastChecked: new Date().toISOString(),
-      uptime: 99.7
-    },
-    cdn: {
-      status: 'operational' as const,
-      responseTime: 35,
-      lastChecked: new Date().toISOString(),
-      uptime: 99.99
+interface SystemMetrics {
+  server: {
+    cpu: number
+    memory: number
+    disk: number
+    network: number
+  }
+  database: {
+    connections: number
+    maxConnections: number
+    queriesPerSecond: number
+    slowQueries: number
+  }
+  performance: {
+    avgResponseTime: number
+    requestsPerMinute: number
+    errorRate: number
+    availability: number
+  }
+}
+
+interface SystemLog {
+  id: string
+  timestamp: string
+  level: 'info' | 'warning' | 'error'
+  service: string
+  message: string
+  details?: Record<string, any>
+}
+
+export default function AdminSystemPage() {
+  const { user, isLoading, isAdmin } = useAuth()
+  const [systemHealth, setSystemHealth] = useState<SystemHealth | null>(null)
+  const [systemMetrics, setSystemMetrics] = useState<SystemMetrics | null>(null)
+  const [systemLogs, setSystemLogs] = useState<SystemLog[]>([])
+  const [dataLoading, setDataLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!isLoading && user && isAdmin) {
+      fetchSystemData()
+    }
+  }, [user, isLoading, isAdmin])
+
+  const fetchSystemData = async () => {
+    try {
+      setDataLoading(true)
+      setError(null)
+
+      // Fetch system data in parallel
+      const [healthResponse, metricsResponse, logsResponse] = await Promise.all([
+        fetch('/api/admin/system/health'),
+        fetch('/api/admin/system/metrics'),
+        fetch('/api/admin/system/logs')
+      ])
+
+      if (!healthResponse.ok || !metricsResponse.ok || !logsResponse.ok) {
+        throw new Error('Failed to fetch system data')
+      }
+
+      const healthData = await healthResponse.json()
+      const metricsData = await metricsResponse.json()
+      const logsData = await logsResponse.json()
+
+      setSystemHealth(healthData.health || null)
+      setSystemMetrics(metricsData.metrics || null)
+      setSystemLogs(logsData.logs || [])
+    } catch (err) {
+      console.error('Error fetching system data:', err)
+      setError('Failed to load system data')
+    } finally {
+      setDataLoading(false)
     }
   }
-}
 
-// Mock function to get system metrics
-async function getSystemMetrics() {
-  return {
-    server: {
-      cpu: 45,
-      memory: 72,
-      disk: 34,
-      network: 23
-    },
-    database: {
-      connections: 47,
-      maxConnections: 100,
-      queriesPerSecond: 156,
-      slowQueries: 3
-    },
-    performance: {
-      avgResponseTime: 245,
-      requestsPerMinute: 1847,
-      errorRate: 0.02,
-      availability: 99.85
-    }
+  if (isLoading) {
+    return (
+      <div className="container mx-auto py-8">
+        <div className="flex items-center justify-center h-64">
+          <LoadingSpinner size="lg" />
+        </div>
+      </div>
+    )
   }
-}
 
-// Mock function to get recent system logs
-async function getSystemLogs() {
-  const now = new Date()
-  return [
-    {
-      id: '1',
-      timestamp: new Date(now.getTime() - 5 * 60000).toISOString(),
-      level: 'info' as const,
-      service: 'api',
-      message: 'User authentication successful for user@example.com',
-      details: { userId: 'user123', ip: '192.168.1.100' }
-    },
-    {
-      id: '2',
-      timestamp: new Date(now.getTime() - 15 * 60000).toISOString(),
-      level: 'warning' as const,
-      service: 'email',
-      message: 'Email delivery delayed - queue size exceeded threshold',
-      details: { queueSize: 150, threshold: 100 }
-    },
-    {
-      id: '3',
-      timestamp: new Date(now.getTime() - 30 * 60000).toISOString(),
-      level: 'error' as const,
-      service: 'storage',
-      message: 'File upload failed for manuscript submission',
-      details: { fileId: 'file456', error: 'Network timeout' }
-    },
-    {
-      id: '4',
-      timestamp: new Date(now.getTime() - 45 * 60000).toISOString(),
-      level: 'info' as const,
-      service: 'database',
-      message: 'Database backup completed successfully',
-      details: { backupSize: '2.4GB', duration: '12 minutes' }
-    },
-    {
-      id: '5',
-      timestamp: new Date(now.getTime() - 60 * 60000).toISOString(),
-      level: 'info' as const,
-      service: 'api',
-      message: 'Manuscript submission received and processed',
-      details: { manuscriptId: 'ms789', authorId: 'author456' }
-    }
-  ]
-}
+  if (!user) {
+    return (
+      <div className="container mx-auto py-8">
+        <Card className="card-academic p-8 text-center">
+          <h2 className="text-xl font-heading font-semibold mb-2">Authentication Required</h2>
+          <p className="text-muted-foreground">Please log in to access the admin panel.</p>
+        </Card>
+      </div>
+    )
+  }
 
-export default async function AdminSystemPage() {
-  await getAuthenticatedUser()
-  
-  const [systemHealth, systemMetrics, systemLogs] = await Promise.all([
-    getSystemHealth(),
-    getSystemMetrics(),
-    getSystemLogs()
-  ])
+  if (!isAdmin) {
+    return (
+      <div className="container mx-auto py-8">
+        <Card className="card-academic p-8 text-center">
+          <h2 className="text-xl font-heading font-semibold mb-2">Access Denied</h2>
+          <p className="text-muted-foreground">You need admin privileges to access this page.</p>
+        </Card>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto py-8">
+        <Card className="card-academic p-8 text-center">
+          <h2 className="text-xl font-heading font-semibold mb-2 text-red-600">Error</h2>
+          <p className="text-muted-foreground mb-4">{error}</p>
+          <button 
+            onClick={fetchSystemData}
+            className="btn-academic"
+          >
+            Try Again
+          </button>
+        </Card>
+      </div>
+    )
+  }
 
   return (
     <div className="container mx-auto py-8 space-y-8">
@@ -166,12 +160,22 @@ export default async function AdminSystemPage() {
         </p>
       </div>
 
-      {/* System Monitoring Component */}
-      <SystemMonitoring 
-        systemHealth={systemHealth}
-        systemMetrics={systemMetrics}
-        systemLogs={systemLogs}
-      />
+      {dataLoading ? (
+        <div className="flex items-center justify-center h-64">
+          <LoadingSpinner size="lg" />
+        </div>
+      ) : systemHealth && systemMetrics ? (
+        <SystemMonitoring 
+          systemHealth={systemHealth}
+          systemMetrics={systemMetrics}
+          systemLogs={systemLogs}
+        />
+      ) : (
+        <Card className="card-academic p-8 text-center">
+          <h2 className="text-xl font-heading font-semibold mb-2">No System Data</h2>
+          <p className="text-muted-foreground">Unable to load system monitoring data.</p>
+        </Card>
+      )}
     </div>
   )
 }
