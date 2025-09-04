@@ -230,6 +230,7 @@ export function EnhancedReviewerDashboard({ profile }: EnhancedReviewerDashboard
                     queue={queue} 
                     compact={true}
                     limit={5}
+                    onRefreshData={handleRefreshData}
                   />
                 </Card>
 
@@ -345,7 +346,7 @@ export function EnhancedReviewerDashboard({ profile }: EnhancedReviewerDashboard
           </TabsContent>
 
           <TabsContent value="reviews" className="mt-6">
-            <ReviewQueue queue={queue} />
+            <ReviewQueue queue={queue} onRefreshData={handleRefreshData} />
           </TabsContent>
 
           <TabsContent value="analytics" className="mt-6">

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -12,7 +13,8 @@ import {
   User,
   Eye,
   Play,
-  X
+  X,
+  Loader2
 } from 'lucide-react'
 import { ReviewAssignment } from '@/types/database'
 
@@ -25,10 +27,14 @@ interface ReviewQueueProps {
   }
   compact?: boolean
   limit?: number
+  onRefreshData?: () => void
 }
 
-export function ReviewQueue({ queue, compact = false, limit }: ReviewQueueProps) {
+export function ReviewQueue({ queue, compact = false, limit, onRefreshData }: ReviewQueueProps) {
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'pending' | 'inProgress' | 'completed' | 'declined'>('all')
+  const [loadingActions, setLoadingActions] = useState<Set<string>>(new Set())
+  const [feedback, setFeedback] = useState<{type: 'success' | 'error', message: string} | null>(null)
+  const router = useRouter()
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -95,24 +101,130 @@ export function ReviewQueue({ queue, compact = false, limit }: ReviewQueueProps)
     return aDue - bDue
   })
 
+  const setActionLoading = (assignmentId: string, loading: boolean) => {
+    setLoadingActions(prev => {
+      const newSet = new Set(prev)
+      if (loading) {
+        newSet.add(assignmentId)
+      } else {
+        newSet.delete(assignmentId)
+      }
+      return newSet
+    })
+  }
+
+  const showFeedback = (type: 'success' | 'error', message: string) => {
+    setFeedback({ type, message })
+    setTimeout(() => setFeedback(null), 5000)
+  }
+
   const handleAcceptReview = async (assignmentId: string) => {
-    // TODO: Implement accept review logic
-    console.log('Accept review:', assignmentId)
+    setActionLoading(assignmentId, true)
+    try {
+      const response = await fetch(`/api/reviews/${assignmentId}/accept`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to accept review')
+      }
+
+      showFeedback('success', 'Review accepted! Redirecting to review page...')
+      
+      // Refresh the dashboard data if callback provided
+      if (onRefreshData) {
+        onRefreshData()
+      }
+      
+      // Navigate to review page after short delay
+      setTimeout(() => {
+        router.push(`/reviewer/review/${assignmentId}`)
+      }, 1500)
+      
+    } catch (error) {
+      console.error('Error accepting review:', error)
+      showFeedback('error', 'Failed to accept review. Please try again.')
+    } finally {
+      setActionLoading(assignmentId, false)
+    }
   }
 
   const handleDeclineReview = async (assignmentId: string) => {
-    // TODO: Implement decline review logic
-    console.log('Decline review:', assignmentId)
+    const confirmDecline = window.confirm(
+      'Are you sure you want to decline this review? This action cannot be undone.'
+    )
+    
+    if (!confirmDecline) return
+
+    setActionLoading(assignmentId, true)
+    try {
+      const response = await fetch(`/api/reviews/${assignmentId}/decline`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          decline_reason: 'Declined from reviewer dashboard'
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to decline review')
+      }
+
+      showFeedback('success', 'Review declined successfully.')
+      
+      // Refresh the dashboard data if callback provided
+      if (onRefreshData) {
+        setTimeout(() => {
+          onRefreshData()
+        }, 1000)
+      }
+      
+    } catch (error) {
+      console.error('Error declining review:', error)
+      showFeedback('error', 'Failed to decline review. Please try again.')
+    } finally {
+      setActionLoading(assignmentId, false)
+    }
   }
 
   const handleContinueReview = (assignmentId: string) => {
-    // TODO: Navigate to review interface
-    console.log('Continue review:', assignmentId)
+    router.push(`/reviewer/review/${assignmentId}`)
+  }
+
+  const handleViewReview = (assignmentId: string) => {
+    router.push(`/reviewer/review/${assignmentId}?mode=view`)
   }
 
   if (!compact) {
     return (
       <div className="space-y-6">
+        {/* Feedback Message */}
+        {feedback && (
+          <Card className={`p-4 border-l-4 ${
+            feedback.type === 'success' 
+              ? 'border-green-500 bg-green-50' 
+              : 'border-red-500 bg-red-50'
+          }`}>
+            <div className="flex items-center">
+              {feedback.type === 'success' ? (
+                <CheckCircle className="w-5 h-5 text-green-600 mr-2" />
+              ) : (
+                <AlertCircle className="w-5 h-5 text-red-600 mr-2" />
+              )}
+              <span className={`font-medium ${
+                feedback.type === 'success' ? 'text-green-800' : 'text-red-800'
+              }`}>
+                {feedback.message}
+              </span>
+            </div>
+          </Card>
+        )}
+
         {/* Filter Tabs */}
         <div className="flex flex-wrap gap-2">
           <Button
@@ -158,10 +270,12 @@ export function ReviewQueue({ queue, compact = false, limit }: ReviewQueueProps)
                 onAccept={handleAcceptReview}
                 onDecline={handleDeclineReview}
                 onContinue={handleContinueReview}
+                onViewReview={handleViewReview}
                 getDaysUntilDue={getDaysUntilDue}
                 getUrgencyColor={getUrgencyColor}
                 getStatusColor={getStatusColor}
                 formatStatus={formatStatus}
+                isLoading={loadingActions.has(assignment.id)}
               />
             ))
           ) : (
@@ -225,10 +339,12 @@ function ReviewCard({
   onAccept, 
   onDecline, 
   onContinue,
+  onViewReview,
   getDaysUntilDue,
   getUrgencyColor,
   getStatusColor,
-  formatStatus
+  formatStatus,
+  isLoading = false
 }: any) {
   const daysLeft = getDaysUntilDue(assignment.due_date)
   
@@ -291,16 +407,26 @@ function ReviewCard({
               variant="outline" 
               className="flex-1"
               onClick={() => onDecline(assignment.id)}
+              disabled={isLoading}
             >
-              <X className="w-3 h-3 mr-1" />
+              {isLoading ? (
+                <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+              ) : (
+                <X className="w-3 h-3 mr-1" />
+              )}
               Decline
             </Button>
             <Button 
               size="sm" 
               className="flex-1"
               onClick={() => onAccept(assignment.id)}
+              disabled={isLoading}
             >
-              <CheckCircle className="w-3 h-3 mr-1" />
+              {isLoading ? (
+                <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+              ) : (
+                <CheckCircle className="w-3 h-3 mr-1" />
+              )}
               Accept & Start
             </Button>
           </div>
@@ -331,8 +457,13 @@ function ReviewCard({
             size="sm" 
             className="w-full"
             onClick={() => onContinue(assignment.id)}
+            disabled={isLoading}
           >
-            <Play className="w-3 h-3 mr-1" />
+            {isLoading ? (
+              <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+            ) : (
+              <Play className="w-3 h-3 mr-1" />
+            )}
             Continue Review
           </Button>
         </div>
@@ -343,8 +474,17 @@ function ReviewCard({
           <span className="text-sm text-gray-600">
             Completed {new Date(assignment.completed_at || '').toLocaleDateString()}
           </span>
-          <Button size="sm" variant="outline">
-            <Eye className="w-3 h-3 mr-1" />
+          <Button 
+            size="sm" 
+            variant="outline"
+            onClick={() => onViewReview(assignment.id)}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+            ) : (
+              <Eye className="w-3 h-3 mr-1" />
+            )}
             View Review
           </Button>
         </div>
