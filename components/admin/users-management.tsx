@@ -16,17 +16,21 @@ import {
   TablePagination,
 } from '@/components/ui/table'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
-import { 
-  Users, 
-  Download, 
-  Filter, 
-  Mail, 
-  Shield, 
+import {
+  Users,
+  Download,
+  Filter,
+  Mail,
+  Shield,
   ShieldOff,
   Edit,
   Eye,
-  UserX
+  UserX,
+  ExternalLink,
+  CheckCircle,
+  AlertCircle
 } from 'lucide-react'
+import { OrcidProfileBadge } from '@/components/orcid/orcid-profile-badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 interface User {
@@ -36,6 +40,8 @@ interface User {
   role: 'author' | 'reviewer' | 'editor' | 'admin'
   affiliation?: string
   orcid?: string
+  orcid_verified?: boolean
+  orcid_last_sync?: string
   h_index?: number
   total_publications?: number
   created_at: string
@@ -64,13 +70,32 @@ const roleLabels = {
 }
 
 export function UsersManagement({ initialUsers }: UsersManagementProps) {
-  const [users] = useState<User[]>(initialUsers)
+  // Enhance users with mock ORCID data for demonstration
+  const usersWithOrcid = initialUsers.map((user, index) => ({
+    ...user,
+    orcid: index % 3 === 0 ? `0000-000${index + 1}-1825-009${index}` : undefined,
+    orcid_verified: index % 3 === 0,
+    orcid_last_sync: index % 3 === 0 ? '2024-09-12' : undefined,
+  }))
+
+  const [users] = useState<User[]>(usersWithOrcid)
   const [searchQuery, setSearchQuery] = useState('')
   const [roleFilter, setRoleFilter] = useState<string>('all')
   const [sortField, setSortField] = useState<SortField>('created_at')
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize] = useState(10)
+
+  // Mock handlers for ORCID actions
+  const handleBulkOrcidVerify = () => {
+    console.log('Bulk ORCID verification initiated')
+    alert('Bulk ORCID verification started! (Mock)')
+  }
+
+  const handleOrcidVerify = (userId: string) => {
+    console.log(`ORCID verification for user ${userId}`)
+    alert('ORCID verification invitation sent! (Mock)')
+  }
 
   // Filter and sort users
   const filteredAndSortedUsers = useMemo(() => {
@@ -184,6 +209,10 @@ export function UsersManagement({ initialUsers }: UsersManagementProps) {
             </Badge>
           </div>
           <div className="flex items-center space-x-2">
+            <Button variant="outline" size="sm" onClick={handleBulkOrcidVerify}>
+              <CheckCircle className="h-4 w-4 mr-2" />
+              Bulk ORCID Verify
+            </Button>
             <Button variant="outline" size="sm" onClick={exportUsers}>
               <Download className="h-4 w-4 mr-2" />
               Export
@@ -243,13 +272,14 @@ export function UsersManagement({ initialUsers }: UsersManagementProps) {
               >
                 Email
               </TableHead>
-              <TableHead 
-                sortable 
+              <TableHead
+                sortable
                 sorted={sortField === 'role' ? sortDirection : false}
                 onSort={() => handleSort('role')}
               >
                 Role
               </TableHead>
+              <TableHead className="text-center">ORCID Verification</TableHead>
               <TableHead>Affiliation</TableHead>
               <TableHead 
                 sortable 
@@ -301,6 +331,42 @@ export function UsersManagement({ initialUsers }: UsersManagementProps) {
                   <Badge className={roleColors[user.role]} variant="secondary">
                     {roleLabels[user.role]}
                   </Badge>
+                </TableCell>
+                <TableCell className="text-center">
+                  <div className="flex flex-col items-center space-y-1">
+                    {user.orcid_verified ? (
+                      <div className="flex items-center space-x-2">
+                        <OrcidProfileBadge
+                          orcidId={user.orcid!}
+                          isVerified={true}
+                          variant="compact"
+                        />
+                        <CheckCircle className="w-4 h-4 text-green-600" />
+                      </div>
+                    ) : user.orcid ? (
+                      <div className="flex items-center space-x-2">
+                        <Badge variant="outline" className="text-xs">
+                          {user.orcid}
+                        </Badge>
+                        <AlertCircle className="w-4 h-4 text-orange-600" />
+                      </div>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleOrcidVerify(user.id)}
+                        className="text-xs"
+                      >
+                        <ExternalLink className="w-3 h-3 mr-1" />
+                        Invite
+                      </Button>
+                    )}
+                    {user.orcid_last_sync && (
+                      <div className="text-xs text-gray-500">
+                        Synced: {new Date(user.orcid_last_sync).toLocaleDateString()}
+                      </div>
+                    )}
+                  </div>
                 </TableCell>
                 <TableCell>
                   <div className="max-w-48 truncate">

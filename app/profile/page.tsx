@@ -9,9 +9,9 @@ import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Avatar } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
-import { 
-  User, 
-  Edit3, 
+import {
+  User,
+  Edit3,
   ArrowLeft,
   Mail,
   Building,
@@ -29,6 +29,13 @@ import {
   GraduationCap,
   Hash
 } from 'lucide-react'
+import {
+  OrcidProfileBadge,
+  OrcidConnectionCard
+} from '@/components/orcid/orcid-profile-badge'
+import {
+  OrcidSyncManager
+} from '@/components/orcid/orcid-sync-manager'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import type { Profile } from '@/types/database'
@@ -40,7 +47,7 @@ export default function ProfilePage() {
   const [isEditMode, setIsEditMode] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('overview')
-  
+
   // Statistics based on role
   const [stats, setStats] = useState({
     manuscripts: 0,
@@ -49,6 +56,17 @@ export default function ProfilePage() {
     hIndex: 0,
     editorialWork: 0
   })
+
+  // Mock ORCID connection status - toggle this to test both states
+  const mockOrcidStatus = {
+    isConnected: true,
+    orcidId: '0000-0002-1825-0097',
+    connectedAt: new Date('2024-01-15'),
+    lastSyncAt: new Date('2024-09-12'),
+    scope: '/authenticate,/read-limited',
+    hasValidToken: true,
+    needsReauth: false
+  }
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -94,6 +112,36 @@ export default function ProfilePage() {
   const handleProfileUpdate = (updatedProfile: Profile) => {
     setProfile(updatedProfile)
     setIsEditMode(false)
+  }
+
+  // Mock ORCID handlers for MVP demo
+  const handleMockOrcidConnect = () => {
+    console.log('Mock ORCID connection initiated')
+    alert('ORCID connection successful! (Mock)')
+  }
+
+  const handleMockOrcidSync = async (options: any) => {
+    console.log('Mock ORCID sync initiated', options)
+    return {
+      success: true,
+      results: [
+        {
+          success: true,
+          syncType: 'profile' as const,
+          itemsSynced: 3,
+        },
+        {
+          success: true,
+          syncType: 'publications' as const,
+          itemsSynced: 5,
+        }
+      ]
+    }
+  }
+
+  const handleMockOrcidDisconnect = () => {
+    console.log('Mock ORCID disconnect')
+    alert('ORCID disconnected successfully! (Mock)')
   }
 
   const getDashboardLink = () => {
@@ -307,6 +355,33 @@ export default function ProfilePage() {
             </TabsList>
 
             <TabsContent value="overview" className="space-y-6">
+              {/* ORCID Integration Section */}
+              <Card className="p-6">
+                <h3 className="text-lg font-semibold mb-4">ORCID Integration</h3>
+
+                {mockOrcidStatus.isConnected ? (
+                  <div className="space-y-4">
+                    <OrcidProfileBadge
+                      orcidId={mockOrcidStatus.orcidId}
+                      isVerified={mockOrcidStatus.isConnected}
+                      status={mockOrcidStatus}
+                      lastSyncAt={mockOrcidStatus.lastSyncAt}
+                      variant="detailed"
+                      onSync={() => handleMockOrcidSync({})}
+                      onDisconnect={handleMockOrcidDisconnect}
+                    />
+
+                    <OrcidSyncManager
+                      onSync={handleMockOrcidSync}
+                    />
+                  </div>
+                ) : (
+                  <OrcidConnectionCard
+                    onConnect={handleMockOrcidConnect}
+                  />
+                )}
+              </Card>
+
               <Card className="p-6">
                 <h3 className="text-lg font-semibold mb-4">About</h3>
                 {profile.bio ? (

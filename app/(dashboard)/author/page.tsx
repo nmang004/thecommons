@@ -5,15 +5,21 @@ import { useAuth } from '@/hooks/useAuth'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { 
-  FileText, 
-  Plus, 
-  Clock, 
-  CheckCircle, 
+import {
+  FileText,
+  Plus,
+  Clock,
+  CheckCircle,
   AlertCircle,
   Eye,
-  Download
+  Download,
+  Hash,
+  RefreshCw
 } from 'lucide-react'
+import {
+  OrcidConnectionCard,
+  OrcidProfileBadge
+} from '@/components/orcid/orcid-profile-badge'
 import Link from 'next/link'
 
 // Mock data - replace with actual API calls
@@ -68,6 +74,26 @@ function AuthorDashboardContent() {
     total_views: 279,
     total_downloads: 79
   })
+
+  // Mock ORCID status for dashboard
+  const mockOrcidStatus = {
+    isConnected: true,
+    orcidId: '0000-0002-1825-0097',
+    lastSyncAt: new Date('2024-09-12'),
+    needsReauth: false,
+    hasValidToken: true
+  }
+
+  // Mock handlers
+  const handleOrcidSync = async () => {
+    console.log('Mock ORCID sync from dashboard')
+    alert('ORCID data synced successfully! (Mock)')
+  }
+
+  const handleOrcidConnect = () => {
+    console.log('Mock ORCID connect from dashboard')
+    alert('ORCID connection successful! (Mock)')
+  }
 
   // In a real app, you would fetch manuscripts using the user ID from Auth0
   useEffect(() => {
@@ -135,6 +161,58 @@ function AuthorDashboardContent() {
             </div>
           </Card>
         </div>
+
+      {/* ORCID Status Widget */}
+      <Card className="p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold">ORCID Integration</h3>
+          <Hash className="w-5 h-5 text-gray-500" />
+        </div>
+
+        {mockOrcidStatus.isConnected ? (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <OrcidProfileBadge
+                orcidId={mockOrcidStatus.orcidId}
+                isVerified={mockOrcidStatus.isConnected}
+                variant="detailed"
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleOrcidSync}
+                className="flex items-center"
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Sync
+              </Button>
+            </div>
+
+            <div className="text-sm text-gray-600">
+              Last synced: {mockOrcidStatus.lastSyncAt.toLocaleDateString()}
+            </div>
+
+            <div className="grid grid-cols-3 gap-4 mt-4">
+              <div className="text-center">
+                <p className="text-lg font-semibold text-green-600">5</p>
+                <p className="text-xs text-gray-600">Publications Synced</p>
+              </div>
+              <div className="text-center">
+                <p className="text-lg font-semibold text-blue-600">3</p>
+                <p className="text-xs text-gray-600">Profile Fields Updated</p>
+              </div>
+              <div className="text-center">
+                <p className="text-lg font-semibold text-purple-600">12</p>
+                <p className="text-xs text-gray-600">Citations Linked</p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <OrcidConnectionCard
+            onConnect={handleOrcidConnect}
+          />
+        )}
+      </Card>
 
       {/* Quick Actions */}
       <div className="flex flex-wrap gap-4">

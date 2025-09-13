@@ -2,17 +2,18 @@
 
 import { useState, useEffect } from 'react'
 import { format } from 'date-fns'
-import { 
-  Download, 
-  Share2, 
-  Bookmark, 
-  Quote, 
-  Eye, 
-  Calendar, 
+import {
+  Download,
+  Share2,
+  Bookmark,
+  Quote,
+  Eye,
+  Calendar,
   ExternalLink,
   FileText,
   Printer
 } from 'lucide-react'
+import { OrcidProfileBadge } from '@/components/orcid/orcid-profile-badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -64,6 +65,34 @@ interface ArticleViewProps {
 export default function ArticleView({ article }: ArticleViewProps) {
   const [activeSection, setActiveSection] = useState('')
   const [isBookmarked, setIsBookmarked] = useState(false)
+
+  // Mock article data with ORCID information for MVP demo
+  const mockArticleWithOrcid = {
+    ...article,
+    author: {
+      ...article.author,
+      orcid: '0000-0002-1825-0097',
+      orcidVerified: true
+    },
+    coauthors: [
+      {
+        name: 'Dr. Alex Kim',
+        orcid: '0000-0002-7183-4567',
+        verified: true,
+        affiliation: 'UC Berkeley',
+        author_order: 2,
+        is_corresponding: false
+      },
+      {
+        name: 'Dr. Maria Rodriguez',
+        orcid: '',
+        verified: false,
+        affiliation: 'State University',
+        author_order: 3,
+        is_corresponding: false
+      }
+    ]
+  }
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -144,22 +173,32 @@ export default function ArticleView({ article }: ArticleViewProps) {
 
             {/* Authors */}
             <div className="flex flex-wrap items-center gap-4 mb-6">
-              {[article.author, ...article.coauthors.sort((a, b) => a.author_order - b.author_order)].map((author, index) => (
+              {[mockArticleWithOrcid.author, ...mockArticleWithOrcid.coauthors.sort((a, b) => a.author_order - b.author_order)].map((author, index) => (
                 <div key={index} className="flex items-center space-x-3">
                   <Avatar className="h-10 w-10">
-                    <AvatarImage 
-                      src={'avatar_url' in author ? author.avatar_url : undefined} 
-                      alt={'full_name' in author ? author.full_name : author.name} 
+                    <AvatarImage
+                      src={'avatar_url' in author ? author.avatar_url : undefined}
+                      alt={'full_name' in author ? author.full_name : author.name}
                     />
                     <AvatarFallback>
                       {('full_name' in author ? author.full_name : author.name).split(' ').map(n => n[0]).join('')}
                     </AvatarFallback>
                   </Avatar>
-                  <div>
-                    <p className="font-medium text-foreground">
-                      {'full_name' in author ? author.full_name : author.name}
-                      {'is_corresponding' in author && author.is_corresponding && <sup className="text-primary ml-1">*</sup>}
-                    </p>
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-2">
+                      <p className="font-medium text-foreground">
+                        {'full_name' in author ? author.full_name : author.name}
+                        {'is_corresponding' in author && author.is_corresponding && <sup className="text-primary ml-1">*</sup>}
+                      </p>
+                      {/* ORCID Badge */}
+                      {(author.orcid || ('orcidVerified' in author && author.orcidVerified)) && (
+                        <OrcidProfileBadge
+                          orcidId={author.orcid || mockArticleWithOrcid.author.orcid}
+                          isVerified={('verified' in author ? author.verified : author.orcidVerified) || false}
+                          variant="compact"
+                        />
+                      )}
+                    </div>
                     {author.affiliation && (
                       <p className="text-sm text-muted-foreground">{author.affiliation}</p>
                     )}

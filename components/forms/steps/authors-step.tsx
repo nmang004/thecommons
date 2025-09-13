@@ -8,17 +8,24 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { 
-  Plus, 
-  Trash2, 
-  GripVertical, 
-  User, 
-  Mail, 
-  Building, 
+import {
+  Plus,
+  Trash2,
+  GripVertical,
+  User,
+  Mail,
+  Building,
   ExternalLink,
   Star,
-  Info
+  Info,
+  CheckCircle
 } from 'lucide-react'
+import {
+  OrcidConnectButton
+} from '@/components/orcid/orcid-connect-button'
+import {
+  OrcidProfileBadge
+} from '@/components/orcid/orcid-profile-badge'
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
 
 export default function AuthorsStep() {
@@ -29,6 +36,31 @@ export default function AuthorsStep() {
   })
 
   const authors = watch('authors')
+
+  // Mock authors with ORCID data for MVP demo
+  const mockAuthorsWithOrcid = [
+    {
+      name: 'Dr. Sarah Chen',
+      email: 'sarah.chen@stanford.edu',
+      orcid: '0000-0002-1825-0097',
+      verified: true,
+      affiliation: 'Stanford University'
+    },
+    {
+      name: 'Dr. James Wilson',
+      email: 'james.wilson@mit.edu',
+      orcid: '0000-0001-5109-3700',
+      verified: true,
+      affiliation: 'MIT'
+    },
+    {
+      name: 'Dr. Maria Rodriguez',
+      email: 'maria.rodriguez@univ.edu',
+      orcid: '',
+      verified: false,
+      affiliation: 'State University'
+    }
+  ]
 
   const addAuthor = () => {
     append({
@@ -64,6 +96,13 @@ export default function AuthorsStep() {
     const orcidRegex = /^(\d{4}-\d{4}-\d{4}-\d{3}[0-9X])$/
     return orcidRegex.test(orcid)
   }
+
+  // Mock ORCID handlers for MVP demo
+  const handleMockOrcidConnect = () => {
+    console.log('Mock ORCID connection initiated for co-author')
+    alert('ORCID verification successful! (Mock)')
+  }
+
 
   return (
     <div className="space-y-8">
@@ -255,6 +294,59 @@ export default function AuthorsStep() {
         {errors.authors && (
           <p className="text-red-600 text-sm mt-2">{errors.authors.message as string}</p>
         )}
+      </div>
+
+      {/* ORCID Verification Demo Section */}
+      <div className="space-y-4">
+        <h4 className="font-medium text-lg">ORCID Verification Example</h4>
+        <p className="text-sm text-gray-600 mb-4">
+          This demonstrates how ORCID verification would work for co-authors in the actual system:
+        </p>
+
+        {mockAuthorsWithOrcid.map((author, index) => (
+          <Card key={index} className="p-4 bg-gray-50 border">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div>
+                  <p className="font-medium">{author.name}</p>
+                  <p className="text-sm text-gray-600">{author.email}</p>
+                  <p className="text-sm text-gray-600">{author.affiliation}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                {author.verified ? (
+                  <div className="flex items-center space-x-2">
+                    <OrcidProfileBadge
+                      orcidId={author.orcid}
+                      isVerified={true}
+                      variant="compact"
+                    />
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                    <span className="text-sm text-green-600 font-medium">Verified</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center space-x-2">
+                    <OrcidConnectButton
+                      variant="small"
+                      onConnect={handleMockOrcidConnect}
+                    />
+                    <span className="text-sm text-orange-600">Unverified</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {author.verified && (
+              <div className="mt-3 pt-3 border-t border-gray-200">
+                <div className="flex items-center text-xs text-gray-500">
+                  <CheckCircle className="w-4 h-4 mr-1 text-green-500" />
+                  ORCID verified • Profile data auto-filled • Citations linked
+                </div>
+              </div>
+            )}
+          </Card>
+        ))}
       </div>
 
       {/* CRediT Roles Reference */}
